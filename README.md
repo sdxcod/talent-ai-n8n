@@ -133,11 +133,9 @@ PostgreSQL فقط روی `127.0.0.1` منتشر شده و از شبکه عموم
 ### ۱. دریافت Repository
 
 ```bash
-git clone <repository-url>
-cd tosan-n8n-talent-ai
+git clone https://github.com/sdxcod/talent-ai-n8n.git
+cd talent-ai-n8n
 ```
-
-به‌جای `<repository-url>` آدرس Repository تیم را قرار دهید.
 
 ### ۲. ایجاد `.env` محلی
 
