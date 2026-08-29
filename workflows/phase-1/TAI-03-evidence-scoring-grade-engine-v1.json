@@ -1,0 +1,262 @@
+{
+  "id": "sGpdmxkpfQDl1uT8",
+  "name": "TAI-03 Evidence Scoring & Deterministic Grade Engine v1",
+  "nodes": [
+    {
+      "id": "da1904bc-90a8-48f7-832e-247409d81c97",
+      "name": "Grade Engine Requested",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -32
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "6a98b27d-f324-4c7e-9fb9-f556565e80f6",
+      "name": "Validate Grade Engine Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        -32
+      ],
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst errors = [];\n\nconst isObject = (value) =>\n  value !== null &&\n  typeof value === 'object' &&\n  !Array.isArray(value);\n\nif (input.schemaVersion !== '1.0') {\n  errors.push('schemaVersion must be 1.0');\n}\n\nif (input.resolution?.status !== 'RESOLVED') {\n  errors.push('resolution.status must be RESOLVED');\n}\n\nconst extractionId = input.extraction?.id;\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nif (!uuidPattern.test(String(extractionId ?? ''))) {\n  errors.push('extraction.id must be a valid UUID');\n}\n\nif (!isObject(input.candidateProfile)) {\n  errors.push('candidateProfile must be an object');\n}\n\nif (!isObject(input.assessmentContext)) {\n  errors.push('assessmentContext must be an object');\n}\n\nif (!isObject(input.gradeGuide)) {\n  errors.push('gradeGuide must be an object');\n}\n\nconst dimensions = input.gradeGuide?.dimensions;\n\nif (!Array.isArray(dimensions) || dimensions.length !== 7) {\n  errors.push('gradeGuide.dimensions must contain exactly 7 dimensions');\n}\n\nconst dimensionCodes = Array.isArray(dimensions)\n  ? dimensions.map((dimension) => dimension.code)\n  : [];\n\nif (new Set(dimensionCodes).size !== dimensionCodes.length) {\n  errors.push('gradeGuide dimension codes must be unique');\n}\n\nconst totalWeight = Array.isArray(dimensions)\n  ? dimensions.reduce(\n      (total, dimension) =>\n        total + Number(dimension.weight ?? 0),\n      0\n    )\n  : 0;\n\nif (totalWeight !== 100) {\n  errors.push(`gradeGuide dimension weights must total 100, found ${totalWeight}`);\n}\n\nconst targetGradeCode =\n  input.assessmentContext?.targetGradeCode;\n\nconst guideTargetGradeCode =\n  input.gradeGuide?.targetGrade?.code;\n\nif (\n  !targetGradeCode ||\n  targetGradeCode !== guideTargetGradeCode\n) {\n  errors.push(\n    'assessment target grade must match gradeGuide.targetGrade.code'\n  );\n}\n\nif (\n  input.gradeGuide?.decisionPolicy?.finalGradeAssignedBy !==\n  'DETERMINISTIC_ENGINE'\n) {\n  errors.push(\n    'final grade must be assigned by DETERMINISTIC_ENGINE'\n  );\n}\n\nif (errors.length > 0) {\n  throw new Error(\n    `INVALID_GRADE_ENGINE_INPUT: ${errors.join('; ')}`\n  );\n}\n\nreturn [\n  {\n    json: input,\n  },\n];"
+      }
+    },
+    {
+      "id": "7c1840e0-e512-4a5a-a58b-0ce2e934578c",
+      "name": "Build Evidence Scoring Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        -32
+      ],
+      "parameters": {
+        "jsCode": "const gradeEngineInput = $input.first().json;\n\nconst instructions = [\n  'You are the evidence-scoring component of TalentAI.',\n  '',\n  'Your only responsibility is to score the candidate resume evidence for every dimension supplied in the grade guide.',\n  'You must not decide whether the candidate meets the target grade.',\n  'You must not recommend hiring.',\n  'You must not calculate the final weighted score.',\n  '',\n  'Rules:',\n  '1. Evaluate exactly the dimensions supplied in gradeGuide.dimensions.',\n  '2. Return every dimension exactly once using its exact code.',\n  '3. Use only explicit information from candidateProfile.',\n  '4. Treat assessmentContext.jobDescription only as role context, never as evidence about the candidate.',\n  '5. Evidence quotes must be traceable verbatim to candidateProfile fields.',\n  '6. Apply gradeGuide.scoringScale and gradeGuide.evidencePolicy literally.',\n  '7. If there is no relevant evidence, assign score 0 and return an empty evidence array.',\n  '8. If evidence is indirect or a technology is merely listed, do not score above maximumScoreForIndirectEvidence.',\n  '9. Job title, claimed duration, or employer name alone does not demonstrate technical depth.',\n  '10. Score evidence independently of the target grade. Do not force a pass or failure.',\n  '11. Use LOW confidence when evidence is ambiguous, contradictory, or too general.',\n  '12. Return only the object required by the connected Structured Output Parser.',\n  '',\n  'Grade Engine input:',\n  JSON.stringify(gradeEngineInput),\n];\n\nreturn [\n  {\n    json: {\n      promptVersion: '1.0',\n      scoringModel: 'gpt-5.6-sol',\n      gradeEngineInput,\n      prompt: instructions.join('\\n'),\n    },\n  },\n];"
+      }
+    },
+    {
+      "id": "2e4aedb7-fe88-42bb-9641-7b24547cbb14",
+      "name": "Score Resume Evidence",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        816,
+        -32
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "hasOutputParser": true,
+        "batching": {}
+      }
+    },
+    {
+      "id": "fc3da8c6-99f6-417f-9f66-5053f56c8e80",
+      "name": "GapGPT Evidence Scoring Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        208
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.6-sol",
+          "mode": "list",
+          "cachedResultName": "gpt-5.6-sol"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0
+        }
+      }
+    },
+    {
+      "id": "ede912e6-78d3-4ffe-8077-4be03a25bd6d",
+      "name": "Grade Evidence Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        208
+      ],
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://talentai.local/schemas/grade-evidence-scoring-v1.schema.json\",\n  \"title\": \"TalentAI Grade Evidence Scoring v1\",\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"required\": [\n    \"schemaVersion\",\n    \"assessmentSummary\",\n    \"dimensions\",\n    \"warnings\"\n  ],\n  \"properties\": {\n    \"schemaVersion\": {\n      \"const\": \"1.0\"\n    },\n    \"assessmentSummary\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 2000\n    },\n    \"dimensions\": {\n      \"type\": \"array\",\n      \"minItems\": 7,\n      \"maxItems\": 7,\n      \"items\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"required\": [\n          \"code\",\n          \"score\",\n          \"confidence\",\n          \"evidence\",\n          \"rationale\"\n        ],\n        \"properties\": {\n          \"code\": {\n            \"type\": \"string\",\n            \"enum\": [\n              \"JAVA_CORE\",\n              \"SPRING_ECOSYSTEM\",\n              \"DATABASE\",\n              \"DISTRIBUTED_SYSTEMS\",\n              \"TESTING\",\n              \"SOFTWARE_ARCHITECTURE\",\n              \"OBSERVABILITY_DEVOPS\"\n            ]\n          },\n          \"score\": {\n            \"type\": \"integer\",\n            \"minimum\": 0,\n            \"maximum\": 4\n          },\n          \"confidence\": {\n            \"type\": \"string\",\n            \"enum\": [\"HIGH\", \"MEDIUM\", \"LOW\"]\n          },\n          \"evidence\": {\n            \"type\": \"array\",\n            \"maxItems\": 5,\n            \"items\": {\n              \"type\": \"object\",\n              \"additionalProperties\": false,\n              \"required\": [\"quote\", \"source\"],\n              \"properties\": {\n                \"quote\": {\n                  \"type\": \"string\",\n                  \"minLength\": 1,\n                  \"maxLength\": 1000\n                },\n                \"source\": {\n                  \"type\": \"string\",\n                  \"enum\": [\n                    \"PROFILE_SKILL\",\n                    \"WORK_EXPERIENCE\",\n                    \"EDUCATION\",\n                    \"WARNING\",\n                    \"OTHER\"\n                  ]\n                }\n              }\n            }\n          },\n          \"rationale\": {\n            \"type\": \"string\",\n            \"minLength\": 1,\n            \"maxLength\": 1500\n          }\n        }\n      }\n    },\n    \"warnings\": {\n      \"type\": \"array\",\n      \"maxItems\": 20,\n      \"items\": {\n        \"type\": \"string\",\n        \"minLength\": 1,\n        \"maxLength\": 1000\n      }\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "id": "fbe80c1d-3d26-4513-bc9b-ed09de7cf9da",
+      "name": "Validate Dimension Assessments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        -32
+      ],
+      "parameters": {
+        "jsCode": "const chainResult = $input.first().json;\n\nlet scoringResult =\n  chainResult.output ??\n  chainResult.text ??\n  chainResult.response ??\n  chainResult;\n\nif (\n  scoringResult &&\n  typeof scoringResult === 'object' &&\n  scoringResult.output &&\n  !scoringResult.dimensions\n) {\n  scoringResult = scoringResult.output;\n}\n\nif (typeof scoringResult === 'string') {\n  try {\n    scoringResult = JSON.parse(scoringResult);\n  } catch (error) {\n    throw new Error(\n      `INVALID_EVIDENCE_SCORING_JSON: ${error.message}`\n    );\n  }\n}\n\nconst promptContext =\n  $('Build Evidence Scoring Prompt').first().json;\n\nconst gradeEngineInput =\n  promptContext.gradeEngineInput;\n\nconst expectedDimensions =\n  gradeEngineInput.gradeGuide.dimensions;\n\nconst expectedCodes =\n  expectedDimensions.map((dimension) => dimension.code);\n\nconst errors = [];\n\nif (\n  !scoringResult ||\n  typeof scoringResult !== 'object' ||\n  Array.isArray(scoringResult)\n) {\n  errors.push('scoring result must be an object');\n}\n\nif (scoringResult?.schemaVersion !== '1.0') {\n  errors.push('scoring schemaVersion must be 1.0');\n}\n\nif (!Array.isArray(scoringResult?.dimensions)) {\n  errors.push('dimensions must be an array');\n}\n\nconst assessments =\n  Array.isArray(scoringResult?.dimensions)\n    ? scoringResult.dimensions\n    : [];\n\nif (assessments.length !== expectedCodes.length) {\n  errors.push(\n    `expected ${expectedCodes.length} dimensions, received ${assessments.length}`\n  );\n}\n\nconst receivedCodes =\n  assessments.map((assessment) => assessment.code);\n\nif (new Set(receivedCodes).size !== receivedCodes.length) {\n  errors.push('dimension codes must be unique');\n}\n\nfor (const expectedCode of expectedCodes) {\n  if (!receivedCodes.includes(expectedCode)) {\n    errors.push(`missing dimension: ${expectedCode}`);\n  }\n}\n\nfor (const receivedCode of receivedCodes) {\n  if (!expectedCodes.includes(receivedCode)) {\n    errors.push(`unexpected dimension: ${receivedCode}`);\n  }\n}\n\nconst allowedConfidences =\n  new Set(['HIGH', 'MEDIUM', 'LOW']);\n\nconst profileCorpus =\n  JSON.stringify(gradeEngineInput.candidateProfile)\n    .toLocaleLowerCase();\n\nfor (const assessment of assessments) {\n  if (\n    !Number.isInteger(assessment.score) ||\n    assessment.score < 0 ||\n    assessment.score > 4\n  ) {\n    errors.push(\n      `${assessment.code}: score must be an integer from 0 to 4`\n    );\n  }\n\n  if (!allowedConfidences.has(assessment.confidence)) {\n    errors.push(\n      `${assessment.code}: invalid confidence`\n    );\n  }\n\n  if (!Array.isArray(assessment.evidence)) {\n    errors.push(\n      `${assessment.code}: evidence must be an array`\n    );\n    continue;\n  }\n\n  if (\n    assessment.score > 0 &&\n    assessment.evidence.length === 0\n  ) {\n    errors.push(\n      `${assessment.code}: a positive score requires evidence`\n    );\n  }\n\n  for (const evidence of assessment.evidence) {\n    const quote = String(evidence?.quote ?? '').trim();\n\n    if (!quote) {\n      errors.push(\n        `${assessment.code}: evidence quote is empty`\n      );\n      continue;\n    }\n\n    if (\n      !profileCorpus.includes(quote.toLocaleLowerCase())\n    ) {\n      errors.push(\n        `${assessment.code}: evidence quote is not traceable to candidateProfile`\n      );\n    }\n  }\n\n  if (\n    typeof assessment.rationale !== 'string' ||\n    !assessment.rationale.trim()\n  ) {\n    errors.push(\n      `${assessment.code}: rationale is required`\n    );\n  }\n}\n\nif (!Array.isArray(scoringResult?.warnings)) {\n  errors.push('warnings must be an array');\n}\n\nif (\n  typeof scoringResult?.assessmentSummary !== 'string' ||\n  !scoringResult.assessmentSummary.trim()\n) {\n  errors.push('assessmentSummary is required');\n}\n\nif (errors.length > 0) {\n  throw new Error(\n    `INVALID_DIMENSION_ASSESSMENTS: ${errors.join('; ')}`\n  );\n}\n\nconst assessmentByCode =\n  new Map(\n    assessments.map((assessment) => [\n      assessment.code,\n      assessment,\n    ])\n  );\n\nconst orderedAssessments =\n  expectedCodes.map((code) => assessmentByCode.get(code));\n\nreturn [\n  {\n    json: {\n      gradeEngineInput,\n      scoringMetadata: {\n        model: promptContext.scoringModel,\n        promptVersion: promptContext.promptVersion,\n      },\n      evidenceScoring: {\n        schemaVersion: scoringResult.schemaVersion,\n        assessmentSummary:\n          scoringResult.assessmentSummary.trim(),\n        dimensions: orderedAssessments,\n        warnings: scoringResult.warnings,\n      },\n    },\n  },\n];"
+      }
+    },
+    {
+      "id": "f737de2f-0095-4e6c-8ad7-6afb7fa0e559",
+      "name": "Calculate Deterministic Grade",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        -32
+      ],
+      "parameters": {
+        "jsCode": "const validated = $input.first().json;\n\nconst gradeEngineInput =\n  validated.gradeEngineInput;\n\nconst evidenceScoring =\n  validated.evidenceScoring;\n\nconst scoringMetadata =\n  validated.scoringMetadata;\n\nconst dimensions =\n  gradeEngineInput.gradeGuide.dimensions;\n\nconst targetGrade =\n  gradeEngineInput.gradeGuide.targetGrade;\n\nconst evidencePolicy =\n  gradeEngineInput.gradeGuide.evidencePolicy;\n\nconst confidenceRank = {\n  LOW: 1,\n  MEDIUM: 2,\n  HIGH: 3,\n};\n\nconst minimumConfidence =\n  evidencePolicy.minimumConfidenceForScoring ?? 'MEDIUM';\n\nconst minimumConfidenceRank =\n  confidenceRank[minimumConfidence];\n\nconst missingEvidenceScore =\n  Number(evidencePolicy.missingEvidenceScore ?? 0);\n\nconst assessmentByCode = new Map(\n  evidenceScoring.dimensions.map((assessment) => [\n    assessment.code,\n    assessment,\n  ])\n);\n\nconst minimumLevels =\n  targetGrade.minimumDimensionLevels ?? {};\n\nconst reviewReasons = [];\nconst dimensionAssessments = [];\n\nlet weightedTotal = 0;\n\nfor (const dimension of dimensions) {\n  const assessment =\n    assessmentByCode.get(dimension.code);\n\n  if (!assessment) {\n    throw new Error(\n      `MISSING_VALIDATED_DIMENSION: ${dimension.code}`\n    );\n  }\n\n  const modelScore =\n    Number(assessment.score);\n\n  const confidence =\n    assessment.confidence;\n\n  const confidenceAccepted =\n    confidenceRank[confidence] >= minimumConfidenceRank;\n\n  const effectiveScore =\n    confidenceAccepted\n      ? modelScore\n      : missingEvidenceScore;\n\n  const weight =\n    Number(dimension.weight);\n\n  const weightedScore =\n    (effectiveScore / 4) * weight;\n\n  weightedTotal += weightedScore;\n\n  const hasRequiredMinimum =\n    Object.prototype.hasOwnProperty.call(\n      minimumLevels,\n      dimension.code\n    );\n\n  const minimumRequired =\n    hasRequiredMinimum\n      ? Number(minimumLevels[dimension.code])\n      : null;\n\n  const minimumMet =\n    minimumRequired === null ||\n    effectiveScore >= minimumRequired;\n\n  if (\n    hasRequiredMinimum &&\n    !confidenceAccepted\n  ) {\n    reviewReasons.push(\n      `${dimension.code}: confidence ${confidence} is below required ${minimumConfidence}`\n    );\n  }\n\n  dimensionAssessments.push({\n    code: dimension.code,\n    title: dimension.title,\n    weight,\n    mandatory: Boolean(dimension.mandatory),\n\n    modelScore,\n    effectiveScore,\n    confidence,\n    confidenceAccepted,\n\n    weightedScore:\n      Math.round(weightedScore * 100) / 100,\n\n    minimumRequired,\n    minimumMet,\n\n    evidence: assessment.evidence,\n    rationale: assessment.rationale,\n  });\n}\n\nconst overallScore =\n  Math.round(weightedTotal * 100) / 100;\n\nconst minimumOverallScore =\n  Number(targetGrade.minimumOverallScore);\n\nconst thresholdMet =\n  overallScore >= minimumOverallScore;\n\nconst mandatoryChecks =\n  Object.entries(minimumLevels).map(\n    ([code, minimumRequired]) => {\n      const assessment =\n        dimensionAssessments.find(\n          (item) => item.code === code\n        );\n\n      if (!assessment) {\n        throw new Error(\n          `MANDATORY_DIMENSION_NOT_FOUND: ${code}`\n        );\n      }\n\n      return {\n        code,\n        minimumRequired:\n          Number(minimumRequired),\n        effectiveScore:\n          assessment.effectiveScore,\n        met:\n          assessment.effectiveScore >=\n          Number(minimumRequired),\n      };\n    }\n  );\n\nconst mandatoryDimensionsMet =\n  mandatoryChecks.every((check) => check.met);\n\nconst reviewRequired =\n  reviewReasons.length > 0;\n\nlet decision;\n\nif (reviewRequired) {\n  decision = 'REVIEW_REQUIRED';\n} else if (\n  thresholdMet &&\n  mandatoryDimensionsMet\n) {\n  decision = 'MEETS_TARGET';\n} else {\n  decision = 'BELOW_TARGET';\n}\n\nconst engineVersion = '1.0';\n\nconst workflowExecutionId =\n  String($execution.id);\n\nif (!workflowExecutionId) {\n  throw new Error(\n    'WORKFLOW_EXECUTION_ID_NOT_AVAILABLE'\n  );\n}\n\nconst persistenceParameters = [\n  workflowExecutionId,\n  gradeEngineInput.extraction.id,\n  gradeEngineInput.gradeGuide.id,\n  gradeEngineInput.gradeGuide.version,\n  gradeEngineInput.assessmentContext.targetGradeCode,\n  scoringMetadata.model,\n  scoringMetadata.promptVersion,\n  engineVersion,\n  JSON.stringify(dimensionAssessments),\n  overallScore,\n  minimumOverallScore,\n  thresholdMet,\n  mandatoryDimensionsMet,\n  decision,\n  JSON.stringify(reviewReasons),\n  JSON.stringify(evidenceScoring.warnings),\n  evidenceScoring.assessmentSummary,\n];\n\nreturn [\n  {\n    json: {\n      schemaVersion: '1.0',\n\n      gradeEngineInput,\n\n      scoringMetadata: {\n        model: scoringMetadata.model,\n        promptVersion:\n          scoringMetadata.promptVersion,\n        engineVersion,\n      },\n\n      evidenceScoring,\n\n      deterministicResult: {\n        targetGradeCode:\n          gradeEngineInput\n            .assessmentContext\n            .targetGradeCode,\n\n        overallScore,\n        minimumOverallScore,\n        thresholdMet,\n        mandatoryDimensionsMet,\n        mandatoryChecks,\n        reviewRequired,\n        reviewReasons,\n        decision,\n        dimensionAssessments,\n      },\n\n      persistenceParameters,\n    },\n  },\n];"
+      }
+    },
+    {
+      "id": "7060be02-f916-406e-a554-25721723edd4",
+      "name": "Persist Grade Assessment",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1616,
+        -32
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inserted AS\n(\n    INSERT INTO talentai.grade_assessment\n    (\n        workflow_execution_id,\n        extraction_id,\n        grade_guide_id,\n        grade_guide_version,\n        target_grade_code,\n        scoring_model,\n        prompt_version,\n        engine_version,\n        dimension_assessments,\n        overall_score,\n        minimum_overall_score,\n        threshold_met,\n        mandatory_dimensions_met,\n        decision,\n        review_reasons,\n        model_warnings,\n        assessment_summary,\n        status\n    )\n    VALUES\n    (\n        $1,\n        $2::UUID,\n        $3::UUID,\n        $4,\n        $5,\n        $6,\n        $7,\n        $8,\n        $9::JSONB,\n        $10::NUMERIC(5, 2),\n        $11::NUMERIC(5, 2),\n        $12::BOOLEAN,\n        $13::BOOLEAN,\n        $14,\n        $15::JSONB,\n        $16::JSONB,\n        $17,\n        'COMPLETED'\n    )\n    ON CONFLICT (workflow_execution_id) DO NOTHING\n    RETURNING *\n),\nselected AS\n(\n    SELECT inserted.*, TRUE AS was_inserted\n    FROM inserted\n\n    UNION ALL\n\n    SELECT existing.*, FALSE AS was_inserted\n    FROM talentai.grade_assessment AS existing\n    WHERE existing.workflow_execution_id = $1\n      AND NOT EXISTS (SELECT 1 FROM inserted)\n)\nSELECT\n    id                              AS \"assessmentId\",\n    workflow_execution_id           AS \"workflowExecutionId\",\n    extraction_id                   AS \"extractionId\",\n    grade_guide_id                  AS \"gradeGuideId\",\n    grade_guide_version             AS \"gradeGuideVersion\",\n    target_grade_code               AS \"targetGradeCode\",\n    scoring_model                   AS \"scoringModel\",\n    prompt_version                  AS \"promptVersion\",\n    engine_version                  AS \"engineVersion\",\n    dimension_assessments           AS \"dimensionAssessments\",\n    overall_score                   AS \"overallScore\",\n    minimum_overall_score           AS \"minimumOverallScore\",\n    threshold_met                   AS \"thresholdMet\",\n    mandatory_dimensions_met        AS \"mandatoryDimensionsMet\",\n    decision,\n    review_reasons                  AS \"reviewReasons\",\n    model_warnings                  AS \"modelWarnings\",\n    assessment_summary              AS \"assessmentSummary\",\n    status,\n    created_at                      AS \"createdAt\",\n    was_inserted                    AS \"wasInserted\"\nFROM selected\nLIMIT 1;\n",
+        "options": {
+          "queryReplacement": "={{ $json.persistenceParameters }}"
+        }
+      }
+    },
+    {
+      "id": "2e210b37-9859-4204-9a13-095a08901686",
+      "name": "Build Grade Assessment Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        -32
+      ],
+      "parameters": {
+        "jsCode": "const persisted =\n  $input.first().json;\n\nconst calculated =\n  $('Calculate Deterministic Grade')\n    .first()\n    .json;\n\nconst engineInput =\n  calculated.gradeEngineInput;\n\nconst candidate =\n  engineInput.candidateProfile?.candidate ?? {};\n\nreturn [\n  {\n    json: {\n      schemaVersion: '1.0',\n\n      assessmentId:\n        persisted.assessmentId,\n\n      extractionId:\n        persisted.extractionId,\n\n      candidate: {\n        fullName:\n          candidate.fullName ?? '',\n      },\n\n      assessmentContext: {\n        positionCode:\n          engineInput\n            .assessmentContext\n            .positionCode,\n\n        targetGradeCode:\n          persisted.targetGradeCode,\n\n        jobDescription:\n          engineInput\n            .assessmentContext\n            .jobDescription,\n      },\n\n      gradeGuide: {\n        id:\n          persisted.gradeGuideId,\n\n        version:\n          persisted.gradeGuideVersion,\n      },\n\n      score: {\n        overall:\n          Number(persisted.overallScore),\n\n        minimumRequired:\n          Number(\n            persisted.minimumOverallScore\n          ),\n\n        thresholdMet:\n          persisted.thresholdMet,\n\n        mandatoryDimensionsMet:\n          persisted.mandatoryDimensionsMet,\n      },\n\n      decision:\n        persisted.decision,\n\n      dimensionAssessments:\n        persisted.dimensionAssessments,\n\n      reviewReasons:\n        persisted.reviewReasons,\n\n      modelWarnings:\n        persisted.modelWarnings,\n\n      assessmentSummary:\n        persisted.assessmentSummary,\n\n      metadata: {\n        scoringModel:\n          persisted.scoringModel,\n\n        promptVersion:\n          persisted.promptVersion,\n\n        engineVersion:\n          persisted.engineVersion,\n\n        status:\n          persisted.status,\n\n        createdAt:\n          persisted.createdAt,\n\n        wasInserted:\n          persisted.wasInserted,\n      },\n    },\n  },\n];"
+      }
+    }
+  ],
+  "connections": {
+    "Grade Engine Requested": {
+      "main": [
+        [
+          {
+            "node": "Validate Grade Engine Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Evidence Scoring Prompt": {
+      "main": [
+        [
+          {
+            "node": "Score Resume Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GapGPT Evidence Scoring Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Score Resume Evidence",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grade Evidence Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Score Resume Evidence",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Resume Evidence": {
+      "main": [
+        [
+          {
+            "node": "Validate Dimension Assessments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Grade Engine Input": {
+      "main": [
+        [
+          {
+            "node": "Build Evidence Scoring Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Dimension Assessments": {
+      "main": [
+        [
+          {
+            "node": "Calculate Deterministic Grade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Deterministic Grade": {
+      "main": [
+        [
+          {
+            "node": "Persist Grade Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Grade Assessment": {
+      "main": [
+        [
+          {
+            "node": "Build Grade Assessment Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "parentFolderId": "qGoZRlZp5YbzHaCz",
+  "isPublished": false,
+  "isArchived": false,
+  "active": false
+}

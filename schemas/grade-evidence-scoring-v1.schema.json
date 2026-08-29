@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://talentai.local/schemas/grade-evidence-scoring-v1.schema.json",
+  "title": "TalentAI Grade Evidence Scoring v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "assessmentSummary",
+    "dimensions",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "assessmentSummary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "score",
+          "confidence",
+          "evidence",
+          "rationale"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "JAVA_CORE",
+              "SPRING_ECOSYSTEM",
+              "DATABASE",
+              "DISTRIBUTED_SYSTEMS",
+              "TESTING",
+              "SOFTWARE_ARCHITECTURE",
+              "OBSERVABILITY_DEVOPS"
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["HIGH", "MEDIUM", "LOW"]
+          },
+          "evidence": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["quote", "source"],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "PROFILE_SKILL",
+                    "WORK_EXPERIENCE",
+                    "EDUCATION",
+                    "WARNING",
+                    "OTHER"
+                  ]
+                }
+              }
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1500
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000
+      }
+    }
+  }
+}

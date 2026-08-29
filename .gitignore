@@ -1,0 +1,26 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local n8n/PostgreSQL data
+.n8n/
+n8n-data/
+postgres-data/
+data/
+backups/
+
+# Private exports and candidate files
+exports/private/
+samples/private/
+*.pdf
+*.doc
+*.docx
+
+# Logs and OS files
+*.log
+.DS_Store
+
+# IDE
+.idea/
+*.iml

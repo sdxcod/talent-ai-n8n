@@ -1,0 +1,44 @@
+{
+  "phase": "1",
+  "releaseVersion": "1.0.0",
+  "packageFormatVersion": "1",
+  "sourceN8nVersion": "2.36.8",
+  "folder": "TalentAI - Phase 1",
+  "workflows": [
+    {
+      "id": "Hs8lqTQJsBuyPYKH",
+      "name": "TAI-01 Resume Intake & Extraction v2",
+      "file": "TAI-01-resume-intake-extraction-v2.json"
+    },
+    {
+      "id": "rdXX7TGqAVaQbntf",
+      "name": "TAI-02 Grade Guide Resolver v1",
+      "file": "TAI-02-grade-guide-resolver-v1.json"
+    },
+    {
+      "id": "sGpdmxkpfQDl1uT8",
+      "name": "TAI-03 Evidence Scoring & Deterministic Grade Engine v1",
+      "file": "TAI-03-evidence-scoring-grade-engine-v1.json"
+    }
+  ],
+  "workflowDependencies": [
+    {
+      "id": "rdXX7TGqAVaQbntf",
+      "name": "TAI-02 Grade Guide Resolver v1",
+      "usedByWorkflows": [
+        "Hs8lqTQJsBuyPYKH"
+      ]
+    },
+    {
+      "id": "sGpdmxkpfQDl1uT8",
+      "name": "TAI-03 Evidence Scoring & Deterministic Grade Engine v1",
+      "usedByWorkflows": [
+        "Hs8lqTQJsBuyPYKH"
+      ]
+    }
+  ],
+  "requiredCredentialTypes": [
+    "openAiApi",
+    "postgres"
+  ]
+}
