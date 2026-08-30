@@ -17,9 +17,13 @@ samples/private/
 *.doc
 *.docx
 
+# Generated release artifacts
+dist/
+
 # Logs and OS files
 *.log
 .DS_Store
+._*
 
 # IDE
 .idea/

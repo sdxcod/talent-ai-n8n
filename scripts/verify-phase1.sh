@@ -56,9 +56,31 @@ fi
 docker compose config --quiet
 
 readonly TALENTAI_N8N_ENDPOINT="$(docker compose port n8n 5678)"
+readonly TALENTAI_EXPECTED_PUBLIC_URL="http://$TALENTAI_N8N_ENDPOINT"
 
-curl -fsS "http://$TALENTAI_N8N_ENDPOINT/healthz"
+curl -fsS "$TALENTAI_EXPECTED_PUBLIC_URL/healthz"
 echo
+
+readonly TALENTAI_ACTUAL_EDITOR_BASE_URL="$(
+  docker compose exec -T n8n printenv N8N_EDITOR_BASE_URL
+)"
+readonly TALENTAI_ACTUAL_WEBHOOK_URL="$(
+  docker compose exec -T n8n printenv N8N_WEBHOOK_URL
+)"
+
+if [ "$TALENTAI_ACTUAL_EDITOR_BASE_URL" != "$TALENTAI_EXPECTED_PUBLIC_URL" ]; then
+  echo 'N8N_EDITOR_BASE_URL does not match the published n8n endpoint.' >&2
+  echo "Expected: $TALENTAI_EXPECTED_PUBLIC_URL" >&2
+  echo "Actual:   $TALENTAI_ACTUAL_EDITOR_BASE_URL" >&2
+  exit 1
+fi
+
+if [ "$TALENTAI_ACTUAL_WEBHOOK_URL" != "$TALENTAI_EXPECTED_PUBLIC_URL" ]; then
+  echo 'N8N_WEBHOOK_URL does not match the published n8n endpoint.' >&2
+  echo "Expected: $TALENTAI_EXPECTED_PUBLIC_URL" >&2
+  echo "Actual:   $TALENTAI_ACTUAL_WEBHOOK_URL" >&2
+  exit 1
+fi
 
 docker compose exec -T n8n n8n --version
 
@@ -71,6 +93,7 @@ DECLARE
   dimension_count INTEGER;
   grade_count INTEGER;
   total_weight INTEGER;
+  missing_runtime_privileges TEXT[];
 BEGIN
   IF to_regclass('talentai.resume_extraction') IS NULL THEN
     RAISE EXCEPTION 'talentai.resume_extraction is missing';
@@ -115,6 +138,63 @@ BEGIN
       dimension_count,
       grade_count,
       total_weight;
+  END IF;
+
+  SELECT ARRAY_AGG(privilege_name ORDER BY privilege_name)
+  INTO missing_runtime_privileges
+  FROM (
+    VALUES
+      (
+        'USAGE on schema talentai',
+        has_schema_privilege('talentai_app', 'talentai', 'USAGE')
+      ),
+      (
+        'SELECT on talentai.resume_extraction',
+        has_table_privilege(
+          'talentai_app',
+          'talentai.resume_extraction',
+          'SELECT'
+        )
+      ),
+      (
+        'INSERT on talentai.resume_extraction',
+        has_table_privilege(
+          'talentai_app',
+          'talentai.resume_extraction',
+          'INSERT'
+        )
+      ),
+      (
+        'SELECT on talentai.grade_guide',
+        has_table_privilege(
+          'talentai_app',
+          'talentai.grade_guide',
+          'SELECT'
+        )
+      ),
+      (
+        'SELECT on talentai.grade_assessment',
+        has_table_privilege(
+          'talentai_app',
+          'talentai.grade_assessment',
+          'SELECT'
+        )
+      ),
+      (
+        'INSERT on talentai.grade_assessment',
+        has_table_privilege(
+          'talentai_app',
+          'talentai.grade_assessment',
+          'INSERT'
+        )
+      )
+  ) AS runtime_privilege(privilege_name, is_granted)
+  WHERE NOT COALESCE(is_granted, FALSE);
+
+  IF missing_runtime_privileges IS NOT NULL THEN
+    RAISE EXCEPTION
+      'talentai_app is missing runtime privileges: %',
+      array_to_string(missing_runtime_privileges, ', ');
   END IF;
 END
 $verification$;

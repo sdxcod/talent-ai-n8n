@@ -46,6 +46,8 @@ services:
       N8N_COMPRESSION_NODE_MAX_ZIP_ENTRIES: 1000
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_SECURE_COOKIE: "false"
+      N8N_EDITOR_BASE_URL: http://127.0.0.1:${N8N_HOST_PORT:-5678}
+      N8N_WEBHOOK_URL: http://127.0.0.1:${N8N_HOST_PORT:-5678}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Asia/Tehran}
       TZ: ${GENERIC_TIMEZONE:-Asia/Tehran}
     ports:

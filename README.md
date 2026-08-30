@@ -87,19 +87,25 @@ n8n-cli --version
 │   ├── migrations
 │   │   ├── V001__create_resume_extraction.sql
 │   │   ├── V002__create_grade_guide.sql
-│   │   └── V003__create_grade_assessment.sql
+│   │   ├── V003__create_grade_assessment.sql
+│   │   └── V004__grant_talentai_runtime_permissions.sql
 │   ├── queries
 │   │   ├── Q001__select_active_grade_guide.sql
 │   │   ├── Q002__resolve_grade_engine_input.sql
 │   │   └── Q003__persist_grade_assessment.sql
 │   └── seeds
 │       └── R001__seed_java_backend_grade_guide_v1.sql
+├── docs
+│   └── releases
+│       └── v1.0.0.md
 ├── prompts
 │   └── evidence-scoring-v1.md
 ├── schemas
 │   └── grade-evidence-scoring-v1.schema.json
 ├── scripts
 │   ├── apply-database.sh
+│   ├── bootstrap-local.sh
+│   ├── build-phase1-release-package.sh
 │   ├── create-local-env.sh
 │   ├── export-phase1-workflows.sh
 │   └── verify-phase1.sh
@@ -113,7 +119,7 @@ n8n-cli --version
 
 ## پورت‌ها، Databaseها و Roleها
 
-| کاربرد | مقدار محلی |
+| کاربرد | مقدار محلی پیش‌فرض |
 | --- | --- |
 | n8n Editor | `http://127.0.0.1:5678` |
 | n8n health endpoint | `http://127.0.0.1:5678/healthz` |
@@ -128,14 +134,62 @@ n8n-cli --version
 
 PostgreSQL فقط روی `127.0.0.1` منتشر شده و از شبکه عمومی قابل دسترسی نیست.
 
+`N8N_EDITOR_BASE_URL` و `N8N_WEBHOOK_URL` در Compose از `N8N_HOST_PORT` ساخته می‌شوند. بنابراین اگر برای یک محیط ایزوله پورت n8n را مثلاً به `5688` تغییر دهید، لینک Test Form نیز به‌صورت خودکار با همان پورت ساخته می‌شود؛ پورت داخلی کانتینر همچنان `5678` باقی می‌ماند.
+
+## مسیر سریع نصب محلی
+
+اگر پورت‌های پیش‌فرض `5678` و `5434` آزاد هستند، مسیر پیشنهادی نصب تازه این است:
+
+```bash
+git clone <repository-url>
+cd tosan-n8n-talent-ai
+
+chmod +x init-data.sh scripts/*.sh
+./scripts/bootstrap-local.sh
+```
+
+Bootstrap به‌صورت خودکار:
+
+1. در نبود `.env`، Secretهای محلی را ایجاد می‌کند؛
+2. Compose را اعتبارسنجی و Imageها را دریافت می‌کند؛
+3. PostgreSQL، n8n و Task Runner را اجرا می‌کند؛
+4. تا سالم‌شدن n8n منتظر می‌ماند؛
+5. همه Migrationها، Seedها و Runtime Permissionها را اعمال می‌کند؛
+6. ساختار Workflowها، دیتابیس، Grade Guide و Permissionهای `talentai_app` را بررسی می‌کند.
+
+اگر `.env` از قبل وجود داشته باشد، Bootstrap آن را تغییر نمی‌دهد و کلید رمزنگاری، Passwordها و Portهای فعلی حفظ می‌شوند.
+
+اگر یکی از پورت‌ها اشغال است، قبل از Bootstrap فایل محلی را ایجاد کنید:
+
+```bash
+./scripts/create-local-env.sh
+```
+
+سپس Portهای لازم را در `.env` تغییر دهید؛ برای نمونه:
+
+```dotenv
+N8N_HOST_PORT=5688
+POSTGRES_HOST_PORT=5435
+```
+
+و اجرا کنید:
+
+```bash
+./scripts/bootstrap-local.sh
+```
+
+بعد از موفقیت Bootstrap، مراحل «ورود اولیه به n8n»، «Credentialهای موردنیاز n8n»، «Import کردن Workflowها» و «اجرای تست End-to-End» را انجام دهید.
+
 ## راه‌اندازی برای اولین بار
 
 ### ۱. دریافت Repository
 
 ```bash
-git clone https://github.com/sdxcod/talent-ai-n8n.git
-cd talent-ai-n8n
+git clone <repository-url>
+cd tosan-n8n-talent-ai
 ```
+
+به‌جای `<repository-url>` آدرس Repository تیم را قرار دهید.
 
 ### ۲. ایجاد `.env` محلی
 
@@ -178,6 +232,8 @@ TALENTAI_DB_PASSWORD
 
 فایل `.env` را commit، ارسال یا در پیام‌ها Paste نکنید.
 
+اگر می‌خواهید Port پیش‌فرض را تغییر دهید، همین‌جا و پیش از اولین `docker compose up` مقدار `N8N_HOST_PORT` یا `POSTGRES_HOST_PORT` را در `.env` اصلاح کنید. URL عمومی Editor و Form Trigger از `N8N_HOST_PORT` مشتق می‌شود و نیاز به تنظیم جداگانه ندارد.
+
 ### ۳. اعتبارسنجی Compose
 
 ```bash
@@ -204,10 +260,11 @@ docker compose ps
 منتظر آماده‌شدن n8n بمانید:
 
 ```bash
+TALENTAI_N8N_ENDPOINT="$(docker compose port n8n 5678)"
 TALENTAI_N8N_HEALTHY=false
 
 for attempt in {1..30}; do
-  if curl -fsS http://127.0.0.1:5678/healthz; then
+  if curl -fsS "http://$TALENTAI_N8N_ENDPOINT/healthz"; then
     echo
     TALENTAI_N8N_HEALTHY=true
     break
@@ -222,7 +279,7 @@ if [ "$TALENTAI_N8N_HEALTHY" != true ]; then
   false
 fi
 
-unset TALENTAI_N8N_HEALTHY
+unset TALENTAI_N8N_HEALTHY TALENTAI_N8N_ENDPOINT
 ```
 
 خروجی سالم:
@@ -249,7 +306,8 @@ docker compose exec -T postgres sh -c '
 2. ایجاد Database مستقل `talentai`؛
 3. ایجاد Role محدود `talentai_app`؛
 4. اجرای تمام فایل‌های `database/migrations`؛
-5. اجرای Seedهای idempotent موجود در `database/seeds`.
+5. اعطای `USAGE` روی Schema و `SELECT/INSERT`های لازم به `talentai_app` از طریق Migration `V004`؛
+6. اجرای Seedهای idempotent موجود در `database/seeds`.
 
 Volumeهای زیر داده‌ها را بین Recreate کانتینرها نگه می‌دارند:
 
@@ -262,8 +320,24 @@ n8n_storage
 
 ### ۶. بررسی خودکار نصب
 
+هم در نصب تازه و هم برای Volume موجود، ابتدا Database State را با Repository همگام کنید:
+
+```bash
+./scripts/apply-database.sh
+```
+
+سپس Verification کامل را اجرا کنید:
+
 ```bash
 ./scripts/verify-phase1.sh
+```
+
+Verification علاوه بر وجود جدول و Grade Guide، مجوزهای واقعی Role زیر را کنترل می‌کند:
+
+```text
+USAGE  -> schema talentai
+SELECT -> resume_extraction, grade_guide, grade_assessment
+INSERT -> resume_extraction, grade_assessment
 ```
 
 خروجی نهایی مطلوب:
@@ -304,14 +378,22 @@ Migrationها و Seedهای فعلی idempotent هستند و اجرای مجد�
 docker compose config --quiet
 docker compose up -d --force-recreate
 docker compose ps
-curl -fsS http://127.0.0.1:5678/healthz
+TALENTAI_N8N_ENDPOINT="$(docker compose port n8n 5678)"
+curl -fsS "http://$TALENTAI_N8N_ENDPOINT/healthz"
+unset TALENTAI_N8N_ENDPOINT
 ```
 
 این عملیات Volumeها را حذف نمی‌کند.
 
 ## ورود اولیه به n8n
 
-مرورگر را باز کنید:
+آدرس واقعی Editor را بگیرید:
+
+```bash
+docker compose port n8n 5678
+```
+
+مرورگر را با همان Host و Port باز کنید. مقدار پیش‌فرض:
 
 ```text
 http://127.0.0.1:5678
@@ -325,6 +407,8 @@ Workflowها بدون Credential Reference commit می‌شوند. هر عضو �
 
 ### Credential مربوط به TalentAI PostgreSQL
 
+یک Credential از نوع `Postgres` با نام پیشنهادی `TalentAI PostgreSQL` بسازید:
+
 | Field | Value |
 | --- | --- |
 | Host | `postgres` |
@@ -336,9 +420,22 @@ Workflowها بدون Credential Reference commit می‌شوند. هر عضو �
 
 از `127.0.0.1:5434` داخل Nodeهای n8n استفاده نکنید؛ n8n باید از نام Service یعنی `postgres:5432` استفاده کند.
 
+در macOS می‌توانید Password را بدون چاپ‌شدن در Terminal مستقیماً از `.env` در Clipboard قرار دهید:
+
+```bash
+awk -F= '
+  $1 == "TALENTAI_DB_PASSWORD" {
+    sub(/^[^=]*=/, "")
+    printf "%s", $0
+  }
+' .env | pbcopy
+```
+
+گزینه `Test connection` فقط اتصال و احراز هویت را ثابت می‌کند؛ برای اطمینان از مجوز `INSERT` باید `./scripts/apply-database.sh` و سپس `./scripts/verify-phase1.sh` موفق باشند.
+
 ### OpenAI API Credential
 
-یک Credential از نوع `openAiApi` در n8n بسازید و API Key محیط خودتان را فقط در بخش Credentials وارد کنید.
+یک Credential از نوع `OpenAI API` با نام پیشنهادی `TalentAI OpenAI` بسازید و API Key محیط خودتان را فقط در بخش Credentials وارد کنید. اگر محیط تیم از Endpoint سازگار با OpenAI استفاده می‌کند، Base URL و Model را مطابق همان Provider تنظیم کنید؛ Secret همچنان فقط باید در Credential Store قرار گیرد.
 
 API Key نباید در این مکان‌ها قرار گیرد:
 
@@ -348,11 +445,21 @@ API Key نباید در این مکان‌ها قرار گیرد:
 - Git history؛
 - Screenshot یا پیام تیمی.
 
-پس از Import، Credential را به تمام Nodeهای PostgreSQL و Model مربوط به TAI-01 و TAI-03 اختصاص دهید.
+پس از Import، Credentialها را دقیقاً به Nodeهای زیر اختصاص دهید:
+
+| Workflow | Node | Credential |
+| --- | --- | --- |
+| TAI-01 | `Save Resume Extraction` | `TalentAI PostgreSQL` |
+| TAI-01 | `OpenAI Chat Model` | `TalentAI OpenAI` |
+| TAI-02 | `Resolve Extraction and Grade Guide` | `TalentAI PostgreSQL` |
+| TAI-03 | `Persist Grade Assessment` | `TalentAI PostgreSQL` |
+| TAI-03 | `GapGPT Evidence Scoring Model` | `TalentAI OpenAI` یا Credential سازگار Provider تیم |
+
+پس از اتصال Credentialها، هر سه Workflow را Save کنید؛ برای Smoke Test لازم نیست آن‌ها را Publish یا Activate کنید.
 
 ## Import کردن Workflowها در محیط جدید
 
-سه Workflow باید داخل Folder زیر قرار گیرند:
+در محیط منبع، سه Workflow باید داخل Folder زیر قرار گیرند:
 
 ```text
 TalentAI - Phase 1
@@ -360,35 +467,76 @@ TalentAI - Phase 1
 
 فایل‌های Commit‌شده در حالت غیرفعال‌اند و Credential Reference یا Pin Data ندارند.
 
-برای Import دستی، این ترتیب را رعایت کنید:
+### مسیر پیشنهادی: Import کردن Package انتشار
 
-1. `TAI-02-grade-guide-resolver-v1.json`؛
-2. `TAI-03-evidence-scoring-grade-engine-v1.json`؛
-3. `TAI-01-resume-intake-extraction-v2.json`.
+Package انتشار سه Workflow و وابستگی Sub-workflowها را با هم منتقل و IDهای مقصد را هنگام Import تطبیق می‌دهد. فایل متناظر با Tag پروژه را از GitHub Release دریافت کنید؛ برای نسخه `v1.0.0` نام مورد انتظار این است:
 
-پس از Import:
+```text
+TalentAI-phase-1-v1.0.0.n8np
+```
 
-1. هر سه Workflow را به Folder `TalentAI - Phase 1` منتقل کنید؛
-2. Credentialهای PostgreSQL و OpenAI را انتخاب کنید؛
-3. در TAI-01، Nodeهای فراخوانی Sub-workflow را باز کنید؛
-4. بررسی کنید که Resolver به TAI-02 و Grade Engine به TAI-03 اشاره می‌کنند؛
-5. Workflowها را Save کنید؛
-6. ابتدا یک اجرای دستی End-to-End انجام دهید؛
-7. فقط پس از موفقیت تست، Entry Workflow را برای استفاده موردنظر Publish یا Activate کنید.
-
-برای انتقال تیمی، n8n Package ترجیح داده می‌شود؛ Package می‌تواند Folder و وابستگی Sub-workflowها را همراه هم منتقل و Referenceها را هنگام Import تطبیق دهد. فایل Package خام محلی در `exports/private` نگه‌داری می‌شود و نباید مستقیماً commit شود.
-
-نمونه Import یک Package بررسی‌شده:
+در n8n مقصد ابتدا Owner محلی را ایجاد کنید، سپس از مسیر `Settings -> n8n API` یک API Key موقت برای CLI بسازید و اجرا کنید:
 
 ```bash
 n8n-cli login
 
 n8n-cli package import \
   --file=TalentAI-phase-1-v1.0.0.n8np \
-  --workflow-conflict-policy=fail
+  --workflow-conflict-policy=fail \
+  --format=json
 ```
 
-در ورود تعاملی، URL محیط مانند `http://127.0.0.1:5678` و API Key ساخته‌شده در `Settings -> n8n API` را وارد کنید. تنظیمات CLI خارج از Repository و با Permission محدود ذخیره می‌شوند. API Key را داخل README، Script یا Command History قرار ندهید.
+در ورود تعاملی، URL واقعی محیط مانند `http://127.0.0.1:5678` یا `http://127.0.0.1:5688` و API Key همان محیط را وارد کنید. API Key را در Command، README یا Git قرار ندهید.
+
+فهرست Import را کنترل کنید:
+
+```bash
+n8n-cli workflow list \
+  --format=json \
+| jq -r '
+    .[]
+    | select(.name | startswith("TAI-"))
+    | [.id, .name, .active]
+    | @tsv
+  '
+```
+
+باید دقیقاً سه Workflow زیر را در حالت `false` ببینید:
+
+```text
+TAI-01 Resume Intake & Extraction v2
+TAI-02 Grade Guide Resolver v1
+TAI-03 Evidence Scoring & Deterministic Grade Engine v1
+```
+
+Package خام محلی در `exports/private` فقط ورودی Release Builder است و نباید مستقیماً Import، commit یا منتشر شود.
+
+### مسیر جایگزین: Import دستی JSONهای standalone
+
+اگر Package انتشار در دسترس نیست، JSONها را به این ترتیب Import کنید:
+
+1. `TAI-02-grade-guide-resolver-v1.json`؛
+2. `TAI-03-evidence-scoring-grade-engine-v1.json`؛
+3. `TAI-01-resume-intake-extraction-v2.json`.
+
+در این مسیر باید دو Node زیر را در TAI-01 باز کنید و Workflow مقصد را دستی انتخاب کنید:
+
+| Node | Workflow مقصد |
+| --- | --- |
+| `Resolve Grade Engine Input` | TAI-02 |
+| `Run Deterministic Grade Engine` | TAI-03 |
+
+در n8n Community، Workflowها در ریشه Personal Project وارد می‌شوند. در نسخه‌ای که قابلیت Folder دارد، می‌توانید پس از Import آن‌ها را به Folder `TalentAI - Phase 1` منتقل کنید.
+
+پس از هر دو روش Import:
+
+1. Credentialهای جدول بخش قبل را متصل کنید؛
+2. دو Sub-workflow Reference در TAI-01 را کنترل کنید؛
+3. هر سه Workflow را Save کنید؛
+4. ابتدا یک اجرای دستی End-to-End انجام دهید؛
+5. فقط پس از موفقیت تست، Entry Workflow را برای استفاده موردنظر Publish یا Activate کنید.
+
+Folder `TalentAI - Phase 1` فقط برای سازمان‌دهی و Export در محیط منبع استفاده می‌شود. چون Import کردن Folder به License پشتیبان Folder نیاز دارد، Artifact انتشار به‌صورت Flat و بدون Folder ساخته می‌شود تا روی n8n Community قابل Import باشد. پس از Import می‌توان Workflowها را در نسخه‌های دارای Folder به‌صورت دستی گروه‌بندی کرد.
 
 قبل از Import در محیط مشترک، حتماً Manifest، تعداد Workflowها و Credential Requirementهای Package را بررسی کنید.
 
@@ -396,7 +544,19 @@ n8n-cli package import \
 
 برای تست کامل، از یک رزومه غیرحساس یا نمونه ساختگی استفاده کنید. فایل‌های رزومه را زیر `samples/private` نگه دارید تا توسط Git نادیده گرفته شوند.
 
-TAI-01 را با ورودی‌هایی مشابه زیر اجرا کنید:
+قبل از تست، این دو دستور باید موفق باشند:
+
+```bash
+./scripts/apply-database.sh
+./scripts/verify-phase1.sh
+```
+
+سپس:
+
+1. TAI-01 را باز کنید؛
+2. `Execute workflow` را بزنید تا Form Trigger در حالت انتظار قرار گیرد؛
+3. در Node با نام `On form submission`، گزینه بازکردن `Test URL` را انتخاب کنید؛
+4. یک PDF ساختگی یا غیرحساس و ورودی‌های زیر را ارسال کنید.
 
 | Field | Example |
 | --- | --- |
@@ -404,6 +564,15 @@ TAI-01 را با ورودی‌هایی مشابه زیر اجرا کنید:
 | `positionCode` | `JAVA_BACKEND` |
 | `targetGradeCode` | `SENIOR` |
 | `jobDescription` | شرح شغل هم‌راستا با Position و Target Grade |
+
+نمونه شرح شغل:
+
+```text
+Senior Java Backend Developer with experience in Java, Spring Boot,
+PostgreSQL, Kafka, testing, observability and architecture.
+```
+
+اجرای موفق باید از Nodeهای `Save Resume Extraction`، TAI-02 و `Persist Grade Assessment` عبور کند و با پیام `TalentAI assessment completed` پایان یابد.
 
 خروجی نهایی باید حداقل این فیلدها را داشته باشد:
 
@@ -521,7 +690,7 @@ TalentAI n8n Local
 
 ## Export کردن Sourceهای Workflow
 
-Folder موجود در n8n باید دقیقاً شامل سه Workflow تیمی فاز اول باشد و Workflow تست یا Backup داخل آن قرار نگیرد.
+Folder موجود در n8n برای نظم تیمی باید شامل سه Workflow فاز اول باشد و Workflow تست یا Backup داخل آن قرار نگیرد.
 
 ```text
 TalentAI - Phase 1
@@ -530,16 +699,18 @@ TalentAI - Phase 1
 └── TAI-03 Evidence Scoring & Deterministic Grade Engine v1
 ```
 
-Folder ID را از محیط n8n دریافت و اجرا کنید:
+Export قابل‌انتشار به Folder ID وابسته نیست. اسکریپت شناسه دقیق سه Workflow مجاز را از `workflows/phase-1/manifest.json` می‌خواند و با سه `--workflow-id` صریح Export می‌کند:
 
 ```bash
-export TALENTAI_PHASE1_FOLDER_ID='<folder-id>'
 ./scripts/export-phase1-workflows.sh 1.0.0
 ```
 
 اسکریپت این کنترل‌ها را انجام می‌دهد:
 
-- Folder دقیقاً سه Workflow مورد انتظار داشته باشد؛
+- Manifest کامیت‌شده دقیقاً سه Workflow مورد انتظار و سه ID معتبر داشته باشد؛
+- Package خام Flat با Export صریح همان سه Workflow ID تولید شود؛
+- نام و ID هر سه Workflow خروجی با allow-list کامیت‌شده برابر باشد؛
+- Folder، Workflow تستی یا Backup وارد Package نشود؛
 - Dependencyهای TAI-01 به TAI-02 و TAI-03 موجود باشند؛
 - Variable خصوصی داخل Package نباشد؛
 - Credential Reference حذف شود؛
@@ -552,7 +723,7 @@ export TALENTAI_PHASE1_FOLDER_ID='<folder-id>'
 
 | مسیر | وضعیت Git |
 | --- | --- |
-| `exports/private/TalentAI-phase-1-v*.raw.n8np` | خصوصی و ignored |
+| `exports/private/TalentAI-phase-1-v*.flat.raw.n8np` | ورودی خصوصی و schema-valid برای Release Builder؛ ignored |
 | `workflows/phase-1/TAI-*.json` | Source پاک‌سازی‌شده و قابل commit |
 | `workflows/phase-1/manifest.json` | Manifest قابل commit |
 
@@ -561,6 +732,89 @@ export TALENTAI_PHASE1_FOLDER_ID='<folder-id>'
 ```bash
 ./scripts/verify-phase1.sh
 ```
+
+## ساخت Package امن برای Release
+
+Package خام حاصل از Export ممکن است Metadata یا Credential Referenceهای محلی Workflowها را همراه داشته باشد و فقط برای پردازش محلی در `exports/private` نگه‌داری می‌شود. Release Builder از فایل `*.flat.raw.n8np` استفاده می‌کند؛ این فایل مستقیماً توسط n8n-cli و با سه `--workflow-id` ساخته شده است، بنابراین Workflowهای داخل آن schema مخصوص Package را دارند.
+
+برای ساخت Artifact انتشار اجرا کنید:
+
+```bash
+./scripts/build-phase1-release-package.sh 1.0.0
+```
+
+این اسکریپت:
+
+- Manifest و ساختار Package خام Flat را کنترل می‌کند؛
+- وجود دقیقاً سه Workflow مورد انتظار و نبود Folder را کنترل می‌کند؛
+- `versionId` و سایر فیلدهای schema مخصوص Package را از Export رسمی n8n حفظ می‌کند؛
+- با نرمال‌سازی Package Workflow و Source قابل‌commit، نبود Source Drift را کنترل می‌کند؛
+- Credential Referenceها را فقط از Nodeهای Package Workflow حذف می‌کند؛
+- Credential و Variable Entityها و Requirementهای محلی را از Manifest انتشار حذف می‌کند؛
+- وابستگی‌های TAI-01 به TAI-02 و TAI-03 را نگه می‌دارد؛
+- تعداد Entityها، نبود Secret و SHA-256 خروجی را بررسی می‌کند.
+
+خروجی:
+
+```text
+dist/TalentAI-phase-1-v1.0.0.n8np
+```
+
+پوشه `dist` تولیدشدنی است و وارد Git نمی‌شود. Artifact نهایی باید به GitHub Release پیوست شود.
+
+خلاصه Manifest مورد انتظار:
+
+```json
+{
+  "packageFormatVersion": "1",
+  "sourceN8nVersion": "2.36.8",
+  "workflowCount": 3,
+  "folderCount": 0,
+  "credentialEntityCount": 0,
+  "credentialRequirementCount": 0,
+  "workflowDependencyCount": 2,
+  "variableEntityCount": 0,
+  "variableRequirementCount": 0
+}
+```
+
+Credential Entity و Credential Requirement عمداً صفر هستند، زیرا Credential Referenceها از Workflowهای انتشار حذف شده‌اند. پس از Import، Credentialهای PostgreSQL و OpenAI محیط مقصد باید به‌صورت دستی انتخاب شوند.
+
+Folder Count نیز عمداً صفر است تا Artifact روی n8n Community به License مربوط به Folder وابسته نباشد. Folder تیمی همچنان در محیط منبع و فرایند Export حفظ می‌شود.
+
+فایل‌های `workflows/phase-1/*.json` قالب standalone و قابل‌commit دارند و شامل `active: false` هستند. فایل‌های `workflow.json` داخل `.n8np` قالب Package دارند، باید `versionId` داشته باشند و نباید با JSONهای standalone جایگزین شوند. Release Builder این دو قالب را فقط برای کنترل Source Drift نرمال می‌کند و Artifact نهایی را از entityهای Package می‌سازد. Folder `TalentAI - Phase 1` صرفاً ابزار سازمان‌دهی محیط منبع است و نبود دسترسی API به آن، فرایند Release را متوقف نمی‌کند.
+
+## Tag و GitHub Release
+
+قبل از Tag، تمام تست‌ها و وضعیت Git را کنترل کنید:
+
+```bash
+./scripts/apply-database.sh
+./scripts/verify-phase1.sh
+git diff --check
+git status --short --branch
+```
+
+پس از Commit و Push تغییرات Release Tooling:
+
+```bash
+git tag -a v1.0.0 \
+  -m "TalentAI n8n Phase 1 v1.0.0"
+
+git push origin v1.0.0
+```
+
+ساخت GitHub Release و پیوست Package امن:
+
+```bash
+gh release create v1.0.0 \
+  dist/TalentAI-phase-1-v1.0.0.n8np \
+  --title "TalentAI n8n Phase 1 v1.0.0" \
+  --notes-file docs/releases/v1.0.0.md \
+  --verify-tag
+```
+
+پس از انتشار، SHA-256 نمایش‌داده‌شده توسط اسکریپت را در توضیحات Release یا کانال تیم قرار دهید.
 
 ## تست‌های قبل از Commit
 
@@ -584,7 +838,7 @@ workflows/phase-1/manifest.json
 
 ```bash
 git check-ignore -v .env
-git check-ignore -v exports/private/TalentAI-phase-1-v1.0.0.raw.n8np
+git check-ignore -v exports/private/TalentAI-phase-1-v1.0.0.flat.raw.n8np
 ```
 
 هیچ‌کدام از موارد زیر نباید Stage یا Commit شوند:
@@ -595,7 +849,7 @@ git check-ignore -v exports/private/TalentAI-phase-1-v1.0.0.raw.n8np
 - `exports/private`؛
 - Pin Data و Execution Sample؛
 - Volume یا Backup دیتابیس؛
-- `.DS_Store` و فایل‌های IDE.
+- `.DS_Store`، فایل‌های AppleDouble با الگوی `._*` و فایل‌های IDE.
 
 ## عیب‌یابی
 
@@ -613,6 +867,38 @@ docker compose logs --tail=150 n8n n8n-runner postgres
 ### Credential بعد از Recreate قابل خواندن نیست
 
 معمولاً `N8N_ENCRYPTION_KEY` تغییر کرده یا به کانتینر ارسال نشده است. کانتینر را با کلید جدید اجرا نکنید و Credential را دوباره Save نکنید. ابتدا مقدار صحیح کلید محیط قبلی را بازیابی کنید.
+
+### Form Trigger در حالت انتظار می‌ماند یا Test Form باز نمی‌شود
+
+Form Trigger تا زمان Submit شدن فرم عمداً در حالت انتظار می‌ماند. اگر Browser فرم را باز نمی‌کند، Test URL را در Node `On form submission` بررسی کنید. Origin باید با Port واقعی Editor یکسان باشد؛ برای نمونه:
+
+```text
+http://127.0.0.1:5688/form-test/...
+```
+
+Compose فعلی `N8N_EDITOR_BASE_URL` و `N8N_WEBHOOK_URL` را از `N8N_HOST_PORT` می‌سازد. اگر `.env` یا Compose override را تغییر داده‌اید، n8n را Recreate کنید:
+
+```bash
+docker compose config --quiet
+docker compose up -d --force-recreate n8n
+docker compose restart n8n-runner
+TALENTAI_N8N_ENDPOINT="$(docker compose port n8n 5678)"
+curl -fsS "http://$TALENTAI_N8N_ENDPOINT/healthz"
+unset TALENTAI_N8N_ENDPOINT
+```
+
+پس از Refresh کردن Editor، دوباره `Execute workflow` را بزنید؛ Test URL فقط هنگام Listening معتبر است.
+
+### `permission denied for table resume_extraction`
+
+موفق‌بودن `Test connection` در Credential به معنی داشتن مجوز `INSERT` نیست. Workflow باید با Role محدود `talentai_app` اجرا شود و Migration `V004` مجوزهای لازم را اعمال کند:
+
+```bash
+./scripts/apply-database.sh
+./scripts/verify-phase1.sh
+```
+
+برای اعمال GRANT نیازی به Restart کردن PostgreSQL یا n8n نیست. اجرای شکست‌خورده را Resume نکنید؛ Smoke Test تازه‌ای از Form Trigger آغاز کنید. Credential را برای دورزدن خطا به Role مدیریتی `admin` تغییر ندهید.
 
 ### `INVALID_EXTRACTION_ID` یا `extractionId must be a valid UUID`
 
@@ -739,6 +1025,8 @@ lsof -nP -iTCP:5434 -sTCP:LISTEN
 
 - [n8n Docker Compose deployment](https://docs.n8n.io/deploy/host-n8n/install-options/use-a-cloud-provider/use-docker-compose/)
 - [n8n encryption key configuration](https://docs.n8n.io/deploy/host-n8n/configure-n8n/basic-configuration/configuration-examples/set-a-custom-encryption-key/)
+- [n8n endpoint environment variables](https://docs.n8n.io/deploy/host-n8n/configure-n8n/basic-configuration/use-environment-variables/endpoints/)
+- [n8n Form Trigger](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.formtrigger/)
 - [n8n packages](https://docs.n8n.io/build/manage-workflows/n8n-packages/)
 - [Export an n8n package](https://docs.n8n.io/build/manage-workflows/n8n-packages/export-a-package/)
 - [Import an n8n package](https://docs.n8n.io/build/manage-workflows/n8n-packages/import-a-package/)
