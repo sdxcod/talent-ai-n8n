@@ -8,13 +8,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -128,
-        560
+        256,
+        224
       ],
       "parameters": {
-        "jsCode": "const source = $input.first().json;\nconst profile = source.output;\n\nif (!profile || typeof profile !== 'object' || Array.isArray(profile)) {\n  throw new Error('Candidate profile must be a JSON object');\n}\n\nconst candidate =\n  profile.candidate &&\n  typeof profile.candidate === 'object' &&\n  !Array.isArray(profile.candidate)\n    ? profile.candidate\n    : {};\n\nconst skills = Array.isArray(profile.skills)\n  ? profile.skills\n  : [];\n\nconst education = Array.isArray(profile.education)\n  ? profile.education\n  : [];\n\nconst workExperiences = Array.isArray(profile.workExperiences)\n  ? profile.workExperiences\n  : [];\n\nconst warnings = Array.isArray(profile.warnings)\n  ? profile.warnings.map(String)\n  : [];\n\nconst errors = [];\n\nconst fullName = String(candidate.fullName ?? '').trim();\nconst email = String(candidate.email ?? '').trim().toLowerCase();\n\nif (profile.schemaVersion !== '1.0') {\n  errors.push('Unsupported candidate profile schema version');\n}\n\nif (!fullName) {\n  errors.push('Candidate full name is required');\n}\n\nif (\n  email &&\n  !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)\n) {\n  errors.push('Candidate email format is invalid');\n}\n\nif (skills.length === 0) {\n  errors.push('At least one evidenced skill is required');\n}\n\nconst allowedConfidence = new Set([\n  'HIGH',\n  'MEDIUM',\n  'LOW'\n]);\n\nconst seenSkills = new Set();\nconst normalizedSkills = [];\n\nfor (const skill of skills) {\n  const name = String(skill?.name ?? '').trim();\n  const evidence = String(skill?.evidence ?? '').trim();\n  const confidence = String(\n    skill?.confidence ?? ''\n  ).trim().toUpperCase();\n\n  if (!name) {\n    errors.push('Every skill must have a name');\n    continue;\n  }\n\n  if (!evidence) {\n    errors.push(`Skill '${name}' has no supporting evidence`);\n  }\n\n  if (!allowedConfidence.has(confidence)) {\n    errors.push(`Skill '${name}' has invalid confidence`);\n  }\n\n  const key = name.toLowerCase();\n\n  if (seenSkills.has(key)) {\n    continue;\n  }\n\n  seenSkills.add(key);\n\n  normalizedSkills.push({\n    name,\n    category: String(skill.category ?? 'OTHER')\n      .trim()\n      .toUpperCase(),\n    claimedDuration: String(\n      skill.claimedDuration ?? ''\n    ).trim(),\n    evidence,\n    confidence\n  });\n}\n\nif (errors.length > 0) {\n  throw new Error(\n    `Candidate profile validation failed: ${errors.join('; ')}`\n  );\n}\n\nconst intake = $('Validate Assessment Intake').first().json;\n\nreturn [\n  {\n    json: {\n      output: {\n        schemaVersion: '1.0',\n        candidate: {\n          fullName,\n          email,\n          phone: String(candidate.phone ?? '').trim(),\n          location: String(candidate.location ?? '').trim(),\n          linkedInUrl: String(candidate.linkedInUrl ?? '').trim()\n        },\n        skills: normalizedSkills,\n        education,\n        workExperiences,\n        warnings\n      },\n      validation: {\n        valid: true,\n        errors: []\n      },\n      metadata: {\n        workflowExecutionId: String($execution.id),\n        sourceFileName: intake.sourceFileName,\n        positionCode: intake.positionCode,\n        targetGradeCode: intake.targetGradeCode,\n        jobDescription: intake.jobDescription,\n        extractionModel: 'gpt-5.6-sol',\n        profileSchemaVersion: '1.0',\n        extractedAt: new Date().toISOString()\n      }\n    }\n  }\n];"
-      },
-      "onError": "continueErrorOutput"
+        "jsCode": "const source = $input.first().json;\nconst profile = source.output;\n\nif (!profile || typeof profile !== 'object' || Array.isArray(profile)) {\n  throw new Error('Candidate profile must be a JSON object');\n}\n\nconst candidate =\n  profile.candidate &&\n  typeof profile.candidate === 'object' &&\n  !Array.isArray(profile.candidate)\n    ? profile.candidate\n    : {};\n\nconst skills = Array.isArray(profile.skills)\n  ? profile.skills\n  : [];\n\nconst education = Array.isArray(profile.education)\n  ? profile.education\n  : [];\n\nconst workExperiences = Array.isArray(profile.workExperiences)\n  ? profile.workExperiences\n  : [];\n\nconst warnings = Array.isArray(profile.warnings)\n  ? profile.warnings.map(String)\n  : [];\n\nconst errors = [];\n\nconst fullName = String(candidate.fullName ?? '').trim();\nconst email = String(candidate.email ?? '').trim().toLowerCase();\n\nif (profile.schemaVersion !== '1.0') {\n  errors.push('Unsupported candidate profile schema version');\n}\n\nif (!fullName) {\n  errors.push('Candidate full name is required');\n}\n\nif (\n  email &&\n  !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)\n) {\n  errors.push('Candidate email format is invalid');\n}\n\nif (skills.length === 0) {\n  errors.push('At least one evidenced skill is required');\n}\n\nconst allowedConfidence = new Set([\n  'HIGH',\n  'MEDIUM',\n  'LOW'\n]);\n\nconst seenSkills = new Set();\nconst normalizedSkills = [];\n\nfor (const skill of skills) {\n  const name = String(skill?.name ?? '').trim();\n  const evidence = String(skill?.evidence ?? '').trim();\n  const confidence = String(\n    skill?.confidence ?? ''\n  ).trim().toUpperCase();\n\n  if (!name) {\n    errors.push('Every skill must have a name');\n    continue;\n  }\n\n  if (!evidence) {\n    errors.push(`Skill '${name}' has no supporting evidence`);\n  }\n\n  if (!allowedConfidence.has(confidence)) {\n    errors.push(`Skill '${name}' has invalid confidence`);\n  }\n\n  const key = name.toLowerCase();\n\n  if (seenSkills.has(key)) {\n    continue;\n  }\n\n  seenSkills.add(key);\n\n  normalizedSkills.push({\n    name,\n    category: String(skill.category ?? 'OTHER')\n      .trim()\n      .toUpperCase(),\n    claimedDuration: String(\n      skill.claimedDuration ?? ''\n    ).trim(),\n    evidence,\n    confidence\n  });\n}\n\nif (errors.length > 0) {\n  throw new Error(\n    `Candidate profile validation failed: ${errors.join('; ')}`\n  );\n}\n\nconst intake = $('Validate Assessment Intake').first().json;\nconst claim = $('Claim Assessment Execution').first().json;\n\nreturn [\n  {\n    json: {\n      output: {\n        schemaVersion: '1.0',\n        candidate: {\n          fullName,\n          email,\n          phone: String(candidate.phone ?? '').trim(),\n          location: String(candidate.location ?? '').trim(),\n          linkedInUrl: String(candidate.linkedInUrl ?? '').trim()\n        },\n        skills: normalizedSkills,\n        education,\n        workExperiences,\n        warnings\n      },\n      validation: {\n        valid: true,\n        errors: []\n      },\n      metadata: {\n        workflowExecutionId: String($execution.id),\n        requestId: claim.requestId,\n        attemptCount: Number(claim.attemptCount),\n        sourceFileName: intake.sourceFileName,\n        positionCode: intake.positionCode,\n        targetGradeCode: intake.targetGradeCode,\n        jobDescription: intake.jobDescription,\n        extractionModel: 'gpt-5.6-sol',\n        profileSchemaVersion: '1.0',\n        extractedAt: new Date().toISOString()\n      }\n    }\n  }\n];"
+      }
     },
     {
       "id": "c9628fc1-7a83-4db9-817d-2127ab904563",
@@ -22,8 +21,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        96,
-        464
+        480,
+        224
       ],
       "parameters": {
         "schema": {
@@ -173,42 +172,26 @@
       }
     },
     {
-      "id": "fb26902b-0539-4b69-8853-aaee371eda4f",
-      "name": "Alert message",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        96,
-        656
-      ],
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "3fb8fe8f-a5f5-4c00-a8d2-39cd3e35615e",
-              "name": "output",
-              "type": "string",
-              "value": "Unable to parse the agent outputs"
-            }
-          ]
-        },
-        "options": {}
-      }
-    },
-    {
       "id": "d9d92dba-8b54-4ab1-8122-c3887740fdea",
       "name": "On form submission",
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.6,
       "position": [
-        -1152,
-        560
+        -1408,
+        464
       ],
       "parameters": {
         "formTitle": "TalentAI Candidate Assessment",
         "formDescription": "Submit the target position and candidate resume for assessment.",
         "formFields": {
           "values": [
+            {
+              "fieldLabel": "شناسه درخواست (اختیاری برای تکرار امن)",
+              "fieldType": "text",
+              "fieldName": "requestId",
+              "placeholder": "UUID دریافتی از اجرای قبلی",
+              "requiredField": false
+            },
             {
               "fieldLabel": "عنوان شغل",
               "fieldType": "dropdown",
@@ -276,11 +259,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -928,
-        560
+        -1184,
+        464
       ],
       "parameters": {
-        "jsCode": "const item = $input.first();\n\nconst positionCode = String(\n  item.json.positionCode ?? ''\n).trim().toUpperCase();\n\nconst targetGradeCode = String(\n  item.json.targetGradeCode ?? ''\n).trim().toUpperCase();\n\nconst jobDescription = String(\n  item.json.jobDescription ?? ''\n).trim();\n\nconst resume = item.binary?.resume;\n\nconst allowedGrades = new Set([\n  'JUNIOR',\n  'MID',\n  'SENIOR'\n]);\n\nif (positionCode !== 'JAVA_BACKEND') {\n  throw new Error(\n    `Unsupported position code: ${positionCode || 'empty'}`\n  );\n}\n\nif (!allowedGrades.has(targetGradeCode)) {\n  throw new Error(\n    `Unsupported target grade: ${targetGradeCode || 'empty'}`\n  );\n}\n\nif (jobDescription.length < 30) {\n  throw new Error(\n    'Job description must contain at least 30 characters'\n  );\n}\n\nif (!resume) {\n  throw new Error(\n    'A resume PDF file is required'\n  );\n}\n\nconst fileName = String(\n  resume.fileName ?? ''\n).trim();\n\nconst mimeType = String(\n  resume.mimeType ?? ''\n).trim().toLowerCase();\n\nif (!fileName.toLowerCase().endsWith('.pdf')) {\n  throw new Error(\n    `Only PDF resumes are supported: ${fileName || 'unknown file'}`\n  );\n}\n\nif (\n  mimeType &&\n  mimeType !== 'application/pdf' &&\n  mimeType !== 'application/octet-stream'\n) {\n  throw new Error(\n    `Unsupported resume MIME type: ${mimeType}`\n  );\n}\n\nreturn [\n  {\n    json: {\n      positionCode,\n      targetGradeCode,\n      jobDescription,\n      sourceFileName: fileName,\n      sourceMimeType: mimeType || 'application/pdf'\n    },\n    binary: item.binary\n  }\n];"
+        "jsCode": "const item = $input.first();\n\nconst requestId = String(\n  item.json.requestId ?? ''\n).trim().toLowerCase();\n\nconst positionCode = String(\n  item.json.positionCode ?? ''\n).trim().toUpperCase();\n\nconst targetGradeCode = String(\n  item.json.targetGradeCode ?? ''\n).trim().toUpperCase();\n\nconst jobDescription = String(\n  item.json.jobDescription ?? ''\n).trim();\n\nconst resume = item.binary?.resume;\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nconst allowedGrades = new Set([\n  'JUNIOR',\n  'MID',\n  'SENIOR'\n]);\n\nif (requestId && !uuidPattern.test(requestId)) {\n  throw new Error(\n    'INVALID_REQUEST_ID: requestId must be an RFC 4122 UUID.'\n  );\n}\n\nif (positionCode !== 'JAVA_BACKEND') {\n  throw new Error(\n    `Unsupported position code: ${positionCode || 'empty'}`\n  );\n}\n\nif (!allowedGrades.has(targetGradeCode)) {\n  throw new Error(\n    `Unsupported target grade: ${targetGradeCode || 'empty'}`\n  );\n}\n\nif (jobDescription.length < 30) {\n  throw new Error(\n    'Job description must contain at least 30 characters'\n  );\n}\n\nif (!resume) {\n  throw new Error(\n    'A resume PDF file is required'\n  );\n}\n\nconst fileName = String(\n  resume.fileName ?? ''\n).trim();\n\nconst mimeType = String(\n  resume.mimeType ?? ''\n).trim().toLowerCase();\n\nif (!fileName.toLowerCase().endsWith('.pdf')) {\n  throw new Error(\n    `Only PDF resumes are supported: ${fileName || 'unknown file'}`\n  );\n}\n\nif (\n  mimeType &&\n  mimeType !== 'application/pdf' &&\n  mimeType !== 'application/octet-stream'\n) {\n  throw new Error(\n    `Unsupported resume MIME type: ${mimeType}`\n  );\n}\n\nreturn [\n  {\n    json: {\n      requestId,\n      positionCode,\n      targetGradeCode,\n      jobDescription,\n      sourceFileName: fileName,\n      sourceMimeType: mimeType || 'application/pdf'\n    },\n    binary: item.binary\n  }\n];"
       }
     },
     {
@@ -289,8 +272,8 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        -704,
-        560
+        -960,
+        464
       ],
       "parameters": {
         "operation": "pdf",
@@ -304,11 +287,11 @@
       "type": "@n8n/n8n-nodes-langchain.informationExtractor",
       "typeVersion": 1.2,
       "position": [
-        -480,
-        560
+        32,
+        224
       ],
       "parameters": {
-        "text": "={{ $json.text }}",
+        "text": "={{ $('Extract from File').first().json.text }}",
         "schemaType": "manual",
         "inputSchema": "{\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"required\": [\n    \"schemaVersion\",\n    \"candidate\",\n    \"skills\",\n    \"education\",\n    \"workExperiences\",\n    \"warnings\"\n  ],\n  \"properties\": {\n    \"schemaVersion\": {\n      \"type\": \"string\",\n      \"enum\": [\"1.0\"]\n    },\n    \"candidate\": {\n      \"type\": \"object\",\n      \"additionalProperties\": false,\n      \"required\": [\n        \"fullName\",\n        \"email\",\n        \"phone\",\n        \"location\",\n        \"linkedInUrl\"\n      ],\n      \"properties\": {\n        \"fullName\": {\n          \"type\": \"string\",\n          \"description\": \"Candidate full name exactly as supported by the resume\"\n        },\n        \"email\": {\n          \"type\": \"string\",\n          \"description\": \"Email address, or an empty string when absent\"\n        },\n        \"phone\": {\n          \"type\": \"string\",\n          \"description\": \"Phone number, or an empty string when absent\"\n        },\n        \"location\": {\n          \"type\": \"string\",\n          \"description\": \"Candidate location, or an empty string when absent\"\n        },\n        \"linkedInUrl\": {\n          \"type\": \"string\",\n          \"description\": \"LinkedIn URL, or an empty string when absent\"\n        }\n      }\n    },\n    \"skills\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"required\": [\n          \"name\",\n          \"category\",\n          \"claimedDuration\",\n          \"evidence\",\n          \"confidence\"\n        ],\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          },\n          \"category\": {\n            \"type\": \"string\",\n            \"enum\": [\n              \"LANGUAGE\",\n              \"FRAMEWORK\",\n              \"DATABASE\",\n              \"MESSAGING\",\n              \"CLOUD_DEVOPS\",\n              \"TESTING\",\n              \"ARCHITECTURE\",\n              \"SECURITY\",\n              \"OBSERVABILITY\",\n              \"OTHER\"\n            ]\n          },\n          \"claimedDuration\": {\n            \"type\": \"string\",\n            \"description\": \"Explicitly claimed duration, or empty string\"\n          },\n          \"evidence\": {\n            \"type\": \"string\",\n            \"description\": \"A short exact supporting fragment from the resume\"\n          },\n          \"confidence\": {\n            \"type\": \"string\",\n            \"enum\": [\"HIGH\", \"MEDIUM\", \"LOW\"]\n          }\n        }\n      }\n    },\n    \"education\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"required\": [\n          \"degree\",\n          \"field\",\n          \"institution\",\n          \"startDateText\",\n          \"endDateText\",\n          \"evidence\"\n        ],\n        \"properties\": {\n          \"degree\": {\n            \"type\": \"string\"\n          },\n          \"field\": {\n            \"type\": \"string\"\n          },\n          \"institution\": {\n            \"type\": \"string\"\n          },\n          \"startDateText\": {\n            \"type\": \"string\"\n          },\n          \"endDateText\": {\n            \"type\": \"string\"\n          },\n          \"evidence\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"workExperiences\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"required\": [\n          \"company\",\n          \"title\",\n          \"startDateText\",\n          \"endDateText\",\n          \"responsibilities\",\n          \"technologies\",\n          \"evidence\"\n        ],\n        \"properties\": {\n          \"company\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          },\n          \"startDateText\": {\n            \"type\": \"string\"\n          },\n          \"endDateText\": {\n            \"type\": \"string\"\n          },\n          \"responsibilities\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"technologies\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"evidence\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"warnings\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    }\n  }\n}",
         "options": {
@@ -322,8 +305,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -408,
-        792
+        48,
+        448
       ],
       "parameters": {
         "model": {
@@ -342,8 +325,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        320,
-        464
+        1376,
+        224
       ],
       "parameters": {
         "workflowId": {
@@ -356,11 +339,12 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "extractionId": "={{ $json.id }}"
+            "extractionId": "={{ $json.extractionId }}",
+            "requestId": "={{ $json.requestId }}",
+            "rootWorkflowExecutionId": "={{ $json.rootWorkflowExecutionId }}",
+            "attemptCount": "={{ $json.attemptCount }}"
           },
-          "matchingColumns": [
-            "extractionId"
-          ],
+          "matchingColumns": [],
           "schema": [
             {
               "id": "extractionId",
@@ -371,10 +355,40 @@
               "canBeUsedToMatch": true,
               "type": "string",
               "removed": false
+            },
+            {
+              "id": "requestId",
+              "displayName": "requestId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "rootWorkflowExecutionId",
+              "displayName": "rootWorkflowExecutionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attemptCount",
+              "displayName": "attemptCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
             }
           ],
           "attemptToConvertTypes": false,
-          "convertFieldsToString": true
+          "convertFieldsToString": false
         },
         "options": {
           "waitForSubWorkflow": true
@@ -387,8 +401,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        544,
-        464
+        1600,
+        224
       ],
       "parameters": {
         "workflowId": {
@@ -417,44 +431,220 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        768,
+        1824,
+        224
+      ],
+      "parameters": {
+        "jsCode": "const assessment = $input.first().json;\n\nconst score = Number(assessment.score?.overall ?? 0);\nconst minimumRequired = Number(\n  assessment.score?.minimumRequired ?? 0\n);\nconst mandatoryPassed =\n  assessment.score?.mandatoryDimensionsMet === true;\nconst decision = assessment.decision ?? 'UNKNOWN';\nconst fullName =\n  assessment.candidate?.fullName ?? 'Unknown candidate';\nconst positionCode =\n  assessment.assessmentContext?.positionCode ?? '';\nconst targetGradeCode =\n  assessment.assessmentContext?.targetGradeCode ?? '';\nconst requestId =\n  assessment.execution?.requestId ?? assessment.requestId ?? '';\nconst attemptCount = Number(\n  assessment.execution?.attemptCount ?? 1\n);\nconst replayed =\n  assessment.execution?.replayed === true ||\n  assessment.metadata?.replayed === true;\n\nconst output = [\n  'TalentAI assessment completed.',\n  '',\n  `Request ID: ${requestId}`,\n  `Attempt: ${attemptCount}`,\n  `Replayed: ${replayed ? 'YES' : 'NO'}`,\n  `Candidate: ${fullName}`,\n  `Position: ${positionCode}`,\n  `Target Grade: ${targetGradeCode}`,\n  `Overall Score: ${score} / 100`,\n  `Required Score: ${minimumRequired} / 100`,\n  `Mandatory Requirements: ${\n    mandatoryPassed ? 'PASSED' : 'NOT PASSED'\n  }`,\n  `Decision: ${decision}`,\n  '',\n  `Assessment ID: ${assessment.assessmentId}`,\n  `Extraction ID: ${assessment.extractionId}`,\n  `Grade Guide: ${assessment.gradeGuide?.version}`,\n  `Model: ${assessment.metadata?.scoringModel}`,\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      output,\n      requestId,\n      attemptCount,\n      replayed,\n      assessmentId: assessment.assessmentId,\n      extractionId: assessment.extractionId,\n      candidateName: fullName,\n      positionCode,\n      targetGradeCode,\n      overallScore: score,\n      minimumRequiredScore: minimumRequired,\n      thresholdMet: assessment.score?.thresholdMet,\n      mandatoryDimensionsMet: mandatoryPassed,\n      decision,\n      gradeGuideVersion: assessment.gradeGuide?.version,\n      scoringModel: assessment.metadata?.scoringModel,\n      createdAt: assessment.metadata?.createdAt,\n    },\n  },\n];"
+      }
+    },
+    {
+      "id": "a018080b-0760-47b6-90f5-a14a28294011",
+      "name": "Build Assessment Claim",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
         464
       ],
       "parameters": {
-        "jsCode": "const assessment = $input.first().json;\n\nconst score =\n  Number(assessment.score?.overall ?? 0);\n\nconst minimumRequired =\n  Number(\n    assessment.score?.minimumRequired ?? 0\n  );\n\nconst mandatoryPassed =\n  assessment.score\n    ?.mandatoryDimensionsMet === true;\n\nconst decision =\n  assessment.decision ?? 'UNKNOWN';\n\nconst fullName =\n  assessment.candidate?.fullName ??\n  'Unknown candidate';\n\nconst positionCode =\n  assessment.assessmentContext\n    ?.positionCode ?? '';\n\nconst targetGradeCode =\n  assessment.assessmentContext\n    ?.targetGradeCode ?? '';\n\nconst output = [\n  'TalentAI assessment completed.',\n  '',\n  `Candidate: ${fullName}`,\n  `Position: ${positionCode}`,\n  `Target Grade: ${targetGradeCode}`,\n  `Overall Score: ${score} / 100`,\n  `Required Score: ${minimumRequired} / 100`,\n  `Mandatory Requirements: ${\n    mandatoryPassed ? 'PASSED' : 'NOT PASSED'\n  }`,\n  `Decision: ${decision}`,\n  '',\n  `Assessment ID: ${assessment.assessmentId}`,\n  `Extraction ID: ${assessment.extractionId}`,\n  `Grade Guide: ${assessment.gradeGuide?.version}`,\n  `Model: ${assessment.metadata?.scoringModel}`,\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      output,\n\n      assessmentId:\n        assessment.assessmentId,\n\n      extractionId:\n        assessment.extractionId,\n\n      candidateName:\n        fullName,\n\n      positionCode,\n      targetGradeCode,\n\n      overallScore:\n        score,\n\n      minimumRequiredScore:\n        minimumRequired,\n\n      thresholdMet:\n        assessment.score?.thresholdMet,\n\n      mandatoryDimensionsMet:\n        mandatoryPassed,\n\n      decision,\n\n      gradeGuideVersion:\n        assessment.gradeGuide?.version,\n\n      scoringModel:\n        assessment.metadata?.scoringModel,\n\n      createdAt:\n        assessment.metadata?.createdAt,\n    },\n  },\n];"
+        "jsCode": "const extracted = $input.first().json;\nconst intake = $('Validate Assessment Intake').first().json;\n\nconst resumeText = String(extracted.text ?? '')\n  .replace(/\\r\\n?/g, '\\n')\n  .trim();\n\nif (resumeText.length < 20) {\n  throw new Error(\n    'RESUME_TEXT_EMPTY: the uploaded PDF did not yield usable text.'\n  );\n}\n\nconst inputFingerprintSource = JSON.stringify({\n  schemaVersion: '1.0',\n  positionCode: intake.positionCode,\n  targetGradeCode: intake.targetGradeCode,\n  jobDescription: intake.jobDescription,\n  resumeText,\n});\n\nreturn [\n  {\n    json: {\n      requestId: intake.requestId,\n      inputFingerprintSource,\n      workflowExecutionId: String($execution.id),\n      positionCode: intake.positionCode,\n      targetGradeCode: intake.targetGradeCode,\n    },\n  },\n];"
+      }
+    },
+    {
+      "id": "b07fc30d-1d75-4679-914c-a74e9b4104b0",
+      "name": "Claim Assessment Execution",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -512,
+        464
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        COALESCE(\n            NULLIF(BTRIM($1), '')::UUID,\n            gen_random_uuid()\n        ) AS request_id,\n        encode(\n            digest(COALESCE($2, ''), 'sha256'),\n            'hex'\n        ) AS input_fingerprint,\n        NULLIF(BTRIM($3), '')          AS workflow_execution_id,\n        UPPER(BTRIM($4))              AS position_code,\n        UPPER(BTRIM($5))              AS target_grade_code\n),\nupserted AS\n(\n    INSERT INTO talentai.assessment_execution AS existing\n    (\n        request_id,\n        input_fingerprint,\n        initial_workflow_execution_id,\n        last_workflow_execution_id,\n        position_code,\n        target_grade_code,\n        status,\n        current_stage\n    )\n    SELECT\n        request_id,\n        input_fingerprint,\n        workflow_execution_id,\n        workflow_execution_id,\n        position_code,\n        target_grade_code,\n        'RUNNING',\n        'PROFILE_EXTRACTION'\n    FROM supplied\n    ON CONFLICT ON CONSTRAINT assessment_execution_pkey\n    DO UPDATE SET\n        last_workflow_execution_id =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN EXCLUDED.last_workflow_execution_id\n                ELSE existing.last_workflow_execution_id\n            END,\n        status =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN 'RUNNING'\n                ELSE existing.status\n            END,\n        current_stage =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN CASE\n                        WHEN existing.extraction_id IS NULL\n                            THEN 'PROFILE_EXTRACTION'\n                        ELSE 'GRADE_GUIDE_RESOLUTION'\n                    END\n                ELSE existing.current_stage\n            END,\n        attempt_count =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN existing.attempt_count + 1\n                ELSE existing.attempt_count\n            END,\n        failure_category =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN NULL\n                ELSE existing.failure_category\n            END,\n        failure_code =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN NULL\n                ELSE existing.failure_code\n            END,\n        failure_message =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN NULL\n                ELSE existing.failure_message\n            END,\n        retryable =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN NULL\n                ELSE existing.retryable\n            END,\n        failed_at =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN NULL\n                ELSE existing.failed_at\n            END,\n        updated_at =\n            CASE\n                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint\n                 AND existing.status = 'FAILED'\n                 AND existing.retryable = TRUE\n                    THEN now()\n                ELSE existing.updated_at\n            END\n    RETURNING existing.*\n)\nSELECT\n    upserted.request_id                    AS \"requestId\",\n    CASE\n        WHEN upserted.input_fingerprint <> supplied.input_fingerprint\n            THEN 'IDEMPOTENCY_CONFLICT'\n        WHEN upserted.status = 'COMPLETED'\n            THEN 'COMPLETED_REPLAY'\n        WHEN upserted.status = 'FAILED'\n         AND upserted.retryable = FALSE\n            THEN 'FAILED_NOT_RETRYABLE'\n        WHEN upserted.status = 'RUNNING'\n         AND upserted.last_workflow_execution_id\n             <> supplied.workflow_execution_id\n            THEN 'ALREADY_RUNNING'\n        WHEN upserted.status = 'RUNNING'\n         AND upserted.attempt_count = 1\n            THEN 'CLAIMED_NEW'\n        WHEN upserted.status = 'RUNNING'\n            THEN 'CLAIMED_RETRY'\n        ELSE 'CLAIM_REJECTED'\n    END                                      AS \"claimStatus\",\n    (\n        upserted.status = 'RUNNING'\n        AND upserted.last_workflow_execution_id\n            = supplied.workflow_execution_id\n    )                                         AS \"canContinue\",\n    upserted.status                            AS status,\n    upserted.current_stage                     AS \"currentStage\",\n    upserted.attempt_count                     AS \"attemptCount\",\n    upserted.extraction_id                     AS \"extractionId\",\n    upserted.assessment_id                     AS \"assessmentId\",\n    upserted.failure_category                  AS \"failureCategory\",\n    upserted.failure_code                      AS \"failureCode\",\n    upserted.failure_message                   AS \"failureMessage\",\n    upserted.retryable                         AS retryable,\n    upserted.started_at                        AS \"startedAt\",\n    upserted.updated_at                        AS \"updatedAt\",\n    upserted.completed_at                      AS \"completedAt\",\n    upserted.failed_at                         AS \"failedAt\"\nFROM upserted\nCROSS JOIN supplied;\n",
+        "options": {
+          "queryReplacement": "={{ [$json.requestId, $json.inputFingerprintSource, $json.workflowExecutionId, $json.positionCode, $json.targetGradeCode] }}"
+        }
+      }
+    },
+    {
+      "id": "c7fba835-11bd-4ba4-b0e3-e0184d75b422",
+      "name": "Claim Can Continue?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -288,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c7fba835-11bd-4ba4-b0e3-e0184d75b422-condition",
+              "leftValue": "={{ $json.canContinue === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dd9ff0fd-9081-42dd-8eac-3309843a90ac",
+      "name": "Retry Has Extraction?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -64,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dd9ff0fd-9081-42dd-8eac-3309843a90ac-condition",
+              "leftValue": "={{ String($json.extractionId ?? '').trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ee607d31-dfa5-4cea-90df-33353b57b01f",
+      "name": "Completed Replay?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -64,
+        672
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ee607d31-dfa5-4cea-90df-33353b57b01f-condition",
+              "leftValue": "={{ String($json.claimStatus ?? '') === 'COMPLETED_REPLAY' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f5083537-ae31-4c1b-b0ed-d8bc453cb2f0",
+      "name": "Attach Resume Extraction",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        704,
+        224
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE talentai.assessment_execution AS execution\nSET\n    last_workflow_execution_id = NULLIF($2, ''),\n    extraction_id = $3::UUID,\n    current_stage = 'GRADE_GUIDE_RESOLUTION',\n    updated_at = now()\nWHERE execution.request_id = $1::UUID\n  AND execution.status = 'RUNNING'\n  AND NULLIF($2, '') IS NOT NULL\n  AND (\n      execution.extraction_id IS NULL\n      OR execution.extraction_id = $3::UUID\n  )\nRETURNING\n    execution.request_id                 AS \"requestId\",\n    execution.status,\n    execution.current_stage              AS \"currentStage\",\n    execution.attempt_count              AS \"attemptCount\",\n    execution.extraction_id              AS \"extractionId\",\n    execution.updated_at                 AS \"updatedAt\";\n",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Assessment Execution').first().json.requestId, String($execution.id), $json.id] }}"
+        }
+      }
+    },
+    {
+      "id": "065d2130-56bd-4887-9be7-88bb3f70700b",
+      "name": "Prepare Grading Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        224
+      ],
+      "parameters": {
+        "jsCode": "const current = $input.first().json;\nconst claim = $('Claim Assessment Execution').first().json;\n\nconst extractionId = String(\n  current.extractionId ?? current.id ?? claim.extractionId ?? ''\n).trim();\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nif (!uuidPattern.test(extractionId)) {\n  throw new Error(\n    'EXTRACTION_NOT_ATTACHED: grading requires a valid extractionId.'\n  );\n}\n\nreturn [\n  {\n    json: {\n      requestId: claim.requestId,\n      extractionId,\n      rootWorkflowExecutionId: String($execution.id),\n      attemptCount: Number(claim.attemptCount),\n    },\n  },\n];"
+      }
+    },
+    {
+      "id": "17671c80-b752-4c05-91f7-da2cbf2e012e",
+      "name": "Load Completed Assessment",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        256,
+        672
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    execution.request_id                    AS \"requestId\",\n    execution.attempt_count                 AS \"attemptCount\",\n    execution.status                        AS \"executionStatus\",\n    execution.started_at                    AS \"startedAt\",\n    execution.completed_at                  AS \"completedAt\",\n    assessment.id                           AS \"assessmentId\",\n    assessment.extraction_id                AS \"extractionId\",\n    assessment.grade_guide_id               AS \"gradeGuideId\",\n    assessment.grade_guide_version          AS \"gradeGuideVersion\",\n    assessment.target_grade_code            AS \"targetGradeCode\",\n    assessment.scoring_model                AS \"scoringModel\",\n    assessment.prompt_version               AS \"promptVersion\",\n    assessment.engine_version               AS \"engineVersion\",\n    assessment.dimension_assessments        AS \"dimensionAssessments\",\n    assessment.overall_score                AS \"overallScore\",\n    assessment.minimum_overall_score        AS \"minimumOverallScore\",\n    assessment.threshold_met                AS \"thresholdMet\",\n    assessment.mandatory_dimensions_met     AS \"mandatoryDimensionsMet\",\n    assessment.decision,\n    assessment.review_reasons               AS \"reviewReasons\",\n    assessment.model_warnings               AS \"modelWarnings\",\n    assessment.assessment_summary           AS \"assessmentSummary\",\n    assessment.status                       AS \"assessmentStatus\",\n    assessment.created_at                   AS \"assessmentCreatedAt\",\n    extraction.position_code                AS \"positionCode\",\n    extraction.job_description              AS \"jobDescription\",\n    extraction.profile -> 'candidate'        AS candidate\nFROM talentai.assessment_execution AS execution\nJOIN talentai.grade_assessment AS assessment\n  ON assessment.id = execution.assessment_id\n AND assessment.request_id = execution.request_id\nJOIN talentai.resume_extraction AS extraction\n  ON extraction.id = execution.extraction_id\nWHERE execution.request_id = $1::UUID\n  AND execution.status = 'COMPLETED'\n  AND execution.current_stage = 'COMPLETED'\n  AND execution.completed_at IS NOT NULL;\n",
+        "options": {
+          "queryReplacement": "={{ [$json.requestId] }}"
+        }
+      }
+    },
+    {
+      "id": "2865a4ad-c5c2-4df4-a095-0c949cb864b1",
+      "name": "Build Replayed Assessment Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        672
+      ],
+      "parameters": {
+        "jsCode": "const replay = $input.first().json;\n\nreturn [\n  {\n    json: {\n      schemaVersion: '1.0',\n      requestId: replay.requestId,\n      assessmentId: replay.assessmentId,\n      extractionId: replay.extractionId,\n      candidate: {\n        fullName: replay.candidate?.fullName ?? '',\n      },\n      assessmentContext: {\n        positionCode: replay.positionCode,\n        targetGradeCode: replay.targetGradeCode,\n        jobDescription: replay.jobDescription,\n      },\n      gradeGuide: {\n        id: replay.gradeGuideId,\n        version: replay.gradeGuideVersion,\n      },\n      score: {\n        overall: Number(replay.overallScore),\n        minimumRequired: Number(replay.minimumOverallScore),\n        thresholdMet: replay.thresholdMet,\n        mandatoryDimensionsMet: replay.mandatoryDimensionsMet,\n      },\n      decision: replay.decision,\n      dimensionAssessments: replay.dimensionAssessments,\n      reviewReasons: replay.reviewReasons,\n      modelWarnings: replay.modelWarnings,\n      assessmentSummary: replay.assessmentSummary,\n      execution: {\n        requestId: replay.requestId,\n        attemptCount: Number(replay.attemptCount),\n        status: replay.executionStatus,\n        replayed: true,\n        startedAt: replay.startedAt,\n        completedAt: replay.completedAt,\n      },\n      metadata: {\n        scoringModel: replay.scoringModel,\n        promptVersion: replay.promptVersion,\n        engineVersion: replay.engineVersion,\n        status: replay.assessmentStatus,\n        createdAt: replay.assessmentCreatedAt,\n        wasInserted: false,\n        replayed: true,\n      },\n    },\n  },\n];"
+      }
+    },
+    {
+      "id": "394ee083-d23e-417c-99d6-25cb034e9153",
+      "name": "Reject Assessment Claim",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        256,
+        816
+      ],
+      "parameters": {
+        "errorMessage": "={{ 'ASSESSMENT_CLAIM_REJECTED: ' + String($json.claimStatus ?? 'UNKNOWN') + ' [requestId=' + String($json.requestId ?? '') + ']' }}"
       }
     }
   ],
   "connections": {
-    "Validate Candidate Profile": {
-      "main": [
-        [
-          {
-            "node": "Save Resume Extraction",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Alert message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Save Resume Extraction": {
-      "main": [
-        [
-          {
-            "node": "Resolve Grade Engine Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "On form submission": {
       "main": [
         [
@@ -477,19 +667,66 @@
         ]
       ]
     },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
+    "Extract from File": {
+      "main": [
         [
           {
-            "node": "Extract Structured Candidate Profile",
-            "type": "ai_languageModel",
+            "node": "Build Assessment Claim",
+            "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract from File": {
+    "Build Assessment Claim": {
       "main": [
+        [
+          {
+            "node": "Claim Assessment Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Assessment Execution": {
+      "main": [
+        [
+          {
+            "node": "Claim Can Continue?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Can Continue?": {
+      "main": [
+        [
+          {
+            "node": "Retry Has Extraction?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Completed Replay?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry Has Extraction?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Grading Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Extract Structured Candidate Profile",
@@ -510,6 +747,61 @@
         ]
       ]
     },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Structured Candidate Profile",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Candidate Profile": {
+      "main": [
+        [
+          {
+            "node": "Save Resume Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Resume Extraction": {
+      "main": [
+        [
+          {
+            "node": "Attach Resume Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Resume Extraction": {
+      "main": [
+        [
+          {
+            "node": "Prepare Grading Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Grading Request": {
+      "main": [
+        [
+          {
+            "node": "Resolve Grade Engine Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Resolve Grade Engine Input": {
       "main": [
         [
@@ -522,6 +814,46 @@
       ]
     },
     "Run Deterministic Grade Engine": {
+      "main": [
+        [
+          {
+            "node": "Build TalentAI Assessment Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completed Replay?": {
+      "main": [
+        [
+          {
+            "node": "Load Completed Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Assessment Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Completed Assessment": {
+      "main": [
+        [
+          {
+            "node": "Build Replayed Assessment Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Replayed Assessment Result": {
       "main": [
         [
           {

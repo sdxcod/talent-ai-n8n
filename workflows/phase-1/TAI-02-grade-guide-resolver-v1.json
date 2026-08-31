@@ -8,7 +8,7 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        -464,
+        -688,
         64
       ],
       "parameters": {
@@ -16,6 +16,16 @@
           "values": [
             {
               "name": "extractionId"
+            },
+            {
+              "name": "requestId"
+            },
+            {
+              "name": "rootWorkflowExecutionId"
+            },
+            {
+              "name": "attemptCount",
+              "type": "number"
             }
           ]
         }
@@ -23,15 +33,15 @@
     },
     {
       "id": "4d03e8b5-72e1-4ec3-a961-59dc14d49ab1",
-      "name": "Validate Extraction ID",
+      "name": "Validate Operational Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -240,
+        -464,
         64
       ],
       "parameters": {
-        "jsCode": "const rawExtractionId = $input.first().json.extractionId;\nconst extractionId =\n  typeof rawExtractionId === 'string'\n    ? rawExtractionId.trim()\n    : '';\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nif (!uuidPattern.test(extractionId)) {\n  throw new Error(\n    'INVALID_EXTRACTION_ID: extractionId must be a valid UUID.'\n  );\n}\n\nreturn [\n  {\n    json: {\n      extractionId,\n    },\n  },\n];"
+        "jsCode": "const input = $input.first().json;\n\nconst requestId = String(input.requestId ?? '').trim();\nconst extractionId = String(input.extractionId ?? '').trim();\nconst rootWorkflowExecutionId = String(\n  input.rootWorkflowExecutionId ?? ''\n).trim();\nconst attemptCount = Number(input.attemptCount);\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nif (!uuidPattern.test(requestId)) {\n  throw new Error(\n    'INVALID_REQUEST_ID: requestId must be a valid UUID.'\n  );\n}\n\nif (!uuidPattern.test(extractionId)) {\n  throw new Error(\n    'INVALID_EXTRACTION_ID: extractionId must be a valid UUID.'\n  );\n}\n\nif (!rootWorkflowExecutionId) {\n  throw new Error(\n    'INVALID_ROOT_EXECUTION_ID: rootWorkflowExecutionId is required.'\n  );\n}\n\nif (!Number.isInteger(attemptCount) || attemptCount < 1) {\n  throw new Error(\n    'INVALID_ATTEMPT_COUNT: attemptCount must be a positive integer.'\n  );\n}\n\nreturn [\n  {\n    json: {\n      requestId,\n      extractionId,\n      rootWorkflowExecutionId,\n      attemptCount,\n    },\n  },\n];"
       }
     },
     {
@@ -47,7 +57,7 @@
         "operation": "executeQuery",
         "query": "WITH requested AS\n(\n    SELECT $1::UUID AS extraction_id\n)\nSELECT\n    CASE\n        WHEN re.id IS NULL\n            THEN 'EXTRACTION_NOT_FOUND'\n        WHEN re.status <> 'EXTRACTED'\n            THEN 'EXTRACTION_NOT_READY'\n        WHEN re.profile_schema_version <> '1.0'\n            THEN 'PROFILE_SCHEMA_UNSUPPORTED'\n        WHEN jsonb_typeof(re.profile) <> 'object'\n            THEN 'PROFILE_INVALID'\n        WHEN NULLIF(BTRIM(re.target_grade_code), '') IS NULL\n             OR re.target_grade_code = 'UNSPECIFIED'\n            THEN 'TARGET_GRADE_UNSPECIFIED'\n        WHEN gg.id IS NULL\n            THEN 'ACTIVE_GRADE_GUIDE_NOT_FOUND'\n        WHEN selected_grade.grade_definition IS NULL\n            THEN 'TARGET_GRADE_NOT_FOUND'\n        ELSE 'RESOLVED'\n    END AS \"resolutionStatus\",\n\n    CASE\n        WHEN re.id IS NULL\n            THEN 'Resume extraction was not found.'\n        WHEN re.status <> 'EXTRACTED'\n            THEN 'Resume extraction is not ready for grading.'\n        WHEN re.profile_schema_version <> '1.0'\n            THEN 'Resume profile schema version is not supported.'\n        WHEN jsonb_typeof(re.profile) <> 'object'\n            THEN 'Resume profile must be a JSON object.'\n        WHEN NULLIF(BTRIM(re.target_grade_code), '') IS NULL\n             OR re.target_grade_code = 'UNSPECIFIED'\n            THEN 'Target grade code is not specified.'\n        WHEN gg.id IS NULL\n            THEN 'No active grade guide exists for the requested position.'\n        WHEN selected_grade.grade_definition IS NULL\n            THEN 'Target grade does not exist in the active grade guide.'\n        ELSE 'Grade guide resolved successfully.'\n    END AS \"resolutionMessage\",\n\n    requested.extraction_id                 AS \"requestedExtractionId\",\n    re.id                                   AS \"extractionId\",\n    re.workflow_execution_id                AS \"workflowExecutionId\",\n    re.position_code                        AS \"positionCode\",\n    re.target_grade_code                    AS \"targetGradeCode\",\n    re.source_file_name                     AS \"sourceFileName\",\n    re.extraction_model                     AS \"extractionModel\",\n    re.status                               AS \"extractionStatus\",\n    re.profile_schema_version               AS \"profileSchemaVersion\",\n    re.job_description                      AS \"jobDescription\",\n    re.profile                              AS profile,\n    re.created_at                           AS \"extractedAt\",\n    gg.id                                   AS \"gradeGuideId\",\n    gg.guide_version                        AS \"gradeGuideVersion\",\n    gg.guide_schema_version                 AS \"gradeGuideSchemaVersion\",\n    selected_grade.grade_definition         AS \"gradeDefinition\",\n    gg.guide -> 'dimensions'                AS dimensions,\n    gg.guide -> 'scoringScale'              AS \"scoringScale\",\n    gg.guide -> 'evidencePolicy'             AS \"evidencePolicy\",\n    gg.guide -> 'decisionPolicy'             AS \"decisionPolicy\"\nFROM requested\nLEFT JOIN talentai.resume_extraction AS re\n       ON re.id = requested.extraction_id\nLEFT JOIN talentai.grade_guide AS gg\n       ON gg.position_code = re.position_code\n      AND gg.status = 'ACTIVE'\nLEFT JOIN LATERAL\n(\n    SELECT grade AS grade_definition\n    FROM jsonb_array_elements(\n        COALESCE(gg.guide -> 'grades', '[]'::JSONB)\n    ) AS grade\n    WHERE grade ->> 'code' = re.target_grade_code\n    LIMIT 1\n) AS selected_grade ON TRUE;\n",
         "options": {
-          "queryReplacement": "={{ [$json.extractionId] }}"
+          "queryReplacement": "={{ [$('Validate Operational Input').first().json.extractionId] }}"
         }
       }
     },
@@ -95,7 +105,7 @@
         160
       ],
       "parameters": {
-        "errorMessage": "={{   $json.resolutionStatus   + ': '   + $json.resolutionMessage   + ' [extractionId='   + $json.requestedExtractionId   + ']' }}"
+        "errorMessage": "={{ $json.resolutionStatus + ': ' + $json.resolutionMessage + ' [requestId=' + $('Validate Operational Input').first().json.requestId + ', extractionId=' + $json.requestedExtractionId + ']' }}"
       }
     },
     {
@@ -108,7 +118,24 @@
         -32
       ],
       "parameters": {
-        "jsCode": "const resolved = $input.first().json;\n\nif (resolved.resolutionStatus !== 'RESOLVED') {\n  throw new Error(\n    `UNEXPECTED_RESOLUTION_STATUS: ${resolved.resolutionStatus}`\n  );\n}\n\nreturn [\n  {\n    json: {\n      schemaVersion: '1.0',\n\n      resolution: {\n        status: resolved.resolutionStatus,\n        message: resolved.resolutionMessage,\n      },\n\n      extraction: {\n        id: resolved.extractionId,\n        workflowExecutionId: resolved.workflowExecutionId,\n        sourceFileName: resolved.sourceFileName,\n        extractionModel: resolved.extractionModel,\n        status: resolved.extractionStatus,\n        profileSchemaVersion: resolved.profileSchemaVersion,\n        extractedAt: resolved.extractedAt,\n      },\n\n      assessmentContext: {\n        positionCode: resolved.positionCode,\n        targetGradeCode: resolved.targetGradeCode,\n        jobDescription: resolved.jobDescription,\n      },\n\n      candidateProfile: resolved.profile,\n\n      gradeGuide: {\n        id: resolved.gradeGuideId,\n        version: resolved.gradeGuideVersion,\n        schemaVersion: resolved.gradeGuideSchemaVersion,\n        targetGrade: resolved.gradeDefinition,\n        dimensions: resolved.dimensions,\n        scoringScale: resolved.scoringScale,\n        evidencePolicy: resolved.evidencePolicy,\n        decisionPolicy: resolved.decisionPolicy,\n      },\n    },\n  },\n];"
+        "jsCode": "const resolved = $input.first().json;\nconst operational = $('Validate Operational Input').first().json;\n\nif (resolved.resolutionStatus !== 'RESOLVED') {\n  throw new Error(\n    `UNEXPECTED_RESOLUTION_STATUS: ${resolved.resolutionStatus}`\n  );\n}\n\nreturn [\n  {\n    json: {\n      schemaVersion: '1.0',\n\n      execution: {\n        requestId: operational.requestId,\n        rootWorkflowExecutionId: operational.rootWorkflowExecutionId,\n        attemptCount: Number(operational.attemptCount),\n      },\n\n      resolution: {\n        status: resolved.resolutionStatus,\n        message: resolved.resolutionMessage,\n      },\n\n      extraction: {\n        id: resolved.extractionId,\n        workflowExecutionId: resolved.workflowExecutionId,\n        sourceFileName: resolved.sourceFileName,\n        extractionModel: resolved.extractionModel,\n        status: resolved.extractionStatus,\n        profileSchemaVersion: resolved.profileSchemaVersion,\n        extractedAt: resolved.extractedAt,\n      },\n\n      assessmentContext: {\n        positionCode: resolved.positionCode,\n        targetGradeCode: resolved.targetGradeCode,\n        jobDescription: resolved.jobDescription,\n      },\n\n      candidateProfile: resolved.profile,\n\n      gradeGuide: {\n        id: resolved.gradeGuideId,\n        version: resolved.gradeGuideVersion,\n        schemaVersion: resolved.gradeGuideSchemaVersion,\n        targetGrade: resolved.gradeDefinition,\n        dimensions: resolved.dimensions,\n        scoringScale: resolved.scoringScale,\n        evidencePolicy: resolved.evidencePolicy,\n        decisionPolicy: resolved.decisionPolicy,\n      },\n    },\n  },\n];"
+      }
+    },
+    {
+      "id": "4a8f2a1b-45da-4274-8fb8-769877e3ae80",
+      "name": "Advance Grade Guide Resolution",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -240,
+        64
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH requested AS\n(\n    SELECT\n        $1::UUID          AS request_id,\n        NULLIF($2, '')    AS workflow_execution_id,\n        UPPER(BTRIM($3))  AS next_stage\n),\nranked AS\n(\n    SELECT\n        requested.*,\n        CASE requested.next_stage\n            WHEN 'INTAKE'                  THEN 0\n            WHEN 'PROFILE_EXTRACTION'      THEN 1\n            WHEN 'GRADE_GUIDE_RESOLUTION'  THEN 2\n            WHEN 'EVIDENCE_SCORING'        THEN 3\n            WHEN 'ASSESSMENT_PERSISTENCE'  THEN 4\n            ELSE -1\n        END AS next_stage_rank\n    FROM requested\n)\nUPDATE talentai.assessment_execution AS execution\nSET\n    last_workflow_execution_id = ranked.workflow_execution_id,\n    current_stage = ranked.next_stage,\n    updated_at = now()\nFROM ranked\nWHERE execution.request_id = ranked.request_id\n  AND execution.status = 'RUNNING'\n  AND ranked.workflow_execution_id IS NOT NULL\n  AND ranked.next_stage_rank >= 0\n  AND ranked.next_stage_rank >=\n      CASE execution.current_stage\n          WHEN 'INTAKE'                  THEN 0\n          WHEN 'PROFILE_EXTRACTION'      THEN 1\n          WHEN 'GRADE_GUIDE_RESOLUTION'  THEN 2\n          WHEN 'EVIDENCE_SCORING'        THEN 3\n          WHEN 'ASSESSMENT_PERSISTENCE'  THEN 4\n          ELSE 99\n      END\nRETURNING\n    execution.request_id                 AS \"requestId\",\n    execution.status,\n    execution.current_stage              AS \"currentStage\",\n    execution.attempt_count              AS \"attemptCount\",\n    execution.updated_at                 AS \"updatedAt\";\n",
+        "options": {
+          "queryReplacement": "={{ [$json.requestId, String($execution.id), 'GRADE_GUIDE_RESOLUTION'] }}"
+        }
       }
     }
   ],
@@ -117,14 +144,25 @@
       "main": [
         [
           {
-            "node": "Validate Extraction ID",
+            "node": "Validate Operational Input",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Validate Extraction ID": {
+    "Validate Operational Input": {
+      "main": [
+        [
+          {
+            "node": "Advance Grade Guide Resolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Advance Grade Guide Resolution": {
       "main": [
         [
           {

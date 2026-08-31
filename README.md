@@ -89,7 +89,8 @@ n8n-cli --version
 │   │   ├── V002__create_grade_guide.sql
 │   │   ├── V003__create_grade_assessment.sql
 │   │   ├── V004__grant_talentai_runtime_permissions.sql
-│   │   └── V005__create_assessment_execution.sql
+│   │   ├── V005__create_assessment_execution.sql
+│   │   └── V006__link_grade_assessment_to_execution.sql
 │   ├── queries
 │   │   ├── Q001__select_active_grade_guide.sql
 │   │   ├── Q002__resolve_grade_engine_input.sql
@@ -98,7 +99,9 @@ n8n-cli --version
 │   │   ├── Q005__advance_assessment_execution.sql
 │   │   ├── Q006__attach_resume_extraction.sql
 │   │   ├── Q007__complete_assessment_execution.sql
-│   │   └── Q008__fail_assessment_execution.sql
+│   │   ├── Q008__fail_assessment_execution.sql
+│   │   ├── Q009__load_completed_assessment_execution.sql
+│   │   └── Q010__persist_operational_grade_assessment.sql
 │   ├── seeds
 │       └── R001__seed_java_backend_grade_guide_v1.sql
 │   └── tests
@@ -115,10 +118,13 @@ n8n-cli --version
 │   ├── apply-database.sh
 │   ├── bootstrap-local.sh
 │   ├── build-phase1-release-package.sh
+│   ├── build-step3b-upgrade-package.sh
 │   ├── create-local-env.sh
 │   ├── export-phase1-workflows.sh
 │   ├── test-assessment-execution-contract.sh
 │   ├── test-assessment-execution-queries.sh
+│   ├── test-phase1-operational-workflows.sh
+│   ├── transform-phase1-step3b.mjs
 │   └── verify-phase1.sh
 └── workflows
     └── phase-1
@@ -318,7 +324,8 @@ docker compose exec -T postgres sh -c '
 3. ایجاد Role محدود `talentai_app`؛
 4. اجرای تمام فایل‌های `database/migrations`؛
 5. اعطای Permissionهای پایه از طریق `V004` و Permissionهای Execution Contract از طریق `V005`؛
-6. اجرای Seedهای idempotent موجود در `database/seeds`.
+6. اتصال یکتای Assessment به Request از طریق `V006`؛
+7. اجرای Seedهای idempotent موجود در `database/seeds`.
 
 Volumeهای زیر داده‌ها را بین Recreate کانتینرها نگه می‌دارند:
 
@@ -704,14 +711,14 @@ TalentAI n8n Local
 
 ## قرارداد عملیاتی اجرای ارزیابی
 
-Migration `V005` زیرساخت گام سوم را بدون تغییر Happy Path نسخه `v1.0.0` اضافه می‌کند. هر درخواست با `request_id` یکتا و `input_fingerprint` ثبت می‌شود و فقط یکی از وضعیت‌های زیر را دارد:
+Migration `V005` چرخه اجرای عملیاتی را ایجاد می‌کند و `V006` هر Assessment عملیاتی را با `request_id` یکتا به همان چرخه متصل می‌کند. این اتصال از ایجاد Assessment دوم در Retry پس از یک قطع‌شدن بین Persistence و Completion جلوگیری می‌کند. هر درخواست با `request_id` یکتا و `input_fingerprint` ثبت می‌شود و فقط یکی از وضعیت‌های زیر را دارد:
 
 ```text
 RUNNING -> COMPLETED
 RUNNING -> FAILED -> RUNNING (only when retryable)
 ```
 
-Stageهای مجاز از `INTAKE` تا `ASSESSMENT_PERSISTENCE` فقط رو به جلو حرکت می‌کنند. Queryهای `Q004` تا `Q008` عملیات Claim، تغییر Stage، اتصال Extraction، Completion و Failure را به‌صورت اتمیک انجام می‌دهند. خروجی Claim یکی از وضعیت‌های پایدار زیر است:
+Stageهای مجاز از `INTAKE` تا `ASSESSMENT_PERSISTENCE` فقط رو به جلو حرکت می‌کنند. Queryهای `Q004` تا `Q008` عملیات Claim، تغییر Stage، اتصال Extraction، Completion و Failure را به‌صورت اتمیک انجام می‌دهند. `Q009` نتیجه تکمیل‌شده را برای Replay می‌خواند و `Q010` Assessment را نسبت به `request_id` به‌صورت idempotent ذخیره می‌کند. خروجی Claim یکی از وضعیت‌های پایدار زیر است:
 
 ```text
 CLAIMED_NEW
@@ -729,9 +736,72 @@ Failure فقط با Category و Code پایدار و پیام کوتاه و پا
 ```bash
 ./scripts/test-assessment-execution-contract.sh
 ./scripts/test-assessment-execution-queries.sh
+./scripts/test-phase1-operational-workflows.sh
 ```
 
-تست نخست Schema، Constraint، Lifecycle و Permissionها را کنترل می‌کند. تست دوم خود Queryهای Runtime را با سناریوهای Claim، Duplicate، Conflict، Completion، Failure و Retry اجرا می‌کند. اتصال این قرارداد به Nodeهای TAI-01، TAI-02 و TAI-03 در مرحله بعدی گام سوم انجام می‌شود.
+تست نخست Schema، Constraint، Lifecycle و Permissionها را کنترل می‌کند. تست دوم Queryهای Runtime را با سناریوهای Claim، Duplicate، Conflict، Persistence idempotent، Completion، Replay، Failure و Retry اجرا می‌کند. تست سوم اتصال Queryها و Code nodeها به TAI-01، TAI-02 و TAI-03، مسیرهای branch و idempotent بودن Transformer را بررسی می‌کند.
+
+قرارداد عملیاتی در Workflowها به این شکل متصل است:
+
+- TAI-01 پس از استخراج متن PDF و پیش از فراخوانی AI، Request را Claim می‌کند؛
+- `CLAIMED_RETRY` در صورت وجود Extraction قبلی، مرحله Profile Extraction را تکرار نمی‌کند؛
+- `COMPLETED_REPLAY` نتیجه ذخیره‌شده را بدون فراخوانی AI برمی‌گرداند؛
+- TAI-02 و TAI-03، `requestId`، Execution ریشه و Attempt را حمل و Stageها را ثبت می‌کنند؛
+- TAI-03 ذخیره Assessment و Completion چرخه اجرا را به Request متصل می‌کند.
+
+Form یک فیلد اختیاری `requestId` دارد. در اجرای اول آن را خالی بگذارید و شناسه بازگشتی را نگه دارید. برای Replay یا Retry امن، همان شناسه و دقیقاً همان Resume، Position، Target Grade و Job Description را ارسال کنید. استفاده از همان شناسه با ورودی متفاوت به `IDEMPOTENCY_CONFLICT` منجر می‌شود.
+
+### ارتقای سه Workflow موجود بدون حذف Credentialها
+
+ابتدا Migrationها و تست‌ها را اجرا کنید:
+
+```bash
+./scripts/apply-database.sh
+./scripts/test-assessment-execution-contract.sh
+./scripts/test-assessment-execution-queries.sh
+./scripts/test-phase1-operational-workflows.sh
+```
+
+سپس Package ارتقا را از سه Workflow فعلی محیط بسازید. Transformer، Credential referenceهای موجود را نگه می‌دارد و Source تبدیل‌شده را با JSONهای commit‌شده مقایسه می‌کند:
+
+```bash
+./scripts/build-step3b-upgrade-package.sh
+```
+
+Package خروجی خصوصی است و نباید commit یا منتشر شود:
+
+```text
+exports/private/TalentAI-phase-1-step3.1B.n8np
+```
+
+آن را در همان Projectی Import کنید که سه Workflow فعلی را در اختیار دارد:
+
+```bash
+TALENTAI_PROJECT_ID='<existing-n8n-project-id>'
+
+n8n-cli package import \
+  --file=exports/private/TalentAI-phase-1-step3.1B.n8np \
+  --project-id="$TALENTAI_PROJECT_ID" \
+  --workflow-conflict-policy=new-version \
+  --workflow-id-policy=source \
+  --workflow-publishing-policy=preserve-published-state \
+  --credential-matching-mode=id-only \
+  --credential-missing-mode=must-preexist \
+  --missing-node-type-mode=fail
+
+unset TALENTAI_PROJECT_ID
+```
+
+خروجی Import باید هر سه Workflow را با `status: updated` و Credentialها را در `matched` نشان دهد؛ `stubbed` باید خالی باشد. پس از Import، Sourceها را از Runtime دوباره Export و Source Drift را کنترل کنید:
+
+```bash
+./scripts/export-phase1-workflows.sh 1.0.0
+./scripts/test-phase1-operational-workflows.sh
+git diff --check
+git status --short --branch
+```
+
+Failure routing سراسری و ثبت خودکار خطاهای Provider، Validation و Orchestration در بسته 3.1C تکمیل می‌شود. تا آن مرحله، این شاخه برای Smoke Test موفق، Replay و Retry کنترل‌شده است و هنوز Production-ready محسوب نمی‌شود.
 
 ## Export کردن Sourceهای Workflow
 

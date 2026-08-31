@@ -11,6 +11,8 @@ DECLARE
     actual_status VARCHAR(30);
     actual_stage VARCHAR(50);
     actual_failure_code VARCHAR(100);
+    operational_request_column_count INTEGER;
+    operational_request_constraint_count INTEGER;
 BEGIN
     SELECT id
     INTO STRICT v_active_guide_id
@@ -256,6 +258,32 @@ BEGIN
     ) THEN
         RAISE EXCEPTION
             'talentai_app is missing assessment_execution runtime privileges';
+    END IF;
+
+    SELECT count(*)
+    INTO operational_request_column_count
+    FROM information_schema.columns
+    WHERE table_schema = 'talentai'
+      AND table_name = 'grade_assessment'
+      AND column_name = 'request_id'
+      AND data_type = 'uuid';
+
+    IF operational_request_column_count <> 1 THEN
+        RAISE EXCEPTION
+            'grade_assessment.request_id operational link is missing';
+    END IF;
+
+    SELECT count(*)
+    INTO operational_request_constraint_count
+    FROM pg_constraint
+    WHERE conrelid = 'talentai.grade_assessment'::regclass
+      AND conname = 'fk_grade_assessment_execution'
+      AND contype = 'f';
+
+    IF operational_request_constraint_count <> 1
+       OR to_regclass('talentai.ux_grade_assessment_request') IS NULL THEN
+        RAISE EXCEPTION
+            'grade_assessment request FK or unique index is missing';
     END IF;
 
     RAISE NOTICE 'Assessment execution contract assertions passed.';

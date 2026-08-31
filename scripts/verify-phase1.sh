@@ -21,10 +21,14 @@ required_operational_files=(
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q006__attach_resume_extraction.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q007__complete_assessment_execution.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q008__fail_assessment_execution.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q009__load_completed_assessment_execution.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q010__persist_operational_grade_assessment.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V006__link_grade_assessment_to_execution.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T001__assessment_execution_contract.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T002__assessment_execution_queries.sql"
   "$TALENTAI_SCRIPT_DIR/test-assessment-execution-contract.sh"
   "$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
+  "$TALENTAI_SCRIPT_DIR/test-phase1-operational-workflows.sh"
 )
 
 for required_workflow_file in "${required_workflow_files[@]}"; do
@@ -305,5 +309,6 @@ SQL
 
 "$TALENTAI_SCRIPT_DIR/test-assessment-execution-contract.sh"
 "$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
+"$TALENTAI_SCRIPT_DIR/test-phase1-operational-workflows.sh"
 
 echo 'TalentAI Phase 1 repository and runtime verification passed.'

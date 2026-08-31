@@ -14,6 +14,8 @@ required_files=(
   "$TALENTAI_QUERY_DIR/Q006__attach_resume_extraction.sql"
   "$TALENTAI_QUERY_DIR/Q007__complete_assessment_execution.sql"
   "$TALENTAI_QUERY_DIR/Q008__fail_assessment_execution.sql"
+  "$TALENTAI_QUERY_DIR/Q009__load_completed_assessment_execution.sql"
+  "$TALENTAI_QUERY_DIR/Q010__persist_operational_grade_assessment.sql"
   "$TALENTAI_TEST_BODY"
 )
 
@@ -124,6 +126,70 @@ RETURNS TABLE (
   "startedAt" TIMESTAMP WITH TIME ZONE,
   "failedAt" TIMESTAMP WITH TIME ZONE
 )' "$TALENTAI_QUERY_DIR/Q008__fail_assessment_execution.sql"
+
+  emit_sql_function '
+CREATE FUNCTION pg_temp.load_completed_assessment_execution(
+  UUID
+)
+RETURNS TABLE (
+  "requestId" UUID,
+  "attemptCount" INTEGER,
+  "executionStatus" VARCHAR,
+  "startedAt" TIMESTAMP WITH TIME ZONE,
+  "completedAt" TIMESTAMP WITH TIME ZONE,
+  "assessmentId" UUID,
+  "extractionId" UUID,
+  "gradeGuideId" UUID,
+  "gradeGuideVersion" VARCHAR,
+  "targetGradeCode" VARCHAR,
+  "scoringModel" VARCHAR,
+  "promptVersion" VARCHAR,
+  "engineVersion" VARCHAR,
+  "dimensionAssessments" JSONB,
+  "overallScore" NUMERIC,
+  "minimumOverallScore" NUMERIC,
+  "thresholdMet" BOOLEAN,
+  "mandatoryDimensionsMet" BOOLEAN,
+  decision VARCHAR,
+  "reviewReasons" JSONB,
+  "modelWarnings" JSONB,
+  "assessmentSummary" TEXT,
+  "assessmentStatus" VARCHAR,
+  "assessmentCreatedAt" TIMESTAMP WITH TIME ZONE,
+  "positionCode" VARCHAR,
+  "jobDescription" TEXT,
+  candidate JSONB
+)' "$TALENTAI_QUERY_DIR/Q009__load_completed_assessment_execution.sql"
+
+  emit_sql_function '
+CREATE FUNCTION pg_temp.persist_operational_grade_assessment(
+  UUID, TEXT, UUID, UUID, TEXT, TEXT, TEXT, TEXT, TEXT,
+  JSONB, NUMERIC, NUMERIC, BOOLEAN, BOOLEAN, TEXT, JSONB, JSONB, TEXT
+)
+RETURNS TABLE (
+  "requestId" UUID,
+  "assessmentId" UUID,
+  "workflowExecutionId" VARCHAR,
+  "extractionId" UUID,
+  "gradeGuideId" UUID,
+  "gradeGuideVersion" VARCHAR,
+  "targetGradeCode" VARCHAR,
+  "scoringModel" VARCHAR,
+  "promptVersion" VARCHAR,
+  "engineVersion" VARCHAR,
+  "dimensionAssessments" JSONB,
+  "overallScore" NUMERIC,
+  "minimumOverallScore" NUMERIC,
+  "thresholdMet" BOOLEAN,
+  "mandatoryDimensionsMet" BOOLEAN,
+  decision VARCHAR,
+  "reviewReasons" JSONB,
+  "modelWarnings" JSONB,
+  "assessmentSummary" TEXT,
+  status VARCHAR,
+  "createdAt" TIMESTAMP WITH TIME ZONE,
+  "wasInserted" BOOLEAN
+)' "$TALENTAI_QUERY_DIR/Q010__persist_operational_grade_assessment.sql"
 
   sed -n '1,$p' "$TALENTAI_TEST_BODY"
   printf '%s\n' 'ROLLBACK;'

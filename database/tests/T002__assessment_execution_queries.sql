@@ -3,7 +3,7 @@ DECLARE
     v_completed_request_id UUID := '40000000-0000-4000-8000-000000000001';
     v_retry_request_id UUID := '40000000-0000-4000-8000-000000000002';
     v_extraction_id UUID := '50000000-0000-4000-8000-000000000001';
-    v_assessment_id UUID := '60000000-0000-4000-8000-000000000001';
+    v_assessment_id UUID;
     v_active_guide_id UUID;
     v_result RECORD;
 BEGIN
@@ -38,51 +38,6 @@ BEGIN
         'Synthetic rollback-only query contract job description.',
         'EXTRACTED',
         '1.0'
-    );
-
-    INSERT INTO talentai.grade_assessment
-    (
-        id,
-        workflow_execution_id,
-        extraction_id,
-        grade_guide_id,
-        grade_guide_version,
-        target_grade_code,
-        scoring_model,
-        prompt_version,
-        engine_version,
-        dimension_assessments,
-        overall_score,
-        minimum_overall_score,
-        threshold_met,
-        mandatory_dimensions_met,
-        decision,
-        review_reasons,
-        model_warnings,
-        assessment_summary,
-        status
-    )
-    VALUES
-    (
-        v_assessment_id,
-        'query-contract-assessment-1',
-        v_extraction_id,
-        v_active_guide_id,
-        '1.0.0',
-        'MID',
-        'query-contract-model',
-        '1.0',
-        '1.0',
-        '[{"code":"QUERY_CONTRACT"}]'::JSONB,
-        70,
-        60,
-        TRUE,
-        TRUE,
-        'MEETS_TARGET',
-        '[]'::JSONB,
-        '[]'::JSONB,
-        'Synthetic rollback-only query contract assessment.',
-        'COMPLETED'
     );
 
     SET LOCAL ROLE talentai_app;
@@ -194,6 +149,70 @@ BEGIN
 
     SELECT *
     INTO STRICT v_result
+    FROM pg_temp.persist_operational_grade_assessment(
+        v_completed_request_id,
+        'query-contract-assessment-1',
+        v_extraction_id,
+        v_active_guide_id,
+        '1.0.0',
+        'MID',
+        'query-contract-model',
+        '1.0',
+        '1.0',
+        '[{"code":"QUERY_CONTRACT"}]'::JSONB,
+        70,
+        60,
+        TRUE,
+        TRUE,
+        'MEETS_TARGET',
+        '[]'::JSONB,
+        '[]'::JSONB,
+        'Synthetic rollback-only query contract assessment.'
+    );
+
+    v_assessment_id := v_result."assessmentId";
+
+    IF v_result."requestId" <> v_completed_request_id
+       OR v_result."wasInserted" <> TRUE THEN
+        RAISE EXCEPTION
+            'Operational assessment insert assertion failed: request %, inserted %',
+            v_result."requestId",
+            v_result."wasInserted";
+    END IF;
+
+    SELECT *
+    INTO STRICT v_result
+    FROM pg_temp.persist_operational_grade_assessment(
+        v_completed_request_id,
+        'query-contract-assessment-retry',
+        v_extraction_id,
+        v_active_guide_id,
+        '1.0.0',
+        'MID',
+        'query-contract-model',
+        '1.0',
+        '1.0',
+        '[{"code":"QUERY_CONTRACT"}]'::JSONB,
+        70,
+        60,
+        TRUE,
+        TRUE,
+        'MEETS_TARGET',
+        '[]'::JSONB,
+        '[]'::JSONB,
+        'Synthetic rollback-only query contract assessment.'
+    );
+
+    IF v_result."assessmentId" <> v_assessment_id
+       OR v_result."wasInserted" <> FALSE THEN
+        RAISE EXCEPTION
+            'Operational assessment replay assertion failed: assessment %, inserted %',
+            v_result."assessmentId",
+            v_result."wasInserted";
+    END IF;
+
+    SELECT *
+    INTO STRICT v_result
     FROM pg_temp.complete_assessment_execution(
         v_completed_request_id,
         'query-contract-grade-1',
@@ -226,6 +245,24 @@ BEGIN
             'Completed replay assertion failed: status %, continue %',
             v_result."claimStatus",
             v_result."canContinue";
+    END IF;
+
+    SELECT *
+    INTO STRICT v_result
+    FROM pg_temp.load_completed_assessment_execution(
+        v_completed_request_id
+    );
+
+    IF v_result."assessmentId" <> v_assessment_id
+       OR v_result."extractionId" <> v_extraction_id
+       OR v_result."executionStatus" <> 'COMPLETED'
+       OR v_result."decision" <> 'MEETS_TARGET'
+       OR v_result."positionCode" <> 'JAVA_BACKEND' THEN
+        RAISE EXCEPTION
+            'Completed result load assertion failed: assessment %, execution %, decision %',
+            v_result."assessmentId",
+            v_result."executionStatus",
+            v_result.decision;
     END IF;
 
     SELECT *
