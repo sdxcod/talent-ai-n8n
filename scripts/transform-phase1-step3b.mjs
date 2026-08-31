@@ -92,6 +92,13 @@ const codeNode = (name, id, position, jsCode) => ({
   name,
 });
 
+const failureCode = (source, definition) =>
+  `const failureDefinition = ${JSON.stringify(definition, null, 2)};\n${code(source)}`;
+
+const enableErrorOutput = (node) => {
+  node.onError = 'continueErrorOutput';
+};
+
 const ifNode = (name, id, position, expression) => ({
   parameters: {
     conditions: {
@@ -142,9 +149,20 @@ const mainConnection = (node, index = 0) => ({
 const transformTai01 = () => {
   const form = updateNode('On form submission', (node) => {
     const fields = node.parameters.formFields.values;
+    const requestIdField = fields.find(
+      (field) => field.fieldName === 'requestId'
+    );
 
-    if (!fields.some((field) => field.fieldName === 'requestId')) {
+    if (!requestIdField) {
       fields.unshift({
+        fieldLabel: 'شناسه درخواست (اختیاری برای تکرار امن)',
+        fieldType: 'text',
+        fieldName: 'requestId',
+        placeholder: 'UUID دریافتی از اجرای قبلی',
+        requiredField: false,
+      });
+    } else {
+      Object.assign(requestIdField, {
         fieldLabel: 'شناسه درخواست (اختیاری برای تکرار امن)',
         fieldType: 'text',
         fieldName: 'requestId',
@@ -159,16 +177,19 @@ const transformTai01 = () => {
   updateNode('Validate Assessment Intake', (node) => {
     node.parameters.jsCode = code('tai01-validate-assessment-intake');
     node.position = [-1184, 464];
+    enableErrorOutput(node);
   });
 
   updateNode('Extract from File', (node) => {
     node.position = [-960, 464];
+    enableErrorOutput(node);
   });
 
   updateNode('Extract Structured Candidate Profile', (node) => {
     node.parameters.text =
       "={{ $('Extract from File').first().json.text }}";
     node.position = [32, 224];
+    enableErrorOutput(node);
   });
 
   updateNode('OpenAI Chat Model', (node) => {
@@ -189,12 +210,13 @@ const transformTai01 = () => {
           "workflowExecutionId: String($execution.id),\n        requestId: claim.requestId,\n        attemptCount: Number(claim.attemptCount),\n        sourceFileName:"
         );
     }
-    delete node.onError;
+    enableErrorOutput(node);
     node.position = [256, 224];
   });
 
   updateNode('Save Resume Extraction', (node) => {
     node.position = [480, 224];
+    enableErrorOutput(node);
   });
 
   updateNode('Resolve Grade Engine Input', (node) => {
@@ -226,15 +248,18 @@ const transformTai01 = () => {
       attemptToConvertTypes: false,
       convertFieldsToString: false,
     };
+    enableErrorOutput(node);
   });
 
   updateNode('Run Deterministic Grade Engine', (node) => {
     node.position = [1600, 224];
+    enableErrorOutput(node);
   });
 
   updateNode('Build TalentAI Assessment Result', (node) => {
     node.parameters.jsCode = code('tai01-build-assessment-result');
     node.position = [1824, 224];
+    enableErrorOutput(node);
   });
 
   removeNode('Alert message');
@@ -244,6 +269,98 @@ const transformTai01 = () => {
     'a018080b-0760-47b6-90f5-a14a28294011',
     [-736, 464],
     code('tai01-build-assessment-claim')
+  ));
+
+  const failureRoutes = [
+    ['Profile Extraction Failure', '405fa194-2a30-44ce-89f4-b4ef79173901', [256, -144], {
+      category: 'PROVIDER', code: 'PROFILE_EXTRACTION_PROVIDER_FAILED',
+      message: 'Candidate profile extraction provider failed; private payload omitted.', retryable: true,
+    }],
+    ['Profile Validation Failure', '4160b2a5-3b41-45df-9a05-c5f08a284012', [480, -144], {
+      category: 'VALIDATION', code: 'PROFILE_SCHEMA_VALIDATION_FAILED',
+      message: 'Candidate profile did not satisfy the required schema.', retryable: false,
+    }],
+    ['Extraction Persistence Failure', '4271c3b6-4c52-46e0-ab16-d6019b395123', [704, -144], {
+      category: 'PERSISTENCE', code: 'RESUME_EXTRACTION_PERSISTENCE_FAILED',
+      message: 'Resume extraction could not be persisted.', retryable: true,
+    }],
+    ['Extraction Attachment Failure', '4382d4c7-5d63-47f1-bc27-e712ac4a6234', [928, -144], {
+      category: 'PERSISTENCE', code: 'RESUME_EXTRACTION_ATTACHMENT_FAILED',
+      message: 'Resume extraction could not be attached to the assessment execution.', retryable: true,
+    }],
+    ['Grade Guide Failure', '4493e5d8-6e74-4802-cd38-f823bd5b7345', [1376, -144], {
+      category: 'CONFIGURATION', code: 'GRADE_GUIDE_RESOLUTION_FAILED',
+      message: 'The active grade guide could not be resolved.', retryable: false,
+    }],
+    ['Grade Engine Failure', '45a4f6e9-7f85-4913-de49-a934ce6c8456', [1600, -144], {
+      category: 'PROVIDER', code: 'EVIDENCE_SCORING_FAILED',
+      message: 'Evidence scoring failed; provider payload omitted.', retryable: true,
+    }],
+    ['Result Assembly Failure', '46b507fa-8096-4a24-ef5a-ba45df7d9567', [1824, -144], {
+      category: 'ORCHESTRATION', code: 'ASSESSMENT_RESULT_ASSEMBLY_FAILED',
+      message: 'The final assessment result could not be assembled.', retryable: true,
+    }],
+  ];
+
+  for (const [name, id, position, definition] of failureRoutes) {
+    upsertNode(codeNode(
+      name, id, position,
+      failureCode('tai01-classify-assessment-failure', definition)
+    ));
+  }
+
+  upsertNode(codeNode(
+    'Intake Validation Failure',
+    '47c6180b-91a7-4b35-f06b-cb56e08ea678',
+    [-1184, 720],
+    failureCode('tai01-classify-unclaimed-failure', {
+      category: 'VALIDATION', code: 'ASSESSMENT_INTAKE_VALIDATION_FAILED',
+      message: 'Assessment intake did not satisfy the required contract.', retryable: false,
+    })
+  ));
+
+  upsertNode(codeNode(
+    'Resume File Failure',
+    '48d7291c-a2b8-4c46-817c-dc67f19fb789',
+    [-960, 720],
+    failureCode('tai01-classify-unclaimed-failure', {
+      category: 'VALIDATION', code: 'RESUME_FILE_EXTRACTION_FAILED',
+      message: 'The submitted resume file could not be read.', retryable: false,
+    })
+  ));
+
+  upsertNode(postgresNode(
+    'Record Assessment Failure',
+    '49e83a2d-b3c9-4d57-928d-ed7802a0c890',
+    [1152, -368],
+    query('Q008__fail_assessment_execution'),
+    '={{ [$json.requestId, $json.workflowExecutionId, $json.currentStage, $json.failureCategory, $json.failureCode, $json.failureMessage, $json.retryable] }}'
+  ));
+  enableErrorOutput(findNode('Record Assessment Failure'));
+
+  upsertNode(codeNode(
+    'Build Failed Assessment Result',
+    '4af94b3e-c4da-4e68-a39e-fe8913b1d901',
+    [1376, -368],
+    code('tai01-build-failed-assessment-result')
+  ));
+  upsertNode(codeNode(
+    'Build Failure Recording Fallback',
+    '4b0a5c4f-d5eb-4f79-b4af-0f9a24c2ea12',
+    [1376, -240],
+    code('tai01-build-failure-recording-fallback')
+  ));
+  upsertNode(codeNode(
+    'Build Unrecorded Failure Result',
+    '4c1b6d50-e6fc-408a-85b0-10ab35d3fb23',
+    [-736, 720],
+    code('tai01-build-unrecorded-failure-result')
+  ));
+  upsertNode(codeNode(
+    'Build Rejected Assessment Result',
+    '4d2c7e61-f70d-419b-96c1-21bc46e40c34',
+    [256, 816],
+    code('tai01-build-rejected-assessment-result')
   ));
 
   upsertNode(postgresNode(
@@ -282,6 +399,7 @@ const transformTai01 = () => {
     query('Q006__attach_resume_extraction'),
     "={{ [$('Claim Assessment Execution').first().json.requestId, String($execution.id), $json.id] }}"
   ));
+  enableErrorOutput(findNode('Attach Resume Extraction'));
 
   upsertNode(codeNode(
     'Prepare Grading Request',
@@ -314,8 +432,8 @@ const transformTai01 = () => {
 
   workflow.connections = {
     'On form submission': { main: [[mainConnection('Validate Assessment Intake')]] },
-    'Validate Assessment Intake': { main: [[mainConnection('Extract from File')]] },
-    'Extract from File': { main: [[mainConnection('Build Assessment Claim')]] },
+    'Validate Assessment Intake': { main: [[mainConnection('Extract from File')], [mainConnection('Intake Validation Failure')]] },
+    'Extract from File': { main: [[mainConnection('Build Assessment Claim')], [mainConnection('Resume File Failure')]] },
     'Build Assessment Claim': { main: [[mainConnection('Claim Assessment Execution')]] },
     'Claim Assessment Execution': { main: [[mainConnection('Claim Can Continue?')]] },
     'Claim Can Continue?': {
@@ -331,7 +449,7 @@ const transformTai01 = () => {
       ],
     },
     'Extract Structured Candidate Profile': {
-      main: [[mainConnection('Validate Candidate Profile')]],
+      main: [[mainConnection('Validate Candidate Profile')], [mainConnection('Profile Extraction Failure')]],
     },
     'OpenAI Chat Model': {
       ai_languageModel: [[{
@@ -341,17 +459,18 @@ const transformTai01 = () => {
       }]],
     },
     'Validate Candidate Profile': {
-      main: [[mainConnection('Save Resume Extraction')]],
+      main: [[mainConnection('Save Resume Extraction')], [mainConnection('Profile Validation Failure')]],
     },
-    'Save Resume Extraction': { main: [[mainConnection('Attach Resume Extraction')]] },
-    'Attach Resume Extraction': { main: [[mainConnection('Prepare Grading Request')]] },
+    'Save Resume Extraction': { main: [[mainConnection('Attach Resume Extraction')], [mainConnection('Extraction Persistence Failure')]] },
+    'Attach Resume Extraction': { main: [[mainConnection('Prepare Grading Request')], [mainConnection('Extraction Attachment Failure')]] },
     'Prepare Grading Request': { main: [[mainConnection('Resolve Grade Engine Input')]] },
-    'Resolve Grade Engine Input': { main: [[mainConnection('Run Deterministic Grade Engine')]] },
-    'Run Deterministic Grade Engine': { main: [[mainConnection('Build TalentAI Assessment Result')]] },
+    'Resolve Grade Engine Input': { main: [[mainConnection('Run Deterministic Grade Engine')], [mainConnection('Grade Guide Failure')]] },
+    'Run Deterministic Grade Engine': { main: [[mainConnection('Build TalentAI Assessment Result')], [mainConnection('Grade Engine Failure')]] },
+    'Build TalentAI Assessment Result': { main: [[], [mainConnection('Result Assembly Failure')]] },
     'Completed Replay?': {
       main: [
         [mainConnection('Load Completed Assessment')],
-        [mainConnection('Reject Assessment Claim')],
+        [mainConnection('Build Rejected Assessment Result')],
       ],
     },
     'Load Completed Assessment': {
@@ -360,6 +479,16 @@ const transformTai01 = () => {
     'Build Replayed Assessment Result': {
       main: [[mainConnection('Build TalentAI Assessment Result')]],
     },
+    'Intake Validation Failure': { main: [[mainConnection('Build Unrecorded Failure Result')]] },
+    'Resume File Failure': { main: [[mainConnection('Build Unrecorded Failure Result')]] },
+    'Profile Extraction Failure': { main: [[mainConnection('Record Assessment Failure')]] },
+    'Profile Validation Failure': { main: [[mainConnection('Record Assessment Failure')]] },
+    'Extraction Persistence Failure': { main: [[mainConnection('Record Assessment Failure')]] },
+    'Extraction Attachment Failure': { main: [[mainConnection('Record Assessment Failure')]] },
+    'Grade Guide Failure': { main: [[mainConnection('Record Assessment Failure')]] },
+    'Grade Engine Failure': { main: [[mainConnection('Record Assessment Failure')]] },
+    'Result Assembly Failure': { main: [[mainConnection('Record Assessment Failure')]] },
+    'Record Assessment Failure': { main: [[mainConnection('Build Failed Assessment Result')], [mainConnection('Build Failure Recording Fallback')]] },
   };
 };
 

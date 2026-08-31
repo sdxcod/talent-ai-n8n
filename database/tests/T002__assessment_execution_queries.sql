@@ -277,10 +277,33 @@ BEGIN
 
     SELECT *
     INTO STRICT v_result
+    FROM pg_temp.advance_assessment_execution(
+        v_retry_request_id,
+        'query-contract-grade-engine-1',
+        'EVIDENCE_SCORING'
+    );
+
+    PERFORM *
+    FROM pg_temp.fail_assessment_execution(
+        v_retry_request_id,
+        'stale-workflow-execution',
+        '',
+        'ORCHESTRATION',
+        'STALE_EXECUTION_FAILURE',
+        'A stale workflow must not own the failure transition.',
+        TRUE
+    );
+
+    IF FOUND THEN
+        RAISE EXCEPTION 'Stale workflow failure transition was unexpectedly accepted';
+    END IF;
+
+    SELECT *
+    INTO STRICT v_result
     FROM pg_temp.fail_assessment_execution(
         v_retry_request_id,
         'query-contract-root-5',
-        'PROFILE_EXTRACTION',
+        '',
         'PROVIDER',
         'PROVIDER_TEMPORARILY_UNAVAILABLE',
         E'Provider request failed.\nPrivate payload omitted.',
@@ -291,10 +314,12 @@ BEGIN
        OR v_result."failureCategory" <> 'PROVIDER'
        OR v_result."failureCode" <> 'PROVIDER_TEMPORARILY_UNAVAILABLE'
        OR v_result."failureMessage" LIKE '%' || chr(10) || '%'
+       OR v_result."currentStage" <> 'EVIDENCE_SCORING'
        OR v_result.retryable <> TRUE THEN
         RAISE EXCEPTION
-            'Failure assertion failed: status %, category %, code %, retryable %',
+            'Failure assertion failed: status %, stage %, category %, code %, retryable %',
             v_result.status,
+            v_result."currentStage",
             v_result."failureCategory",
             v_result."failureCode",
             v_result.retryable;
@@ -322,6 +347,14 @@ BEGIN
             v_result."attemptCount",
             v_result."currentStage",
             v_result."failureCode";
+    END IF;
+
+    IF (
+        SELECT claim_owner_workflow_execution_id
+        FROM talentai.assessment_execution
+        WHERE request_id = v_retry_request_id
+    ) <> 'query-contract-root-6' THEN
+        RAISE EXCEPTION 'Retry did not transfer claim ownership to the new root execution';
     END IF;
 
     RAISE NOTICE 'Assessment execution query assertions passed.';

@@ -20,6 +20,7 @@ upserted AS
         request_id,
         input_fingerprint,
         initial_workflow_execution_id,
+        claim_owner_workflow_execution_id,
         last_workflow_execution_id,
         position_code,
         target_grade_code,
@@ -31,6 +32,7 @@ upserted AS
         input_fingerprint,
         workflow_execution_id,
         workflow_execution_id,
+        workflow_execution_id,
         position_code,
         target_grade_code,
         'RUNNING',
@@ -38,6 +40,14 @@ upserted AS
     FROM supplied
     ON CONFLICT ON CONSTRAINT assessment_execution_pkey
     DO UPDATE SET
+        claim_owner_workflow_execution_id =
+            CASE
+                WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint
+                 AND existing.status = 'FAILED'
+                 AND existing.retryable = TRUE
+                    THEN EXCLUDED.claim_owner_workflow_execution_id
+                ELSE existing.claim_owner_workflow_execution_id
+            END,
         last_workflow_execution_id =
             CASE
                 WHEN existing.input_fingerprint = EXCLUDED.input_fingerprint

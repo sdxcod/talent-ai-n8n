@@ -801,7 +801,9 @@ git diff --check
 git status --short --branch
 ```
 
-Failure routing سراسری و ثبت خودکار خطاهای Provider، Validation و Orchestration در بسته 3.1C تکمیل می‌شود. تا آن مرحله، این شاخه برای Smoke Test موفق، Replay و Retry کنترل‌شده است و هنوز Production-ready محسوب نمی‌شود.
+بسته 3.1C مسیر خطای سراسری را در Workflow ریشه اضافه می‌کند. خطاهای بعد از Claim با Category و Code پایدار در `assessment_execution` ثبت می‌شوند؛ پیام ذخیره‌شده شامل رزومه، Prompt، پاسخ خام Provider یا Credential نیست. خطاهای پیش از Claim و شکست خود عملیات ثبت خطا با `Failure Recorded: NO` و شناسهٔ Workflow execution برگردانده می‌شوند تا اپراتور بتواند آن‌ها را پیگیری کند.
+
+Retry فقط برای Failureهای موقت Provider و Failureهای قابل‌بازیابی Persistence/Orchestration فعال است. Validation و Configuration غیرقابل Retry هستند. Query ثبت Failure همچنین مالکیت `last_workflow_execution_id` را کنترل می‌کند تا اجرای قدیمی نتواند وضعیت Claim جدید را تغییر دهد. این مرحله resilience پایهٔ MVP را فراهم می‌کند، اما سیاست timeout، retry خودکار با backoff و alerting عملیاتی در مراحل بعد تکمیل می‌شوند.
 
 ## Export کردن Sourceهای Workflow
 

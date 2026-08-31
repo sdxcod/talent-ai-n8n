@@ -37,6 +37,11 @@ jq -e '
   and any(.nodes[]; .name == "Load Completed Assessment")
   and any(.nodes[]; .name == "Build Replayed Assessment Result")
   and any(.nodes[]; .name == "Reject Assessment Claim")
+  and any(.nodes[]; .name == "Record Assessment Failure")
+  and any(.nodes[]; .name == "Build Failed Assessment Result")
+  and any(.nodes[]; .name == "Build Failure Recording Fallback")
+  and any(.nodes[]; .name == "Build Unrecorded Failure Result")
+  and any(.nodes[]; .name == "Build Rejected Assessment Result")
   and (all(.nodes[]; .name != "Alert message"))
   and (
     .connections["Claim Can Continue?"].main[0][0].node
@@ -57,6 +62,44 @@ jq -e '
   and (
     .connections["Build Replayed Assessment Result"].main[0][0].node
     == "Build TalentAI Assessment Result"
+  )
+  and (
+    .connections["Extract Structured Candidate Profile"].main[1][0].node
+    == "Profile Extraction Failure"
+  )
+  and (
+    .connections["Run Deterministic Grade Engine"].main[1][0].node
+    == "Grade Engine Failure"
+  )
+  and (
+    .connections["Record Assessment Failure"].main[0][0].node
+    == "Build Failed Assessment Result"
+  )
+  and (
+    .connections["Record Assessment Failure"].main[1][0].node
+    == "Build Failure Recording Fallback"
+  )
+  and (
+    [
+      "Validate Assessment Intake",
+      "Extract from File",
+      "Extract Structured Candidate Profile",
+      "Validate Candidate Profile",
+      "Save Resume Extraction",
+      "Attach Resume Extraction",
+      "Resolve Grade Engine Input",
+      "Run Deterministic Grade Engine",
+      "Build TalentAI Assessment Result",
+      "Record Assessment Failure"
+    ] as $error_nodes
+    | (
+        [
+          .nodes[]
+          | select(.name as $name | $error_nodes | index($name))
+          | select(.onError == "continueErrorOutput")
+        ]
+        | length
+      ) == ($error_nodes | length)
   )
 ' "$TALENTAI_TAI01" >/dev/null
 
@@ -145,6 +188,11 @@ assert_embedded_query \
   'database/queries/Q009__load_completed_assessment_execution.sql'
 
 assert_embedded_query \
+  "$TALENTAI_TAI01" \
+  'Record Assessment Failure' \
+  'database/queries/Q008__fail_assessment_execution.sql'
+
+assert_embedded_query \
   "$TALENTAI_TAI02" \
   'Advance Grade Guide Resolution' \
   'database/queries/Q005__advance_assessment_execution.sql'
@@ -193,6 +241,26 @@ assert_embedded_code \
   "$TALENTAI_TAI01" \
   'Build TalentAI Assessment Result' \
   'workflows/phase-1/code/tai01-build-assessment-result.js'
+
+assert_embedded_code \
+  "$TALENTAI_TAI01" \
+  'Build Failed Assessment Result' \
+  'workflows/phase-1/code/tai01-build-failed-assessment-result.js'
+
+assert_embedded_code \
+  "$TALENTAI_TAI01" \
+  'Build Failure Recording Fallback' \
+  'workflows/phase-1/code/tai01-build-failure-recording-fallback.js'
+
+assert_embedded_code \
+  "$TALENTAI_TAI01" \
+  'Build Unrecorded Failure Result' \
+  'workflows/phase-1/code/tai01-build-unrecorded-failure-result.js'
+
+assert_embedded_code \
+  "$TALENTAI_TAI01" \
+  'Build Rejected Assessment Result' \
+  'workflows/phase-1/code/tai01-build-rejected-assessment-result.js'
 
 assert_embedded_code \
   "$TALENTAI_TAI02" \

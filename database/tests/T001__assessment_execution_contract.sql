@@ -13,6 +13,7 @@ DECLARE
     actual_failure_code VARCHAR(100);
     operational_request_column_count INTEGER;
     operational_request_constraint_count INTEGER;
+    claim_owner_column_count INTEGER;
 BEGIN
     SELECT id
     INTO STRICT v_active_guide_id
@@ -97,6 +98,7 @@ BEGIN
         request_id,
         input_fingerprint,
         initial_workflow_execution_id,
+        claim_owner_workflow_execution_id,
         last_workflow_execution_id,
         position_code,
         target_grade_code,
@@ -108,6 +110,7 @@ BEGIN
     (
         v_completed_request_id,
         repeat('a', 64),
+        'contract-test-root-1',
         'contract-test-root-1',
         'contract-test-grade-1',
         'JAVA_BACKEND',
@@ -146,6 +149,7 @@ BEGIN
             request_id,
             input_fingerprint,
             initial_workflow_execution_id,
+            claim_owner_workflow_execution_id,
             last_workflow_execution_id,
             position_code,
             target_grade_code,
@@ -156,6 +160,7 @@ BEGIN
         (
             v_completed_request_id,
             repeat('b', 64),
+            'contract-test-duplicate',
             'contract-test-duplicate',
             'contract-test-duplicate',
             'JAVA_BACKEND',
@@ -175,6 +180,7 @@ BEGIN
         request_id,
         input_fingerprint,
         initial_workflow_execution_id,
+        claim_owner_workflow_execution_id,
         last_workflow_execution_id,
         position_code,
         target_grade_code,
@@ -185,6 +191,7 @@ BEGIN
     (
         v_failed_request_id,
         repeat('c', 64),
+        'contract-test-root-2',
         'contract-test-root-2',
         'contract-test-root-2',
         'JAVA_BACKEND',
@@ -225,6 +232,7 @@ BEGIN
             request_id,
             input_fingerprint,
             initial_workflow_execution_id,
+            claim_owner_workflow_execution_id,
             last_workflow_execution_id,
             position_code,
             target_grade_code,
@@ -236,6 +244,7 @@ BEGIN
         (
             v_invalid_request_id,
             repeat('d', 64),
+            'contract-test-invalid',
             'contract-test-invalid',
             'contract-test-invalid',
             'JAVA_BACKEND',
@@ -271,6 +280,19 @@ BEGIN
     IF operational_request_column_count <> 1 THEN
         RAISE EXCEPTION
             'grade_assessment.request_id operational link is missing';
+    END IF;
+
+    SELECT count(*)
+    INTO claim_owner_column_count
+    FROM information_schema.columns
+    WHERE table_schema = 'talentai'
+      AND table_name = 'assessment_execution'
+      AND column_name = 'claim_owner_workflow_execution_id'
+      AND is_nullable = 'NO';
+
+    IF claim_owner_column_count <> 1 THEN
+        RAISE EXCEPTION
+            'assessment_execution claim owner column is missing or nullable';
     END IF;
 
     SELECT count(*)
