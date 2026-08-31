@@ -14,9 +14,29 @@ required_workflow_files=(
   "$TALENTAI_WORKFLOW_DIR/manifest.json"
 )
 
+required_operational_files=(
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V005__create_assessment_execution.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q004__claim_assessment_execution.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q005__advance_assessment_execution.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q006__attach_resume_extraction.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q007__complete_assessment_execution.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q008__fail_assessment_execution.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/tests/T001__assessment_execution_contract.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/tests/T002__assessment_execution_queries.sql"
+  "$TALENTAI_SCRIPT_DIR/test-assessment-execution-contract.sh"
+  "$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
+)
+
 for required_workflow_file in "${required_workflow_files[@]}"; do
   if [ ! -f "$required_workflow_file" ]; then
     echo "Required workflow file is missing: $required_workflow_file" >&2
+    exit 1
+  fi
+done
+
+for required_operational_file in "${required_operational_files[@]}"; do
+  if [ ! -f "$required_operational_file" ]; then
+    echo "Required operational file is missing: $required_operational_file" >&2
     exit 1
   fi
 done
@@ -94,6 +114,7 @@ DECLARE
   grade_count INTEGER;
   total_weight INTEGER;
   missing_runtime_privileges TEXT[];
+  execution_column_count INTEGER;
 BEGIN
   IF to_regclass('talentai.resume_extraction') IS NULL THEN
     RAISE EXCEPTION 'talentai.resume_extraction is missing';
@@ -105,6 +126,43 @@ BEGIN
 
   IF to_regclass('talentai.grade_assessment') IS NULL THEN
     RAISE EXCEPTION 'talentai.grade_assessment is missing';
+  END IF;
+
+  IF to_regclass('talentai.assessment_execution') IS NULL THEN
+    RAISE EXCEPTION 'talentai.assessment_execution is missing';
+  END IF;
+
+  SELECT count(*)
+  INTO execution_column_count
+  FROM information_schema.columns
+  WHERE table_schema = 'talentai'
+    AND table_name = 'assessment_execution'
+    AND column_name IN (
+      'request_id',
+      'input_fingerprint',
+      'initial_workflow_execution_id',
+      'last_workflow_execution_id',
+      'position_code',
+      'target_grade_code',
+      'status',
+      'current_stage',
+      'attempt_count',
+      'extraction_id',
+      'assessment_id',
+      'failure_category',
+      'failure_code',
+      'failure_message',
+      'retryable',
+      'started_at',
+      'updated_at',
+      'completed_at',
+      'failed_at'
+    );
+
+  IF execution_column_count <> 19 THEN
+    RAISE EXCEPTION
+      'assessment_execution contract is incomplete: expected 19 columns, found %',
+      execution_column_count;
   END IF;
 
   SELECT
@@ -187,6 +245,30 @@ BEGIN
           'talentai.grade_assessment',
           'INSERT'
         )
+      ),
+      (
+        'SELECT on talentai.assessment_execution',
+        has_table_privilege(
+          'talentai_app',
+          'talentai.assessment_execution',
+          'SELECT'
+        )
+      ),
+      (
+        'INSERT on talentai.assessment_execution',
+        has_table_privilege(
+          'talentai_app',
+          'talentai.assessment_execution',
+          'INSERT'
+        )
+      ),
+      (
+        'UPDATE on talentai.assessment_execution',
+        has_table_privilege(
+          'talentai_app',
+          'talentai.assessment_execution',
+          'UPDATE'
+        )
       )
   ) AS runtime_privilege(privilege_name, is_granted)
   WHERE NOT COALESCE(is_granted, FALSE);
@@ -220,5 +302,8 @@ SELECT count(*) AS active_guide_count
 FROM talentai.grade_guide
 WHERE status = 'ACTIVE';
 SQL
+
+"$TALENTAI_SCRIPT_DIR/test-assessment-execution-contract.sh"
+"$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
 
 echo 'TalentAI Phase 1 repository and runtime verification passed.'

@@ -32,7 +32,8 @@ docker compose exec -T postgres sh -c '
 SELECT
   to_regclass('talentai.resume_extraction') AS resume_extraction,
   to_regclass('talentai.grade_guide') AS grade_guide,
-  to_regclass('talentai.grade_assessment') AS grade_assessment;
+  to_regclass('talentai.grade_assessment') AS grade_assessment,
+  to_regclass('talentai.assessment_execution') AS assessment_execution;
 SQL
 
 echo 'TalentAI database migrations and reference seeds were applied.'

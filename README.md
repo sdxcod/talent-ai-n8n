@@ -88,13 +88,22 @@ n8n-cli --version
 │   │   ├── V001__create_resume_extraction.sql
 │   │   ├── V002__create_grade_guide.sql
 │   │   ├── V003__create_grade_assessment.sql
-│   │   └── V004__grant_talentai_runtime_permissions.sql
+│   │   ├── V004__grant_talentai_runtime_permissions.sql
+│   │   └── V005__create_assessment_execution.sql
 │   ├── queries
 │   │   ├── Q001__select_active_grade_guide.sql
 │   │   ├── Q002__resolve_grade_engine_input.sql
-│   │   └── Q003__persist_grade_assessment.sql
-│   └── seeds
+│   │   ├── Q003__persist_grade_assessment.sql
+│   │   ├── Q004__claim_assessment_execution.sql
+│   │   ├── Q005__advance_assessment_execution.sql
+│   │   ├── Q006__attach_resume_extraction.sql
+│   │   ├── Q007__complete_assessment_execution.sql
+│   │   └── Q008__fail_assessment_execution.sql
+│   ├── seeds
 │       └── R001__seed_java_backend_grade_guide_v1.sql
+│   └── tests
+│       ├── T001__assessment_execution_contract.sql
+│       └── T002__assessment_execution_queries.sql
 ├── docs
 │   └── releases
 │       └── v1.0.0.md
@@ -108,6 +117,8 @@ n8n-cli --version
 │   ├── build-phase1-release-package.sh
 │   ├── create-local-env.sh
 │   ├── export-phase1-workflows.sh
+│   ├── test-assessment-execution-contract.sh
+│   ├── test-assessment-execution-queries.sh
 │   └── verify-phase1.sh
 └── workflows
     └── phase-1
@@ -306,7 +317,7 @@ docker compose exec -T postgres sh -c '
 2. ایجاد Database مستقل `talentai`؛
 3. ایجاد Role محدود `talentai_app`؛
 4. اجرای تمام فایل‌های `database/migrations`؛
-5. اعطای `USAGE` روی Schema و `SELECT/INSERT`های لازم به `talentai_app` از طریق Migration `V004`؛
+5. اعطای Permissionهای پایه از طریق `V004` و Permissionهای Execution Contract از طریق `V005`؛
 6. اجرای Seedهای idempotent موجود در `database/seeds`.
 
 Volumeهای زیر داده‌ها را بین Recreate کانتینرها نگه می‌دارند:
@@ -332,12 +343,13 @@ n8n_storage
 ./scripts/verify-phase1.sh
 ```
 
-Verification علاوه بر وجود جدول و Grade Guide، مجوزهای واقعی Role زیر را کنترل می‌کند:
+Verification علاوه بر وجود جدول‌ها و Grade Guide، مجوزهای واقعی Role زیر و تست‌های Rollback-safe قرارداد اجرا را کنترل می‌کند:
 
 ```text
 USAGE  -> schema talentai
-SELECT -> resume_extraction, grade_guide, grade_assessment
-INSERT -> resume_extraction, grade_assessment
+SELECT -> resume_extraction, grade_guide, grade_assessment, assessment_execution
+INSERT -> resume_extraction, grade_assessment, assessment_execution
+UPDATE -> assessment_execution
 ```
 
 خروجی نهایی مطلوب:
@@ -676,6 +688,7 @@ TalentAI n8n Local
         -> resume_extraction
         -> grade_guide
         -> grade_assessment
+        -> assessment_execution
 ```
 
 ## مسئولیت جدول‌ها
@@ -685,8 +698,40 @@ TalentAI n8n Local
 | `talentai.resume_extraction` | پروفایل ساخت‌یافته استخراج‌شده، اطلاعات منبع، Model و Schema Version |
 | `talentai.grade_guide` | Grade Guide نسخه‌بندی‌شده، Dimensionها، Weightها و Decision Policy |
 | `talentai.grade_assessment` | Dimension Assessmentها، امتیاز نهایی، نتیجه قواعد قطعی و اطلاعات Audit |
+| `talentai.assessment_execution` | هویت Request، Fingerprint، Stage، Attempt، نتیجه و Failure Contract اجرای ارزیابی |
 
 داده‌های Runtime داخل Volume PostgreSQL قرار دارند و جزئی از commit نیستند. Git فقط Migration، Seed و Queryهای قابل‌بازتولید را نگه می‌دارد.
+
+## قرارداد عملیاتی اجرای ارزیابی
+
+Migration `V005` زیرساخت گام سوم را بدون تغییر Happy Path نسخه `v1.0.0` اضافه می‌کند. هر درخواست با `request_id` یکتا و `input_fingerprint` ثبت می‌شود و فقط یکی از وضعیت‌های زیر را دارد:
+
+```text
+RUNNING -> COMPLETED
+RUNNING -> FAILED -> RUNNING (only when retryable)
+```
+
+Stageهای مجاز از `INTAKE` تا `ASSESSMENT_PERSISTENCE` فقط رو به جلو حرکت می‌کنند. Queryهای `Q004` تا `Q008` عملیات Claim، تغییر Stage، اتصال Extraction، Completion و Failure را به‌صورت اتمیک انجام می‌دهند. خروجی Claim یکی از وضعیت‌های پایدار زیر است:
+
+```text
+CLAIMED_NEW
+CLAIMED_RETRY
+ALREADY_RUNNING
+COMPLETED_REPLAY
+IDEMPOTENCY_CONFLICT
+FAILED_NOT_RETRYABLE
+```
+
+Failure فقط با Category و Code پایدار و پیام کوتاه و پاک‌سازی‌شده ثبت می‌شود؛ متن رزومه، Prompt، پاسخ خام Provider و Credential نباید وارد `failure_message` شوند.
+
+تست‌های زیر داخل Transaction اجرا و در پایان Rollback می‌شوند:
+
+```bash
+./scripts/test-assessment-execution-contract.sh
+./scripts/test-assessment-execution-queries.sh
+```
+
+تست نخست Schema، Constraint، Lifecycle و Permissionها را کنترل می‌کند. تست دوم خود Queryهای Runtime را با سناریوهای Claim، Duplicate، Conflict، Completion، Failure و Retry اجرا می‌کند. اتصال این قرارداد به Nodeهای TAI-01، TAI-02 و TAI-03 در مرحله بعدی گام سوم انجام می‌شود.
 
 ## Export کردن Sourceهای Workflow
 
