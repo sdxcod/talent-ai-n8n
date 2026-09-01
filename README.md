@@ -803,7 +803,31 @@ git status --short --branch
 
 بسته 3.1C مسیر خطای سراسری را در Workflow ریشه اضافه می‌کند. خطاهای بعد از Claim با Category و Code پایدار در `assessment_execution` ثبت می‌شوند؛ پیام ذخیره‌شده شامل رزومه، Prompt، پاسخ خام Provider یا Credential نیست. خطاهای پیش از Claim و شکست خود عملیات ثبت خطا با `Failure Recorded: NO` و شناسهٔ Workflow execution برگردانده می‌شوند تا اپراتور بتواند آن‌ها را پیگیری کند.
 
-Retry فقط برای Failureهای موقت Provider و Failureهای قابل‌بازیابی Persistence/Orchestration فعال است. Validation و Configuration غیرقابل Retry هستند. Query ثبت Failure همچنین مالکیت `last_workflow_execution_id` را کنترل می‌کند تا اجرای قدیمی نتواند وضعیت Claim جدید را تغییر دهد. این مرحله resilience پایهٔ MVP را فراهم می‌کند، اما سیاست timeout، retry خودکار با backoff و alerting عملیاتی در مراحل بعد تکمیل می‌شوند.
+Retry فقط برای Failureهای موقت Provider و Failureهای قابل‌بازیابی Persistence/Orchestration فعال است. Validation و Configuration غیرقابل Retry هستند. Query ثبت Failure همچنین مالکیت `claim_owner_workflow_execution_id` را کنترل می‌کند تا اجرای قدیمی نتواند وضعیت Claim جدید را تغییر دهد. این مرحله resilience پایهٔ MVP را فراهم می‌کند.
+
+### Timeout، Retry محدود و Observability
+
+Workflow ریشه حداکثر ۳۰۰ ثانیه، Grade Guide Resolver حداکثر ۶۰ ثانیه و Grade Engine حداکثر ۲۴۰ ثانیه زمان اجرا دارند. دو Node متصل به Provider حداکثر سه تلاش داخلی با فاصلهٔ ثابت دو ثانیه انجام می‌دهند. تلاش داخلی Node با `attempt_count` متفاوت است؛ این ستون فقط Claim و Retry کامل درخواست را می‌شمارد.
+
+اگر n8n اجرای Workflow را به علت Timeout متوقف کند، اجرای دیتابیسی ممکن است موقتاً `RUNNING` بماند. پیش از Claim بعدی، اجراهایی که بیش از ۳۶۰ ثانیه به‌روزرسانی نشده‌اند با Code پایدار `EXECUTION_TIMEOUT`، Category برابر `ORCHESTRATION` و `retryable = true` منقضی می‌شوند. فاصلهٔ ۶۰ ثانیه‌ای میان Timeout ریشه و stale threshold از منقضی‌شدن اجرای سالم جلوگیری می‌کند.
+
+View زیر وضعیت عملیاتی، مدت اجرا و stale بودن را بدون Resume، Prompt، پاسخ خام Provider یا Credential نمایش می‌دهد:
+
+```text
+talentai.assessment_execution_observability
+```
+
+برای مشاهدهٔ ۲۰ اجرای اخیر:
+
+```bash
+./scripts/show-assessment-executions.sh
+```
+
+برای مشاهدهٔ حداکثر ۵۰ Failure اخیر:
+
+```bash
+./scripts/show-assessment-executions.sh FAILED 50
+```
 
 ## Export کردن Sourceهای Workflow
 

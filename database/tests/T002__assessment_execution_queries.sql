@@ -2,6 +2,7 @@ DO $query_contract_test$
 DECLARE
     v_completed_request_id UUID := '40000000-0000-4000-8000-000000000001';
     v_retry_request_id UUID := '40000000-0000-4000-8000-000000000002';
+    v_stale_request_id UUID := '40000000-0000-4000-8000-000000000003';
     v_extraction_id UUID := '50000000-0000-4000-8000-000000000001';
     v_assessment_id UUID;
     v_active_guide_id UUID;
@@ -355,6 +356,52 @@ BEGIN
         WHERE request_id = v_retry_request_id
     ) <> 'query-contract-root-6' THEN
         RAISE EXCEPTION 'Retry did not transfer claim ownership to the new root execution';
+    END IF;
+
+    SELECT *
+    INTO STRICT v_result
+    FROM pg_temp.claim_assessment_execution(
+        v_stale_request_id::TEXT,
+        'resume-stale|JAVA_BACKEND|MID|job-description',
+        'query-contract-stale-root-1',
+        'JAVA_BACKEND',
+        'MID'
+    );
+
+    UPDATE talentai.assessment_execution
+    SET
+        started_at = now() - INTERVAL '8 minutes',
+        updated_at = now() - INTERVAL '7 minutes'
+    WHERE request_id = v_stale_request_id;
+
+    SELECT *
+    INTO STRICT v_result
+    FROM pg_temp.expire_stale_assessment_executions(360);
+
+    IF v_result."expiredExecutionCount" <> 1 THEN
+        RAISE EXCEPTION
+            'Stale expiration count assertion failed: %',
+            v_result."expiredExecutionCount";
+    END IF;
+
+    SELECT *
+    INTO STRICT v_result
+    FROM pg_temp.claim_assessment_execution(
+        v_stale_request_id::TEXT,
+        'resume-stale|JAVA_BACKEND|MID|job-description',
+        'query-contract-stale-root-2',
+        'JAVA_BACKEND',
+        'MID'
+    );
+
+    IF v_result."claimStatus" <> 'CLAIMED_RETRY'
+       OR v_result."attemptCount" <> 2
+       OR v_result."canContinue" <> TRUE THEN
+        RAISE EXCEPTION
+            'Timed-out execution retry assertion failed: status %, attempt %, continue %',
+            v_result."claimStatus",
+            v_result."attemptCount",
+            v_result."canContinue";
     END IF;
 
     RAISE NOTICE 'Assessment execution query assertions passed.';

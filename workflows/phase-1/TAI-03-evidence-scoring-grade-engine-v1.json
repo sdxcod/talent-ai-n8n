@@ -55,7 +55,10 @@
         "text": "={{ $json.prompt }}",
         "hasOutputParser": true,
         "batching": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "fc3da8c6-99f6-417f-9f66-5053f56c8e80",
@@ -150,55 +153,55 @@
       }
     },
     {
-      "id": "5ea80c9d-c375-4a42-9739-42d561874095",
-      "name": "Advance Evidence Scoring",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        432,
-        -32
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "WITH requested AS\n(\n    SELECT\n        $1::UUID          AS request_id,\n        NULLIF($2, '')    AS workflow_execution_id,\n        UPPER(BTRIM($3))  AS next_stage\n),\nranked AS\n(\n    SELECT\n        requested.*,\n        CASE requested.next_stage\n            WHEN 'INTAKE'                  THEN 0\n            WHEN 'PROFILE_EXTRACTION'      THEN 1\n            WHEN 'GRADE_GUIDE_RESOLUTION'  THEN 2\n            WHEN 'EVIDENCE_SCORING'        THEN 3\n            WHEN 'ASSESSMENT_PERSISTENCE'  THEN 4\n            ELSE -1\n        END AS next_stage_rank\n    FROM requested\n)\nUPDATE talentai.assessment_execution AS execution\nSET\n    last_workflow_execution_id = ranked.workflow_execution_id,\n    current_stage = ranked.next_stage,\n    updated_at = now()\nFROM ranked\nWHERE execution.request_id = ranked.request_id\n  AND execution.status = 'RUNNING'\n  AND ranked.workflow_execution_id IS NOT NULL\n  AND ranked.next_stage_rank >= 0\n  AND ranked.next_stage_rank >=\n      CASE execution.current_stage\n          WHEN 'INTAKE'                  THEN 0\n          WHEN 'PROFILE_EXTRACTION'      THEN 1\n          WHEN 'GRADE_GUIDE_RESOLUTION'  THEN 2\n          WHEN 'EVIDENCE_SCORING'        THEN 3\n          WHEN 'ASSESSMENT_PERSISTENCE'  THEN 4\n          ELSE 99\n      END\nRETURNING\n    execution.request_id                 AS \"requestId\",\n    execution.status,\n    execution.current_stage              AS \"currentStage\",\n    execution.attempt_count              AS \"attemptCount\",\n    execution.updated_at                 AS \"updatedAt\";\n",
         "options": {
           "queryReplacement": "={{ [$json.execution.requestId, String($execution.id), 'EVIDENCE_SCORING'] }}"
         }
-      }
-    },
-    {
-      "id": "6fa768df-a232-4656-b872-4017c59d7ba9",
-      "name": "Advance Assessment Persistence",
+      },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        1552,
+        432,
         -32
       ],
+      "id": "5ea80c9d-c375-4a42-9739-42d561874095",
+      "name": "Advance Evidence Scoring"
+    },
+    {
       "parameters": {
         "operation": "executeQuery",
         "query": "WITH requested AS\n(\n    SELECT\n        $1::UUID          AS request_id,\n        NULLIF($2, '')    AS workflow_execution_id,\n        UPPER(BTRIM($3))  AS next_stage\n),\nranked AS\n(\n    SELECT\n        requested.*,\n        CASE requested.next_stage\n            WHEN 'INTAKE'                  THEN 0\n            WHEN 'PROFILE_EXTRACTION'      THEN 1\n            WHEN 'GRADE_GUIDE_RESOLUTION'  THEN 2\n            WHEN 'EVIDENCE_SCORING'        THEN 3\n            WHEN 'ASSESSMENT_PERSISTENCE'  THEN 4\n            ELSE -1\n        END AS next_stage_rank\n    FROM requested\n)\nUPDATE talentai.assessment_execution AS execution\nSET\n    last_workflow_execution_id = ranked.workflow_execution_id,\n    current_stage = ranked.next_stage,\n    updated_at = now()\nFROM ranked\nWHERE execution.request_id = ranked.request_id\n  AND execution.status = 'RUNNING'\n  AND ranked.workflow_execution_id IS NOT NULL\n  AND ranked.next_stage_rank >= 0\n  AND ranked.next_stage_rank >=\n      CASE execution.current_stage\n          WHEN 'INTAKE'                  THEN 0\n          WHEN 'PROFILE_EXTRACTION'      THEN 1\n          WHEN 'GRADE_GUIDE_RESOLUTION'  THEN 2\n          WHEN 'EVIDENCE_SCORING'        THEN 3\n          WHEN 'ASSESSMENT_PERSISTENCE'  THEN 4\n          ELSE 99\n      END\nRETURNING\n    execution.request_id                 AS \"requestId\",\n    execution.status,\n    execution.current_stage              AS \"currentStage\",\n    execution.attempt_count              AS \"attemptCount\",\n    execution.updated_at                 AS \"updatedAt\";\n",
         "options": {
           "queryReplacement": "={{ [$json.gradeEngineInput.execution.requestId, String($execution.id), 'ASSESSMENT_PERSISTENCE'] }}"
         }
-      }
-    },
-    {
-      "id": "70edbca8-010d-4f62-bb58-5135c96e9354",
-      "name": "Complete Assessment Execution",
+      },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        2000,
+        1552,
         -32
       ],
+      "id": "6fa768df-a232-4656-b872-4017c59d7ba9",
+      "name": "Advance Assessment Persistence"
+    },
+    {
       "parameters": {
         "operation": "executeQuery",
         "query": "UPDATE talentai.assessment_execution AS execution\nSET\n    last_workflow_execution_id = NULLIF($2, ''),\n    assessment_id = $3::UUID,\n    status = 'COMPLETED',\n    current_stage = 'COMPLETED',\n    completed_at = now(),\n    updated_at = now()\nWHERE execution.request_id = $1::UUID\n  AND execution.status = 'RUNNING'\n  AND execution.extraction_id IS NOT NULL\n  AND NULLIF($2, '') IS NOT NULL\n  AND EXISTS\n  (\n      SELECT 1\n      FROM talentai.grade_assessment AS assessment\n      WHERE assessment.id = $3::UUID\n        AND assessment.extraction_id = execution.extraction_id\n        AND assessment.status = 'COMPLETED'\n  )\nRETURNING\n    execution.request_id                 AS \"requestId\",\n    execution.status,\n    execution.current_stage              AS \"currentStage\",\n    execution.attempt_count              AS \"attemptCount\",\n    execution.extraction_id              AS \"extractionId\",\n    execution.assessment_id              AS \"assessmentId\",\n    execution.started_at                 AS \"startedAt\",\n    execution.completed_at               AS \"completedAt\";\n",
         "options": {
           "queryReplacement": "={{ [$json.requestId, String($execution.id), $json.assessmentId] }}"
         }
-      }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2000,
+        -32
+      ],
+      "id": "70edbca8-010d-4f62-bb58-5135c96e9354",
+      "name": "Complete Assessment Execution"
     }
   ],
   "connections": {
@@ -337,7 +340,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "executionTimeout": 240
   },
   "isPublished": false,
   "isArchived": false,

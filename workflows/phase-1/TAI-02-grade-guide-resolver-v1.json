@@ -122,21 +122,21 @@
       }
     },
     {
-      "id": "4a8f2a1b-45da-4274-8fb8-769877e3ae80",
-      "name": "Advance Grade Guide Resolution",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        -240,
-        64
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "WITH requested AS\n(\n    SELECT\n        $1::UUID          AS request_id,\n        NULLIF($2, '')    AS workflow_execution_id,\n        UPPER(BTRIM($3))  AS next_stage\n),\nranked AS\n(\n    SELECT\n        requested.*,\n        CASE requested.next_stage\n            WHEN 'INTAKE'                  THEN 0\n            WHEN 'PROFILE_EXTRACTION'      THEN 1\n            WHEN 'GRADE_GUIDE_RESOLUTION'  THEN 2\n            WHEN 'EVIDENCE_SCORING'        THEN 3\n            WHEN 'ASSESSMENT_PERSISTENCE'  THEN 4\n            ELSE -1\n        END AS next_stage_rank\n    FROM requested\n)\nUPDATE talentai.assessment_execution AS execution\nSET\n    last_workflow_execution_id = ranked.workflow_execution_id,\n    current_stage = ranked.next_stage,\n    updated_at = now()\nFROM ranked\nWHERE execution.request_id = ranked.request_id\n  AND execution.status = 'RUNNING'\n  AND ranked.workflow_execution_id IS NOT NULL\n  AND ranked.next_stage_rank >= 0\n  AND ranked.next_stage_rank >=\n      CASE execution.current_stage\n          WHEN 'INTAKE'                  THEN 0\n          WHEN 'PROFILE_EXTRACTION'      THEN 1\n          WHEN 'GRADE_GUIDE_RESOLUTION'  THEN 2\n          WHEN 'EVIDENCE_SCORING'        THEN 3\n          WHEN 'ASSESSMENT_PERSISTENCE'  THEN 4\n          ELSE 99\n      END\nRETURNING\n    execution.request_id                 AS \"requestId\",\n    execution.status,\n    execution.current_stage              AS \"currentStage\",\n    execution.attempt_count              AS \"attemptCount\",\n    execution.updated_at                 AS \"updatedAt\";\n",
         "options": {
           "queryReplacement": "={{ [$json.requestId, String($execution.id), 'GRADE_GUIDE_RESOLUTION'] }}"
         }
-      }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -240,
+        64
+      ],
+      "id": "4a8f2a1b-45da-4274-8fb8-769877e3ae80",
+      "name": "Advance Grade Guide Resolution"
     }
   ],
   "connections": {
@@ -205,7 +205,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "executionTimeout": 60
   },
   "isPublished": false,
   "isArchived": false,

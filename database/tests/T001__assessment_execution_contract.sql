@@ -273,6 +273,18 @@ BEGIN
     INTO operational_request_column_count
     FROM information_schema.columns
     WHERE table_schema = 'talentai'
+      AND table_name = 'assessment_execution_observability'
+      AND column_name IN ('extraction_id', 'assessment_id');
+
+    IF operational_request_column_count <> 2 THEN
+        RAISE EXCEPTION
+            'observability execution result identifiers are missing';
+    END IF;
+
+    SELECT count(*)
+    INTO operational_request_column_count
+    FROM information_schema.columns
+    WHERE table_schema = 'talentai'
       AND table_name = 'grade_assessment'
       AND column_name = 'request_id'
       AND data_type = 'uuid';
@@ -293,6 +305,22 @@ BEGIN
     IF claim_owner_column_count <> 1 THEN
         RAISE EXCEPTION
             'assessment_execution claim owner column is missing or nullable';
+    END IF;
+
+    IF to_regclass(
+        'talentai.assessment_execution_observability'
+    ) IS NULL THEN
+        RAISE EXCEPTION
+            'assessment_execution observability view is missing';
+    END IF;
+
+    IF NOT has_table_privilege(
+        'talentai_app',
+        'talentai.assessment_execution_observability',
+        'SELECT'
+    ) THEN
+        RAISE EXCEPTION
+            'talentai_app is missing observability view privilege';
     END IF;
 
     SELECT count(*)

@@ -24,11 +24,16 @@ required_operational_files=(
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q009__load_completed_assessment_execution.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q010__persist_operational_grade_assessment.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/migrations/V006__link_grade_assessment_to_execution.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V007__track_assessment_claim_owner.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V008__add_execution_resilience_observability.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q011__expire_stale_assessment_executions.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q012__recent_assessment_execution_observability.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T001__assessment_execution_contract.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T002__assessment_execution_queries.sql"
   "$TALENTAI_SCRIPT_DIR/test-assessment-execution-contract.sh"
   "$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
   "$TALENTAI_SCRIPT_DIR/test-phase1-operational-workflows.sh"
+  "$TALENTAI_SCRIPT_DIR/show-assessment-executions.sh"
 )
 
 for required_workflow_file in "${required_workflow_files[@]}"; do

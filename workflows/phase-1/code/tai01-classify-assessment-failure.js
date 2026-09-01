@@ -5,7 +5,8 @@ return [
     json: {
       requestId: String(claim.requestId ?? ''),
       workflowExecutionId: String($execution.id),
-      currentStage: String(claim.currentStage ?? ''),
+      // Preserve the latest database stage advanced by child workflows.
+      currentStage: '',
       attemptCount: Number(claim.attemptCount ?? 1),
       failureCategory: failureDefinition.category,
       failureCode: failureDefinition.code,

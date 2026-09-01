@@ -42,7 +42,30 @@ jq -e '
   and any(.nodes[]; .name == "Build Failure Recording Fallback")
   and any(.nodes[]; .name == "Build Unrecorded Failure Result")
   and any(.nodes[]; .name == "Build Rejected Assessment Result")
+  and any(.nodes[]; .name == "Expire Stale Assessment Executions")
+  and any(.nodes[]; .name == "Stale Recovery Failure")
+  and (.settings.executionTimeout == 300)
+  and any(
+    .nodes[];
+    .name == "Extract Structured Candidate Profile"
+    and .retryOnFail == true
+    and .maxTries == 3
+    and .waitBetweenTries == 2000
+  )
+  and any(
+    .nodes[];
+    .name == "Grade Engine Failure"
+    and (.parameters.jsCode | contains("currentStage: ''"))
+  )
   and (all(.nodes[]; .name != "Alert message"))
+  and (
+    .connections["Build Assessment Claim"].main[0][0].node
+    == "Expire Stale Assessment Executions"
+  )
+  and (
+    .connections["Expire Stale Assessment Executions"].main[0][0].node
+    == "Claim Assessment Execution"
+  )
   and (
     .connections["Claim Can Continue?"].main[0][0].node
     == "Retry Has Extraction?"
@@ -90,6 +113,7 @@ jq -e '
       "Resolve Grade Engine Input",
       "Run Deterministic Grade Engine",
       "Build TalentAI Assessment Result",
+      "Expire Stale Assessment Executions",
       "Record Assessment Failure"
     ] as $error_nodes
     | (
@@ -100,6 +124,10 @@ jq -e '
         ]
         | length
       ) == ($error_nodes | length)
+  )
+  and (
+    .connections["Expire Stale Assessment Executions"].main[1][0].node
+    == "Stale Recovery Failure"
   )
 ' "$TALENTAI_TAI01" >/dev/null
 
@@ -116,6 +144,7 @@ jq -e '
   )
   and any(.nodes[]; .name == "Validate Operational Input")
   and any(.nodes[]; .name == "Advance Grade Guide Resolution")
+  and (.settings.executionTimeout == 60)
   and (
     .connections["Validate Operational Input"].main[0][0].node
     == "Advance Grade Guide Resolution"
@@ -128,6 +157,14 @@ jq -e '
   and any(.nodes[]; .name == "Advance Evidence Scoring")
   and any(.nodes[]; .name == "Advance Assessment Persistence")
   and any(.nodes[]; .name == "Complete Assessment Execution")
+  and (.settings.executionTimeout == 240)
+  and any(
+    .nodes[];
+    .name == "Score Resume Evidence"
+    and .retryOnFail == true
+    and .maxTries == 3
+    and .waitBetweenTries == 2000
+  )
   and (
     .connections["Validate Grade Engine Input"].main[0][0].node
     == "Advance Evidence Scoring"
@@ -191,6 +228,11 @@ assert_embedded_query \
   "$TALENTAI_TAI01" \
   'Record Assessment Failure' \
   'database/queries/Q008__fail_assessment_execution.sql'
+
+assert_embedded_query \
+  "$TALENTAI_TAI01" \
+  'Expire Stale Assessment Executions' \
+  'database/queries/Q011__expire_stale_assessment_executions.sql'
 
 assert_embedded_query \
   "$TALENTAI_TAI02" \

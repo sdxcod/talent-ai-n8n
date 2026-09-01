@@ -147,6 +147,11 @@ const mainConnection = (node, index = 0) => ({
 });
 
 const transformTai01 = () => {
+  workflow.settings = {
+    ...(workflow.settings ?? {}),
+    executionTimeout: 300,
+  };
+
   const form = updateNode('On form submission', (node) => {
     const fields = node.parameters.formFields.values;
     const requestIdField = fields.find(
@@ -190,6 +195,9 @@ const transformTai01 = () => {
       "={{ $('Extract from File').first().json.text }}";
     node.position = [32, 224];
     enableErrorOutput(node);
+    node.retryOnFail = true;
+    node.maxTries = 3;
+    node.waitBetweenTries = 2000;
   });
 
   updateNode('OpenAI Chat Model', (node) => {
@@ -336,6 +344,25 @@ const transformTai01 = () => {
     query('Q008__fail_assessment_execution'),
     '={{ [$json.requestId, $json.workflowExecutionId, $json.currentStage, $json.failureCategory, $json.failureCode, $json.failureMessage, $json.retryable] }}'
   ));
+
+  upsertNode(postgresNode(
+    'Expire Stale Assessment Executions',
+    '4e3d8f72-081e-42ac-a7d2-32cd57f51d45',
+    [-624, 464],
+    query('Q011__expire_stale_assessment_executions'),
+    '={{ [360] }}'
+  ));
+  enableErrorOutput(findNode('Expire Stale Assessment Executions'));
+
+  upsertNode(codeNode(
+    'Stale Recovery Failure',
+    '4f4e9083-192f-43bd-b8e3-43de68062e56',
+    [-624, 720],
+    failureCode('tai01-classify-unclaimed-failure', {
+      category: 'PERSISTENCE', code: 'STALE_EXECUTION_RECOVERY_FAILED',
+      message: 'Stale assessment execution recovery could not be completed.', retryable: true,
+    })
+  ));
   enableErrorOutput(findNode('Record Assessment Failure'));
 
   upsertNode(codeNode(
@@ -368,7 +395,7 @@ const transformTai01 = () => {
     'b07fc30d-1d75-4679-914c-a74e9b4104b0',
     [-512, 464],
     query('Q004__claim_assessment_execution'),
-    '={{ [$json.requestId, $json.inputFingerprintSource, $json.workflowExecutionId, $json.positionCode, $json.targetGradeCode] }}'
+    "={{ [$('Build Assessment Claim').first().json.requestId, $('Build Assessment Claim').first().json.inputFingerprintSource, $('Build Assessment Claim').first().json.workflowExecutionId, $('Build Assessment Claim').first().json.positionCode, $('Build Assessment Claim').first().json.targetGradeCode] }}"
   ));
 
   upsertNode(ifNode(
@@ -434,7 +461,8 @@ const transformTai01 = () => {
     'On form submission': { main: [[mainConnection('Validate Assessment Intake')]] },
     'Validate Assessment Intake': { main: [[mainConnection('Extract from File')], [mainConnection('Intake Validation Failure')]] },
     'Extract from File': { main: [[mainConnection('Build Assessment Claim')], [mainConnection('Resume File Failure')]] },
-    'Build Assessment Claim': { main: [[mainConnection('Claim Assessment Execution')]] },
+    'Build Assessment Claim': { main: [[mainConnection('Expire Stale Assessment Executions')]] },
+    'Expire Stale Assessment Executions': { main: [[mainConnection('Claim Assessment Execution')], [mainConnection('Stale Recovery Failure')]] },
     'Claim Assessment Execution': { main: [[mainConnection('Claim Can Continue?')]] },
     'Claim Can Continue?': {
       main: [
@@ -481,6 +509,7 @@ const transformTai01 = () => {
     },
     'Intake Validation Failure': { main: [[mainConnection('Build Unrecorded Failure Result')]] },
     'Resume File Failure': { main: [[mainConnection('Build Unrecorded Failure Result')]] },
+    'Stale Recovery Failure': { main: [[mainConnection('Build Unrecorded Failure Result')]] },
     'Profile Extraction Failure': { main: [[mainConnection('Record Assessment Failure')]] },
     'Profile Validation Failure': { main: [[mainConnection('Record Assessment Failure')]] },
     'Extraction Persistence Failure': { main: [[mainConnection('Record Assessment Failure')]] },
@@ -493,6 +522,11 @@ const transformTai01 = () => {
 };
 
 const transformTai02 = () => {
+  workflow.settings = {
+    ...(workflow.settings ?? {}),
+    executionTimeout: 60,
+  };
+
   updateNode('Grade Guide Resolution Requested', (node) => {
     node.parameters = {
       workflowInputs: {
@@ -581,6 +615,11 @@ const transformTai02 = () => {
 };
 
 const transformTai03 = () => {
+  workflow.settings = {
+    ...(workflow.settings ?? {}),
+    executionTimeout: 240,
+  };
+
   updateNode('Grade Engine Requested', (node) => {
     node.position = [-16, -32];
   });
@@ -600,6 +639,9 @@ const transformTai03 = () => {
 
   updateNode('Score Resume Evidence', (node) => {
     node.position = [880, -32];
+    node.retryOnFail = true;
+    node.maxTries = 3;
+    node.waitBetweenTries = 2000;
   });
 
   updateNode('GapGPT Evidence Scoring Model', (node) => {

@@ -16,6 +16,7 @@ required_files=(
   "$TALENTAI_QUERY_DIR/Q008__fail_assessment_execution.sql"
   "$TALENTAI_QUERY_DIR/Q009__load_completed_assessment_execution.sql"
   "$TALENTAI_QUERY_DIR/Q010__persist_operational_grade_assessment.sql"
+  "$TALENTAI_QUERY_DIR/Q011__expire_stale_assessment_executions.sql"
   "$TALENTAI_TEST_BODY"
 )
 
@@ -190,6 +191,14 @@ RETURNS TABLE (
   "createdAt" TIMESTAMP WITH TIME ZONE,
   "wasInserted" BOOLEAN
 )' "$TALENTAI_QUERY_DIR/Q010__persist_operational_grade_assessment.sql"
+
+  emit_sql_function '
+CREATE FUNCTION pg_temp.expire_stale_assessment_executions(
+  INTEGER
+)
+RETURNS TABLE (
+  "expiredExecutionCount" INTEGER
+)' "$TALENTAI_QUERY_DIR/Q011__expire_stale_assessment_executions.sql"
 
   sed -n '1,$p' "$TALENTAI_TEST_BODY"
   printf '%s\n' 'ROLLBACK;'
