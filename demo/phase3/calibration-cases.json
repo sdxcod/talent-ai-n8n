@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "guideVersion": "1.0.0",
+  "cases": [
+    {
+      "id": "junior-defensible",
+      "profile": "Junior developer who built Java and Spring Boot services, wrote tests, used PostgreSQL, and discussed a layered design.",
+      "targetGrade": "JUNIOR",
+      "scores": [2, 2, 1, 0, 1, 1, 0],
+      "confidence": "HIGH",
+      "warnings": [],
+      "expected": { "overallScore": 31.25, "decision": "MEETS_TARGET", "mandatoryDimensionsMet": true }
+    },
+    {
+      "id": "mid-exact-boundary-50",
+      "profile": "Mid developer used Java, Spring Boot, PostgreSQL, Kafka, testing, architecture, Docker and metrics in production.",
+      "targetGrade": "MID",
+      "scores": [2, 2, 2, 2, 2, 2, 2],
+      "confidence": "HIGH",
+      "warnings": [],
+      "expected": { "overallScore": 50, "decision": "MEETS_TARGET", "mandatoryDimensionsMet": true }
+    },
+    {
+      "id": "senior-exact-boundary-70",
+      "profile": "Senior developer owned advanced Java, Spring and database work, distributed systems, test strategy, architecture, observability and delivery.",
+      "targetGrade": "SENIOR",
+      "scores": [3, 3, 3, 2, 3, 2, 4],
+      "confidence": "HIGH",
+      "warnings": [],
+      "expected": { "overallScore": 70, "decision": "MEETS_TARGET", "mandatoryDimensionsMet": true }
+    },
+    {
+      "id": "senior-below-boundary",
+      "profile": "Senior applicant has strong Java, Spring and database evidence but less testing and operational depth.",
+      "targetGrade": "SENIOR",
+      "scores": [3, 3, 3, 2, 2, 2, 3],
+      "confidence": "HIGH",
+      "warnings": [],
+      "expected": { "overallScore": 66.25, "decision": "BELOW_TARGET", "mandatoryDimensionsMet": true }
+    },
+    {
+      "id": "mandatory-floor-failure",
+      "profile": "Applicant claims broad senior ownership but provides only practical Java depth while other dimensions are strong.",
+      "targetGrade": "SENIOR",
+      "scores": [2, 4, 4, 4, 4, 4, 4],
+      "confidence": "HIGH",
+      "warnings": [],
+      "expected": { "overallScore": 87.5, "decision": "BELOW_TARGET", "mandatoryDimensionsMet": false }
+    },
+    {
+      "id": "low-evidence-review",
+      "profile": "Applicant lists senior Java technologies without responsibilities, outcomes, projects, dates or ownership evidence.",
+      "targetGrade": "SENIOR",
+      "scores": [4, 3, 3, 2, 2, 2, 2],
+      "confidence": "LOW",
+      "warnings": ["Technology claims lack traceable context."],
+      "expected": { "overallScore": 0, "decision": "REVIEW_REQUIRED", "mandatoryDimensionsMet": false }
+    },
+    {
+      "id": "contradictory-profile-review",
+      "profile": "Profile states ten years of Java experience but dated work history contains two years and conflicting role dates.",
+      "targetGrade": "MID",
+      "scores": [3, 2, 2, 1, 1, 1, 1],
+      "confidence": "LOW",
+      "warnings": ["Experience duration conflicts with dated work history."],
+      "expected": { "overallScore": 0, "decision": "REVIEW_REQUIRED", "mandatoryDimensionsMet": false }
+    },
+    {
+      "id": "warnings-preserved-with-accepted-confidence",
+      "profile": "Developer provides direct Java, Spring, SQL and testing examples; one employment date remains ambiguous.",
+      "targetGrade": "MID",
+      "scores": [2, 2, 2, 2, 2, 2, 2],
+      "confidence": "MEDIUM",
+      "warnings": ["One employment date is ambiguous."],
+      "expected": { "overallScore": 50, "decision": "MEETS_TARGET", "mandatoryDimensionsMet": true }
+    }
+  ]
+}

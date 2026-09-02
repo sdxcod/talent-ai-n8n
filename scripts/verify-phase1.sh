@@ -34,6 +34,11 @@ required_operational_files=(
   "$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
   "$TALENTAI_SCRIPT_DIR/test-phase1-operational-workflows.sh"
   "$TALENTAI_SCRIPT_DIR/show-assessment-executions.sh"
+  "$TALENTAI_SCRIPT_DIR/test-phase3-calibration.mjs"
+  "$TALENTAI_SCRIPT_DIR/test-phase3-handoff.mjs"
+  "$TALENTAI_SCRIPT_DIR/lib/phase3-handoff.mjs"
+  "$TALENTAI_REPOSITORY_ROOT/demo/phase3/calibration-cases.json"
+  "$TALENTAI_REPOSITORY_ROOT/docs/quality/phase3-calibration-v1.md"
 )
 
 for required_workflow_file in "${required_workflow_files[@]}"; do
@@ -51,6 +56,10 @@ for required_operational_file in "${required_operational_files[@]}"; do
 done
 
 jq empty "${required_workflow_files[@]}"
+jq empty "$TALENTAI_REPOSITORY_ROOT/demo/phase3/calibration-cases.json"
+
+node "$TALENTAI_SCRIPT_DIR/test-phase3-calibration.mjs"
+node "$TALENTAI_SCRIPT_DIR/test-phase3-handoff.mjs"
 
 jq -e '
   (.workflows | length == 3)

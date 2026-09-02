@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://talentai.local/schemas/phase3-assessment-handoff-v1.schema.json",
+  "title": "TalentAI Phase 3 Assessment Handoff v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "contractVersion",
+    "requestId",
+    "assessmentId",
+    "extractionId",
+    "candidate",
+    "assessmentContext",
+    "gradeGuide",
+    "score",
+    "decision",
+    "dimensionAssessments",
+    "reviewReasons",
+    "modelWarnings",
+    "assessmentSummary",
+    "execution",
+    "metadata"
+  ],
+  "properties": {
+    "contract": { "const": "talentai.phase3.assessment-handoff" },
+    "contractVersion": { "const": "1.0.0" },
+    "requestId": { "$ref": "#/$defs/uuid" },
+    "assessmentId": { "$ref": "#/$defs/uuid" },
+    "extractionId": { "$ref": "#/$defs/uuid" },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fullName"],
+      "properties": {
+        "fullName": { "type": "string", "minLength": 1, "maxLength": 300 }
+      }
+    },
+    "assessmentContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["positionCode", "targetGradeCode", "jobDescription"],
+      "properties": {
+        "positionCode": { "const": "JAVA_BACKEND" },
+        "targetGradeCode": {
+          "type": "string",
+          "enum": ["JUNIOR", "MID", "SENIOR"]
+        },
+        "jobDescription": { "type": "string", "minLength": 30, "maxLength": 20000 }
+      }
+    },
+    "gradeGuide": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 50 }
+      }
+    },
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overall",
+        "minimumRequired",
+        "thresholdMet",
+        "mandatoryDimensionsMet"
+      ],
+      "properties": {
+        "overall": { "type": "number", "minimum": 0, "maximum": 100 },
+        "minimumRequired": { "type": "number", "minimum": 0, "maximum": 100 },
+        "thresholdMet": { "type": "boolean" },
+        "mandatoryDimensionsMet": { "type": "boolean" }
+      }
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["MEETS_TARGET", "BELOW_TARGET", "REVIEW_REQUIRED"]
+    },
+    "dimensionAssessments": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": { "$ref": "#/$defs/dimensionAssessment" }
+    },
+    "reviewReasons": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 }
+    },
+    "modelWarnings": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 }
+    },
+    "assessmentSummary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attemptCount", "status", "replayed", "startedAt", "completedAt"],
+      "properties": {
+        "attemptCount": { "type": "integer", "minimum": 1 },
+        "status": { "const": "COMPLETED" },
+        "replayed": { "type": "boolean" },
+        "startedAt": { "$ref": "#/$defs/dateTime" },
+        "completedAt": { "$ref": "#/$defs/dateTime" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scoringModel",
+        "promptVersion",
+        "engineVersion",
+        "assessmentStatus",
+        "createdAt"
+      ],
+      "properties": {
+        "scoringModel": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "promptVersion": { "type": "string", "minLength": 1, "maxLength": 20 },
+        "engineVersion": { "type": "string", "minLength": 1, "maxLength": 20 },
+        "assessmentStatus": { "const": "COMPLETED" },
+        "createdAt": { "$ref": "#/$defs/dateTime" }
+      }
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quote", "source"],
+      "properties": {
+        "quote": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "source": {
+          "type": "string",
+          "enum": [
+            "PROFILE_SKILL",
+            "WORK_EXPERIENCE",
+            "EDUCATION",
+            "WARNING",
+            "OTHER"
+          ]
+        }
+      }
+    },
+    "dimensionAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "title",
+        "weight",
+        "mandatory",
+        "modelScore",
+        "effectiveScore",
+        "confidence",
+        "confidenceAccepted",
+        "weightedScore",
+        "minimumRequired",
+        "minimumMet",
+        "evidence",
+        "rationale"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "JAVA_CORE",
+            "SPRING_ECOSYSTEM",
+            "DATABASE",
+            "DISTRIBUTED_SYSTEMS",
+            "TESTING",
+            "SOFTWARE_ARCHITECTURE",
+            "OBSERVABILITY_DEVOPS"
+          ]
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "weight": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "mandatory": { "type": "boolean" },
+        "modelScore": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "effectiveScore": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "confidence": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "confidenceAccepted": { "type": "boolean" },
+        "weightedScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "minimumRequired": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0, "maximum": 4 },
+            { "type": "null" }
+          ]
+        },
+        "minimumMet": { "type": "boolean" },
+        "evidence": {
+          "type": "array",
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 1500 }
+      }
+    }
+  }
+}
