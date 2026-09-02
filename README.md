@@ -9,13 +9,14 @@ TalentAI یک سامانهٔ قابل ممیزی برای پشتیبانی از 
 
 ## وضعیت فعلی پیاده‌سازی
 
-مسیر عملیاتی موجود شامل سه Workflow وابسته است:
+مسیر عملیاتی موجود شامل چهار Workflow وابسته است:
 
 | Workflow | مسئولیت |
 | --- | --- |
 | `TAI-01 Resume Intake & Extraction v2` | دریافت رزومه، استخراج متن، تولید و اعتبارسنجی پروفایل کاندید، ذخیره Extraction و هماهنگ‌کردن مراحل بعدی |
 | `TAI-02 Grade Guide Resolver v1` | دریافت `extractionId`، بازیابی Extraction و Grade Guide فعال و ساخت ورودی استاندارد Grade Engine |
 | `TAI-03 Evidence Scoring & Deterministic Grade Engine v1` | امتیازدهی مبتنی بر شواهد، اجرای قواعد قطعی، ذخیره Assessment و تولید خروجی نهایی |
+| `TAI-04 Candidate Interview & Final Grade v1` | دریافت `extractionId` از فرم، خواندن پروفایل، Grade Guide و آخرین گرید رزومه، دو مرحله مصاحبه با فرم داینامیک (سوالات مرحله دوم از دل پاسخ‌های مرحله اول) و تعیین گرید نهایی کارجو |
 
 جریان کلی:
 
@@ -25,9 +26,10 @@ Resume PDF
   -> TAI-02: extraction and grade-guide resolution
   -> TAI-03: evidence scoring and deterministic decision
   -> talentai.grade_assessment
+  -> TAI-04: two-round candidate interview (dynamic forms) and final grade
 ```
 
-LLM فقط برای استخراج اطلاعات و امتیازدهی شواهد استفاده می‌شود. محاسبه امتیاز نهایی، کنترل حداقل امتیاز و بررسی حداقل سطح Dimensionهای اجباری توسط منطق قطعی انجام می‌شود.
+LLM فقط برای استخراج اطلاعات، امتیازدهی شواهد، طراحی سوالات مصاحبه و امتیازدهی پاسخ‌های تشریحی استفاده می‌شود. محاسبه امتیاز نهایی، کنترل حداقل امتیاز، بررسی حداقل سطح Dimensionهای اجباری و انتخاب گرید نهایی توسط منطق قطعی انجام می‌شود. در TAI-04، گرید نهایی فقط بر اساس پاسخ‌های مصاحبه تعیین می‌شود و گرید رزومه صرفاً برای مقایسه نمایش داده می‌شود.
 
 ## فناوری‌ها و نسخه‌های آزموده‌شده
 
@@ -134,6 +136,7 @@ n8n-cli --version
         ├── TAI-01-resume-intake-extraction-v2.json
         ├── TAI-02-grade-guide-resolver-v1.json
         ├── TAI-03-evidence-scoring-grade-engine-v1.json
+        ├── TAI-04-candidate-interview-final-grade-v1.json
         └── manifest.json
 ```
 
@@ -476,12 +479,16 @@ API Key نباید در این مکان‌ها قرار گیرد:
 | TAI-02 | `Resolve Extraction and Grade Guide` | `TalentAI PostgreSQL` |
 | TAI-03 | `Persist Grade Assessment` | `TalentAI PostgreSQL` |
 | TAI-03 | `GapGPT Evidence Scoring Model` | `TalentAI OpenAI` یا Credential سازگار Provider تیم |
+| TAI-04 | `Resolve Candidate and Resume Grade` | `TalentAI PostgreSQL` |
+| TAI-04 | `GapGPT Interview Question Model` | `TalentAI OpenAI` یا Credential سازگار Provider تیم |
+| TAI-04 | `GapGPT Follow-up Question Model` | `TalentAI OpenAI` یا Credential سازگار Provider تیم |
+| TAI-04 | `GapGPT Answer Scoring Model` | `TalentAI OpenAI` یا Credential سازگار Provider تیم |
 
-پس از اتصال Credentialها، هر سه Workflow را Save کنید؛ برای Smoke Test لازم نیست آن‌ها را Publish یا Activate کنید.
+پس از اتصال Credentialها، همه Workflowها را Save کنید؛ برای Smoke Test لازم نیست آن‌ها را Publish یا Activate کنید.
 
 ## Import کردن Workflowها در محیط جدید
 
-در محیط منبع، سه Workflow باید داخل Folder زیر قرار گیرند:
+در محیط منبع، چهار Workflow باید داخل Folder زیر قرار گیرند:
 
 ```text
 TalentAI - Phase 1
@@ -491,7 +498,7 @@ TalentAI - Phase 1
 
 ### مسیر پیشنهادی: Import کردن Package انتشار
 
-Package انتشار سه Workflow و وابستگی Sub-workflowها را با هم منتقل و IDهای مقصد را هنگام Import تطبیق می‌دهد. فایل متناظر با Tag پروژه را از GitHub Release دریافت کنید؛ برای نسخه `v1.0.0` نام مورد انتظار این است:
+Package انتشار چهار Workflow و وابستگی Sub-workflowها را با هم منتقل و IDهای مقصد را هنگام Import تطبیق می‌دهد. فایل متناظر با Tag پروژه را از GitHub Release دریافت کنید؛ برای نسخه `v1.0.0` نام مورد انتظار این است:
 
 ```text
 TalentAI-phase-1-v1.0.0.n8np
@@ -523,12 +530,13 @@ n8n-cli workflow list \
   '
 ```
 
-باید دقیقاً سه Workflow زیر را در حالت `false` ببینید:
+باید دقیقاً چهار Workflow زیر را در حالت `false` ببینید:
 
 ```text
 TAI-01 Resume Intake & Extraction v2
 TAI-02 Grade Guide Resolver v1
 TAI-03 Evidence Scoring & Deterministic Grade Engine v1
+TAI-04 Candidate Interview & Final Grade v1
 ```
 
 Package خام محلی در `exports/private` فقط ورودی Release Builder است و نباید مستقیماً Import، commit یا منتشر شود.
@@ -539,7 +547,8 @@ Package خام محلی در `exports/private` فقط ورودی Release Builder
 
 1. `TAI-02-grade-guide-resolver-v1.json`؛
 2. `TAI-03-evidence-scoring-grade-engine-v1.json`؛
-3. `TAI-01-resume-intake-extraction-v2.json`.
+3. `TAI-04-candidate-interview-final-grade-v1.json`؛
+4. `TAI-01-resume-intake-extraction-v2.json`.
 
 در این مسیر باید دو Node زیر را در TAI-01 باز کنید و Workflow مقصد را دستی انتخاب کنید:
 
@@ -554,7 +563,7 @@ Package خام محلی در `exports/private` فقط ورودی Release Builder
 
 1. Credentialهای جدول بخش قبل را متصل کنید؛
 2. دو Sub-workflow Reference در TAI-01 را کنترل کنید؛
-3. هر سه Workflow را Save کنید؛
+3. هر چهار Workflow را Save کنید؛
 4. ابتدا یک اجرای دستی End-to-End انجام دهید؛
 5. فقط پس از موفقیت تست، Entry Workflow را برای استفاده موردنظر Publish یا Activate کنید.
 
@@ -834,16 +843,17 @@ talentai.assessment_execution_observability
 
 ## Export کردن Sourceهای Workflow
 
-Folder موجود در n8n برای نظم تیمی باید شامل سه Workflow فاز اول باشد و Workflow تست یا Backup داخل آن قرار نگیرد.
+Folder موجود در n8n برای نظم تیمی باید شامل چهار Workflow فاز اول باشد و Workflow تست یا Backup داخل آن قرار نگیرد.
 
 ```text
 TalentAI - Phase 1
 ├── TAI-01 Resume Intake & Extraction v2
 ├── TAI-02 Grade Guide Resolver v1
-└── TAI-03 Evidence Scoring & Deterministic Grade Engine v1
+├── TAI-03 Evidence Scoring & Deterministic Grade Engine v1
+└── TAI-04 Candidate Interview & Final Grade v1
 ```
 
-Export قابل‌انتشار به Folder ID وابسته نیست. اسکریپت شناسه دقیق سه Workflow مجاز را از `workflows/phase-1/manifest.json` می‌خواند و با سه `--workflow-id` صریح Export می‌کند:
+Export قابل‌انتشار به Folder ID وابسته نیست. اسکریپت شناسه دقیق چهار Workflow مجاز را از `workflows/phase-1/manifest.json` می‌خواند و با چهار `--workflow-id` صریح Export می‌کند:
 
 ```bash
 ./scripts/export-phase1-workflows.sh 1.0.0
@@ -851,9 +861,9 @@ Export قابل‌انتشار به Folder ID وابسته نیست. اسکری�
 
 اسکریپت این کنترل‌ها را انجام می‌دهد:
 
-- Manifest کامیت‌شده دقیقاً سه Workflow مورد انتظار و سه ID معتبر داشته باشد؛
-- Package خام Flat با Export صریح همان سه Workflow ID تولید شود؛
-- نام و ID هر سه Workflow خروجی با allow-list کامیت‌شده برابر باشد؛
+- Manifest کامیت‌شده دقیقاً چهار Workflow مورد انتظار و چهار ID معتبر داشته باشد؛
+- Package خام Flat با Export صریح همان چهار Workflow ID تولید شود؛
+- نام و ID هر چهار Workflow خروجی با allow-list کامیت‌شده برابر باشد؛
 - Folder، Workflow تستی یا Backup وارد Package نشود؛
 - Dependencyهای TAI-01 به TAI-02 و TAI-03 موجود باشند؛
 - Variable خصوصی داخل Package نباشد؛
@@ -890,7 +900,7 @@ Package خام حاصل از Export ممکن است Metadata یا Credential Ref
 این اسکریپت:
 
 - Manifest و ساختار Package خام Flat را کنترل می‌کند؛
-- وجود دقیقاً سه Workflow مورد انتظار و نبود Folder را کنترل می‌کند؛
+- وجود دقیقاً چهار Workflow مورد انتظار و نبود Folder را کنترل می‌کند؛
 - `versionId` و سایر فیلدهای schema مخصوص Package را از Export رسمی n8n حفظ می‌کند؛
 - با نرمال‌سازی Package Workflow و Source قابل‌commit، نبود Source Drift را کنترل می‌کند؛
 - Credential Referenceها را فقط از Nodeهای Package Workflow حذف می‌کند؛
@@ -912,7 +922,7 @@ dist/TalentAI-phase-1-v1.0.0.n8np
 {
   "packageFormatVersion": "1",
   "sourceN8nVersion": "2.36.8",
-  "workflowCount": 3,
+  "workflowCount": 4,
   "folderCount": 0,
   "credentialEntityCount": 0,
   "credentialRequirementCount": 0,
@@ -975,6 +985,7 @@ git status --short --branch
 workflows/phase-1/TAI-01-resume-intake-extraction-v2.json
 workflows/phase-1/TAI-02-grade-guide-resolver-v1.json
 workflows/phase-1/TAI-03-evidence-scoring-grade-engine-v1.json
+workflows/phase-1/TAI-04-candidate-interview-final-grade-v1.json
 workflows/phase-1/manifest.json
 ```
 
