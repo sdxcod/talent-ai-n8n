@@ -34,6 +34,12 @@ jobs:
           docker --version
           docker compose version
 
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ripgrep
+          rg --version
+
       - name: Validate shell syntax
         run: bash -n init-data.sh scripts/*.sh
 
