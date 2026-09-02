@@ -1,0 +1,58 @@
+name: Phase 3 quality
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase3-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phase3-quality-gate:
+    name: Phase 3 quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show tool versions
+        run: |
+          node --version
+          docker --version
+          docker compose version
+
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ripgrep
+          rg --version
+
+      - name: Validate shell syntax
+        run: bash -n init-data.sh scripts/*.sh
+
+      - name: Create isolated configuration
+        run: |
+          chmod +x init-data.sh scripts/*.sh
+          ./scripts/create-local-env.sh
+
+      - name: Bootstrap and verify release baseline
+        run: ./scripts/bootstrap-local.sh
+
+      - name: Ensure verification did not modify tracked files
+        run: |
+          git diff --check
+          git diff --exit-code
+
