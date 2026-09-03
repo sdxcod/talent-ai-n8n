@@ -76,7 +76,20 @@ for (const forbiddenKey of [
 const nodeByName = new Map(workflow.nodes.map((node) => [node.name, node]));
 assert.equal(nodeByName.size, workflow.nodes.length, 'Node names must be unique.');
 
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 for (const node of workflow.nodes) {
+  assert.match(node.id, uuidPattern, `Node has an invalid UUID: ${node.name}`);
+
+  if (node.webhookId !== undefined) {
+    assert.match(
+      node.webhookId,
+      uuidPattern,
+      `Node has an invalid webhook UUID: ${node.name}`,
+    );
+  }
+
   assert.equal(
     Object.hasOwn(node, 'credentials'),
     false,

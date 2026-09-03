@@ -933,6 +933,13 @@ answerScoringPrompt.parameters.jsCode =
     "const roundOneRecords = Array.isArray(\n  roundTwoContext.firstRoundAnswerRecords\n)\n  ? roundTwoContext.firstRoundAnswerRecords\n  : $('Restore First Round Answers').first().json.answerRecords;"
   );
 
+// n8n package schema validates webhook IDs as RFC 4122 UUIDs. Keep these
+// deterministic so repeated source transformations remain idempotent.
+requireNode('Candidate Interview Form').webhookId =
+  '5a6b7c8d-9e0f-4a1b-8c3d-4e5f6a7b8c9d';
+requireNode('Show Final Grade').webhookId =
+  '6e7f8a9b-0c1d-4e2f-8a4b-5c6d7e8f9a0c';
+
 const positions = new Map([
   ['Build Interview Question Prompt', [1856, -320]],
   ['Generate Interview Questions', [2080, -320]],
