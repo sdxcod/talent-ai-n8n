@@ -23,7 +23,7 @@
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.6,
       "position": [
-        -352,
+        -384,
         -256
       ],
       "webhookId": "1ef72bf0-6abf-47dd-a526-e8f4f487096e"
@@ -37,7 +37,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -128,
+        -160,
         -256
       ]
     },
@@ -54,7 +54,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        96,
+        64,
         -256
       ]
     },
@@ -88,7 +88,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        320,
+        288,
         -256
       ]
     },
@@ -101,7 +101,7 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        544,
+        512,
         -128
       ]
     },
@@ -114,7 +114,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        768,
+        736,
         -320
       ]
     },
@@ -127,7 +127,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        992,
+        1408,
         -320
       ]
     },
@@ -140,8 +140,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1216,
-        -256
+        1632,
+        -320
       ]
     },
     {
@@ -156,8 +156,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1440,
-        -256
+        1856,
+        -320
       ]
     },
     {
@@ -178,8 +178,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1448,
-        -24
+        1856,
+        -88
       ]
     },
     {
@@ -192,8 +192,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1576,
-        -24
+        1856,
+        -552
       ]
     },
     {
@@ -205,8 +205,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1792,
-        -256
+        2080,
+        -320
       ]
     },
     {
@@ -224,8 +224,8 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2016,
-        -256
+        2752,
+        -320
       ],
       "webhookId": "5a6b7c8d-9e0f-4a1b-2c3d-4e5f6a7b8c9d"
     },
@@ -238,8 +238,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2240,
-        -256
+        2976,
+        -320
       ]
     },
     {
@@ -251,8 +251,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2464,
-        -256
+        3648,
+        -320
       ]
     },
     {
@@ -267,8 +267,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        2688,
-        -256
+        3872,
+        -320
       ]
     },
     {
@@ -289,8 +289,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        2696,
-        -24
+        3872,
+        -88
       ]
     },
     {
@@ -303,8 +303,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        2824,
-        -24
+        3872,
+        -552
       ]
     },
     {
@@ -316,8 +316,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3040,
-        -256
+        4320,
+        -320
       ]
     },
     {
@@ -335,8 +335,8 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        3264,
-        -256
+        4992,
+        -320
       ],
       "webhookId": "e15c6d7e-8f9a-4bac-bdbe-2f3a4b5c6d7e"
     },
@@ -349,8 +349,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3488,
-        -256
+        5216,
+        -320
       ]
     },
     {
@@ -362,8 +362,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3712,
-        -256
+        5888,
+        -320
       ]
     },
     {
@@ -378,8 +378,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        3936,
-        -256
+        6112,
+        -320
       ]
     },
     {
@@ -400,8 +400,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        3944,
-        -24
+        6112,
+        -88
       ]
     },
     {
@@ -414,8 +414,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        4072,
-        -24
+        6112,
+        -552
       ]
     },
     {
@@ -427,8 +427,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4288,
-        -256
+        6336,
+        -320
       ]
     },
     {
@@ -440,8 +440,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4512,
-        -256
+        7008,
+        -320
       ]
     },
     {
@@ -453,8 +453,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4736,
-        -256
+        7680,
+        -320
       ]
     },
     {
@@ -469,8 +469,8 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        4960,
-        -256
+        7904,
+        -320
       ],
       "webhookId": "6e7f8a9b-0c1d-4e2f-3a4b-5c6d7e8f9a0c"
     },
@@ -489,7 +489,7 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        544,
+        512,
         -512
       ],
       "id": "9e700501-12fe-4f59-9914-a976a76d3174",
@@ -502,11 +502,306 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        544,
+        512,
         -320
       ],
       "id": "ad4e2705-1e38-4a71-9456-b9a5f9d4e201",
       "name": "Build Demo Phase 3 Handoff"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        NULLIF(BTRIM($1), '')                         AS contract_version,\n        $2::UUID                                      AS request_id,\n        $3::UUID                                      AS assessment_id,\n        $4::UUID                                      AS extraction_id,\n        NULLIF(BTRIM($5), '')                         AS workflow_execution_id\n),\ninserted AS\n(\n    INSERT INTO talentai.technical_interview_session\n    (\n        contract_version,\n        request_id,\n        assessment_id,\n        extraction_id,\n        initial_workflow_execution_id,\n        claim_owner_workflow_execution_id,\n        last_workflow_execution_id\n    )\n    SELECT\n        contract_version,\n        request_id,\n        assessment_id,\n        extraction_id,\n        workflow_execution_id,\n        workflow_execution_id,\n        workflow_execution_id\n    FROM supplied\n    ON CONFLICT ON CONSTRAINT uq_technical_interview_session_handoff\n    DO NOTHING\n    RETURNING *\n),\nretried AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        claim_owner_workflow_execution_id = supplied.workflow_execution_id,\n        last_workflow_execution_id = supplied.workflow_execution_id,\n        status = 'RUNNING',\n        attempt_count = session.attempt_count + 1,\n        failure_category = NULL,\n        failure_code = NULL,\n        failure_message = NULL,\n        retryable = NULL,\n        failed_at = NULL,\n        updated_at = now()\n    FROM supplied\n    WHERE session.contract_version = supplied.contract_version\n      AND session.request_id = supplied.request_id\n      AND session.assessment_id = supplied.assessment_id\n      AND session.extraction_id = supplied.extraction_id\n      AND session.status = 'FAILED'\n      AND session.retryable = TRUE\n      AND NOT EXISTS (SELECT 1 FROM inserted)\n    RETURNING session.*\n),\ncurrent_session AS\n(\n    SELECT * FROM inserted\n    UNION ALL\n    SELECT * FROM retried\n    UNION ALL\n    SELECT session.*\n    FROM talentai.technical_interview_session AS session\n    CROSS JOIN supplied\n    WHERE session.contract_version = supplied.contract_version\n      AND session.request_id = supplied.request_id\n      AND session.assessment_id = supplied.assessment_id\n      AND NOT EXISTS (SELECT 1 FROM inserted)\n      AND NOT EXISTS (SELECT 1 FROM retried)\n)\nSELECT\n    current_session.id                         AS \"sessionId\",\n    CASE\n        WHEN EXISTS (SELECT 1 FROM inserted)\n            THEN 'CLAIMED_NEW'\n        WHEN EXISTS (SELECT 1 FROM retried)\n            THEN 'CLAIMED_RETRY'\n        WHEN current_session.extraction_id <> supplied.extraction_id\n            THEN 'HANDOFF_CONFLICT'\n        WHEN current_session.status = 'COMPLETED'\n            THEN 'COMPLETED_REPLAY'\n        WHEN current_session.status = 'RUNNING'\n         AND current_session.claim_owner_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN 'CLAIMED_CURRENT'\n        WHEN current_session.status = 'RUNNING'\n            THEN 'ALREADY_RUNNING'\n        WHEN current_session.status = 'FAILED'\n         AND current_session.retryable = FALSE\n            THEN 'FAILED_NOT_RETRYABLE'\n        ELSE 'CLAIM_REJECTED'\n    END                                        AS \"claimStatus\",\n    (\n        current_session.extraction_id = supplied.extraction_id\n        AND current_session.status = 'RUNNING'\n        AND current_session.claim_owner_workflow_execution_id\n            = supplied.workflow_execution_id\n    )                                          AS \"canContinue\",\n    current_session.status                     AS status,\n    current_session.current_stage              AS \"currentStage\",\n    current_session.attempt_count              AS \"attemptCount\",\n    current_session.request_id                 AS \"requestId\",\n    current_session.assessment_id              AS \"assessmentId\",\n    current_session.extraction_id              AS \"extractionId\",\n    current_session.failure_category           AS \"failureCategory\",\n    current_session.failure_code               AS \"failureCode\",\n    current_session.failure_message            AS \"failureMessage\",\n    current_session.retryable                  AS retryable,\n    current_session.started_at                 AS \"startedAt\",\n    current_session.updated_at                 AS \"updatedAt\",\n    current_session.completed_at               AS \"completedAt\",\n    current_session.failed_at                  AS \"failedAt\"\nFROM current_session\nCROSS JOIN supplied;\n",
+        "options": {
+          "queryReplacement": "={{ [$json.correlation.contractVersion, $json.correlation.requestId, $json.correlation.assessmentId, $json.correlation.extractionId, String($execution.id)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        960,
+        -320
+      ],
+      "id": "22dc1a92-e189-47c5-91c4-498c11ec45d7",
+      "name": "Claim Technical Interview Session"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9773418d-f421-40bd-8920-7b9b4dd1c951-condition",
+              "leftValue": "={{ $json.canContinue === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1184,
+        -320
+      ],
+      "id": "9773418d-f421-40bd-8920-7b9b4dd1c951",
+      "name": "Interview Claim Can Continue?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fe43b43a-19f2-4b4b-8d33-bda7b013a4f1-condition",
+              "leftValue": "={{ String($json.claimStatus ?? '') === 'COMPLETED_REPLAY' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1408,
+        -128
+      ],
+      "id": "fe43b43a-19f2-4b4b-8d33-bda7b013a4f1",
+      "name": "Completed Interview Replay?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    session.id                              AS \"sessionId\",\n    session.contract_version                AS \"contractVersion\",\n    session.request_id                      AS \"requestId\",\n    session.assessment_id                   AS \"assessmentId\",\n    session.extraction_id                   AS \"extractionId\",\n    session.attempt_count                   AS \"attemptCount\",\n    session.status                          AS status,\n    session.current_stage                   AS \"currentStage\",\n    session.started_at                      AS \"startedAt\",\n    session.completed_at                    AS \"completedAt\",\n    result.id                               AS \"resultId\",\n    result.result_version                   AS \"resultVersion\",\n    result.result_payload                   AS \"resultPayload\"\nFROM talentai.technical_interview_session AS session\nJOIN talentai.technical_interview_result AS result\n  ON result.session_id = session.id\n AND result.status = 'COMPLETED'\nWHERE session.contract_version = NULLIF(BTRIM($1), '')\n  AND session.request_id = $2::UUID\n  AND session.assessment_id = $3::UUID\n  AND session.status = 'COMPLETED'\n  AND session.current_stage = 'COMPLETED'\n  AND session.completed_at IS NOT NULL\nORDER BY result.result_version DESC\nLIMIT 1;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Validate Phase 3 Handoff').first().json.correlation.contractVersion, $('Validate Phase 3 Handoff').first().json.correlation.requestId, $('Validate Phase 3 Handoff').first().json.correlation.assessmentId] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1632,
+        -384
+      ],
+      "id": "273f6900-d01f-4408-b65e-ae9beb922f60",
+      "name": "Load Completed Technical Interview"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'TECHNICAL_INTERVIEW_CLAIM_REJECTED: ' + String($json.claimStatus ?? 'UNKNOWN') + ' [requestId=' + String($json.requestId ?? '') + ', assessmentId=' + String($json.assessmentId ?? '') + ']' }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        -128
+      ],
+      "id": "26379c3d-96e2-41d2-a4ed-3595603cc5dc",
+      "name": "Reject Technical Interview Claim"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                                      AS session_id,\n        NULLIF(BTRIM($2), '')                         AS workflow_execution_id,\n        UPPER(BTRIM($3))                              AS round,\n        $4::JSONB                                     AS question_plan,\n        NULLIF(BTRIM($5), '')                         AS generation_model,\n        NULLIF(BTRIM($6), '')                         AS prompt_version\n),\nnormalized AS\n(\n    SELECT\n        supplied.*,\n        jsonb_array_length(question_plan -> 'questions') AS question_count,\n        encode(digest(question_plan::TEXT, 'sha256'), 'hex') AS content_hash,\n        CASE round\n            WHEN 'FIRST' THEN 'QUESTION_GENERATION'\n            WHEN 'FOLLOW_UP' THEN 'FOLLOW_UP_GENERATION'\n        END AS expected_stage,\n        CASE round\n            WHEN 'FIRST' THEN 'FIRST_ROUND'\n            WHEN 'FOLLOW_UP' THEN 'FOLLOW_UP'\n        END AS next_stage\n    FROM supplied\n    WHERE round IN ('FIRST', 'FOLLOW_UP')\n      AND jsonb_typeof(question_plan) = 'object'\n      AND jsonb_typeof(question_plan -> 'questions') = 'array'\n      AND jsonb_array_length(question_plan -> 'questions') > 0\n),\neligible AS\n(\n    SELECT normalized.*, session.current_stage\n    FROM normalized\n    JOIN talentai.technical_interview_session AS session\n      ON session.id = normalized.session_id\n     AND session.status = 'RUNNING'\n     AND session.claim_owner_workflow_execution_id\n         = normalized.workflow_execution_id\n     AND session.current_stage IN\n         (normalized.expected_stage, normalized.next_stage)\n),\nexisting AS\n(\n    SELECT question_set.*\n    FROM talentai.technical_question_set AS question_set\n    JOIN eligible\n      ON question_set.session_id = eligible.session_id\n     AND question_set.round = eligible.round\n     AND question_set.content_hash = eligible.content_hash\n),\ninserted AS\n(\n    INSERT INTO talentai.technical_question_set\n    (\n        session_id,\n        round,\n        version,\n        content_hash,\n        question_plan,\n        question_count,\n        generation_model,\n        prompt_version\n    )\n    SELECT\n        eligible.session_id,\n        eligible.round,\n        COALESCE(\n            (\n                SELECT MAX(question_set.version) + 1\n                FROM talentai.technical_question_set AS question_set\n                WHERE question_set.session_id = eligible.session_id\n                  AND question_set.round = eligible.round\n            ),\n            1\n        ),\n        eligible.content_hash,\n        eligible.question_plan,\n        eligible.question_count,\n        eligible.generation_model,\n        eligible.prompt_version\n    FROM eligible\n    WHERE eligible.current_stage = eligible.expected_stage\n      AND NOT EXISTS (SELECT 1 FROM existing)\n    ON CONFLICT ON CONSTRAINT uq_technical_question_set_content\n    DO NOTHING\n    RETURNING *\n),\nresolved AS\n(\n    SELECT existing.*, FALSE AS was_inserted FROM existing\n    UNION ALL\n    SELECT inserted.*, TRUE AS was_inserted FROM inserted\n),\nadvanced AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        current_stage = eligible.next_stage,\n        last_workflow_execution_id = eligible.workflow_execution_id,\n        updated_at = now()\n    FROM eligible\n    WHERE session.id = eligible.session_id\n      AND session.current_stage = eligible.expected_stage\n      AND EXISTS (SELECT 1 FROM resolved)\n    RETURNING session.id\n)\nSELECT\n    resolved.id                              AS \"questionSetId\",\n    resolved.session_id                      AS \"sessionId\",\n    resolved.round                           AS round,\n    resolved.version                         AS version,\n    resolved.content_hash                    AS \"contentHash\",\n    resolved.question_count                  AS \"questionCount\",\n    resolved.generation_model                AS \"generationModel\",\n    resolved.prompt_version                  AS \"promptVersion\",\n    resolved.was_inserted                    AS \"wasInserted\",\n    eligible.next_stage                      AS \"currentStage\"\nFROM resolved\nJOIN eligible\n  ON eligible.session_id = resolved.session_id\n AND eligible.round = resolved.round;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), 'FIRST', JSON.stringify($json.questionPlan), 'gpt-5.6-sol', '1.0'] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2304,
+        -320
+      ],
+      "id": "bb866eb9-7e7d-45be-b04b-e2ce483fc056",
+      "name": "Persist First Question Set"
+    },
+    {
+      "parameters": {
+        "jsCode": "const persisted = $input.first().json;\n\nif (\n  !persisted.questionSetId ||\n  persisted.round !== 'FIRST' ||\n  Number(persisted.questionCount) < 1\n) {\n  throw new Error(\n    'FIRST_QUESTION_SET_PERSISTENCE_FAILED'\n  );\n}\n\nconst validated =\n  $('Validate Interview Questions').first().json;\n\nreturn [\n  {\n    json: {\n      ...validated,\n      persistence: {\n        sessionId: persisted.sessionId,\n        questionSetId: persisted.questionSetId,\n        questionSetVersion: Number(persisted.version),\n        contentHash: persisted.contentHash,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        -320
+      ],
+      "id": "5ff3bc18-ae39-49d2-8283-8158d73e2d50",
+      "name": "Restore First Question Form"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                              AS session_id,\n        NULLIF(BTRIM($2), '')                 AS workflow_execution_id,\n        $3::UUID                              AS question_set_id,\n        $4::JSONB                             AS answer_records\n),\neligible AS\n(\n    SELECT\n        supplied.*,\n        question_set.round,\n        question_set.question_plan,\n        question_set.question_count,\n        session.current_stage,\n        CASE question_set.round\n            WHEN 'FIRST' THEN 'FIRST_ROUND'\n            WHEN 'FOLLOW_UP' THEN 'FOLLOW_UP'\n        END AS expected_stage,\n        CASE question_set.round\n            WHEN 'FIRST' THEN 'FOLLOW_UP_GENERATION'\n            WHEN 'FOLLOW_UP' THEN 'ANSWER_EVALUATION'\n        END AS next_stage\n    FROM supplied\n    JOIN talentai.technical_question_set AS question_set\n      ON question_set.id = supplied.question_set_id\n     AND question_set.session_id = supplied.session_id\n    JOIN talentai.technical_interview_session AS session\n      ON session.id = supplied.session_id\n     AND session.status = 'RUNNING'\n     AND session.claim_owner_workflow_execution_id\n         = supplied.workflow_execution_id\n    WHERE jsonb_typeof(supplied.answer_records) = 'array'\n),\nrecords AS\n(\n    SELECT\n        eligible.*,\n        answer_record,\n        CASE answer_record ->> 'round'\n            WHEN 'first' THEN 'FIRST'\n            WHEN 'followUp' THEN 'FOLLOW_UP'\n        END AS answer_round,\n        NULLIF(BTRIM(answer_record ->> 'id'), '') AS question_id,\n        NULLIF(BTRIM(answer_record ->> 'dimensionCode'), '') AS dimension_code,\n        NULLIF(BTRIM(answer_record ->> 'type'), '') AS question_type\n    FROM eligible\n    CROSS JOIN LATERAL jsonb_array_elements(\n        eligible.answer_records\n    ) AS item(answer_record)\n),\nvalidated AS\n(\n    SELECT records.*\n    FROM records\n    WHERE records.answer_round = records.round\n      AND EXISTS\n      (\n          SELECT 1\n          FROM jsonb_array_elements(\n              records.question_plan -> 'questions'\n          ) AS planned(question)\n          WHERE planned.question ->> 'id' = records.question_id\n            AND planned.question ->> 'dimensionCode'\n                = records.dimension_code\n            AND planned.question ->> 'type' = records.question_type\n      )\n      AND records.answer_record ? 'answerLabels'\n      AND records.answer_record ? 'answerText'\n),\nvalidation AS\n(\n    SELECT\n        eligible.*,\n        COUNT(validated.question_id)::INTEGER AS valid_count,\n        COUNT(DISTINCT validated.question_id)::INTEGER AS unique_count\n    FROM eligible\n    LEFT JOIN validated\n      ON validated.session_id = eligible.session_id\n     AND validated.question_set_id = eligible.question_set_id\n    GROUP BY\n        eligible.session_id,\n        eligible.workflow_execution_id,\n        eligible.question_set_id,\n        eligible.answer_records,\n        eligible.round,\n        eligible.question_plan,\n        eligible.question_count,\n        eligible.current_stage,\n        eligible.expected_stage,\n        eligible.next_stage\n),\npersisted AS\n(\n    INSERT INTO talentai.technical_interview_answer AS existing\n    (\n        session_id,\n        question_set_id,\n        round,\n        question_id,\n        dimension_code,\n        question_type,\n        answer_payload,\n        deterministic_score,\n        model_score,\n        final_score,\n        rationale,\n        status,\n        evaluated_at\n    )\n    SELECT\n        validated.session_id,\n        validated.question_set_id,\n        validated.round,\n        validated.question_id,\n        validated.dimension_code,\n        validated.question_type,\n        jsonb_build_object(\n            'questionText', validated.answer_record ->> 'questionText',\n            'answerLabels', validated.answer_record -> 'answerLabels',\n            'answerText', validated.answer_record ->> 'answerText'\n        ),\n        NULLIF(validated.answer_record ->> 'mcqScore', '')::NUMERIC,\n        NULLIF(validated.answer_record ->> 'llmScore', '')::NUMERIC,\n        NULLIF(validated.answer_record ->> 'finalScore', '')::NUMERIC,\n        COALESCE(validated.answer_record ->> 'llmRationale', ''),\n        CASE\n            WHEN validated.answer_record ->> 'finalScore' IS NULL\n                THEN 'SUBMITTED'\n            ELSE 'EVALUATED'\n        END,\n        CASE\n            WHEN validated.answer_record ->> 'finalScore' IS NULL\n                THEN NULL\n            ELSE now()\n        END\n    FROM validated\n    JOIN validation\n      ON validation.session_id = validated.session_id\n     AND validation.question_set_id = validated.question_set_id\n     AND validation.valid_count = validation.question_count\n     AND validation.unique_count = validation.question_count\n     AND validation.current_stage IN\n         (validation.expected_stage, validation.next_stage)\n    ON CONFLICT ON CONSTRAINT uq_technical_interview_answer_question\n    DO UPDATE SET\n        answer_payload = existing.answer_payload\n    WHERE existing.question_set_id = EXCLUDED.question_set_id\n      AND existing.dimension_code = EXCLUDED.dimension_code\n      AND existing.question_type = EXCLUDED.question_type\n      AND existing.answer_payload = EXCLUDED.answer_payload\n      AND existing.deterministic_score IS NOT DISTINCT FROM\n          EXCLUDED.deterministic_score\n      AND existing.model_score IS NOT DISTINCT FROM EXCLUDED.model_score\n      AND existing.final_score IS NOT DISTINCT FROM EXCLUDED.final_score\n      AND existing.rationale = EXCLUDED.rationale\n    RETURNING existing.*\n),\npersisted_count AS\n(\n    SELECT COUNT(*)::INTEGER AS value FROM persisted\n),\nadvanced AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        current_stage = validation.next_stage,\n        last_workflow_execution_id = validation.workflow_execution_id,\n        updated_at = now()\n    FROM validation, persisted_count\n    WHERE session.id = validation.session_id\n      AND session.current_stage = validation.expected_stage\n      AND validation.valid_count = validation.question_count\n      AND validation.unique_count = validation.question_count\n      AND persisted_count.value = validation.question_count\n    RETURNING session.id\n)\nSELECT\n    validation.session_id                     AS \"sessionId\",\n    validation.question_set_id                AS \"questionSetId\",\n    validation.round                          AS round,\n    persisted_count.value                     AS \"persistedCount\",\n    validation.question_count                 AS \"expectedCount\",\n    (\n        persisted_count.value = validation.question_count\n    )                                         AS \"complete\",\n    CASE\n        WHEN persisted_count.value = validation.question_count\n            THEN validation.next_stage\n        ELSE validation.current_stage\n    END                                       AS \"currentStage\"\nFROM validation\nCROSS JOIN persisted_count;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), $('Persist First Question Set').first().json.questionSetId, JSON.stringify($json.answerRecords)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        3200,
+        -320
+      ],
+      "id": "6f24d56e-9057-4824-8e6a-d51a316e0b64",
+      "name": "Persist First Round Answers"
+    },
+    {
+      "parameters": {
+        "jsCode": "const persisted = $input.first().json;\n\nif (\n  persisted.complete !== true ||\n  Number(persisted.persistedCount) !==\n    Number(persisted.expectedCount)\n) {\n  throw new Error(\n    'FIRST_ROUND_ANSWER_PERSISTENCE_FAILED'\n  );\n}\n\nconst normalized =\n  $('Normalize Interview Answers').first().json;\n\nreturn [\n  {\n    json: {\n      ...normalized,\n      persistence: {\n        sessionId: persisted.sessionId,\n        questionSetId: persisted.questionSetId,\n        answerCount: Number(persisted.persistedCount),\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        -320
+      ],
+      "id": "55e8b39b-2735-4183-9e80-681768272581",
+      "name": "Restore First Round Answers"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                                      AS session_id,\n        NULLIF(BTRIM($2), '')                         AS workflow_execution_id,\n        UPPER(BTRIM($3))                              AS round,\n        $4::JSONB                                     AS question_plan,\n        NULLIF(BTRIM($5), '')                         AS generation_model,\n        NULLIF(BTRIM($6), '')                         AS prompt_version\n),\nnormalized AS\n(\n    SELECT\n        supplied.*,\n        jsonb_array_length(question_plan -> 'questions') AS question_count,\n        encode(digest(question_plan::TEXT, 'sha256'), 'hex') AS content_hash,\n        CASE round\n            WHEN 'FIRST' THEN 'QUESTION_GENERATION'\n            WHEN 'FOLLOW_UP' THEN 'FOLLOW_UP_GENERATION'\n        END AS expected_stage,\n        CASE round\n            WHEN 'FIRST' THEN 'FIRST_ROUND'\n            WHEN 'FOLLOW_UP' THEN 'FOLLOW_UP'\n        END AS next_stage\n    FROM supplied\n    WHERE round IN ('FIRST', 'FOLLOW_UP')\n      AND jsonb_typeof(question_plan) = 'object'\n      AND jsonb_typeof(question_plan -> 'questions') = 'array'\n      AND jsonb_array_length(question_plan -> 'questions') > 0\n),\neligible AS\n(\n    SELECT normalized.*, session.current_stage\n    FROM normalized\n    JOIN talentai.technical_interview_session AS session\n      ON session.id = normalized.session_id\n     AND session.status = 'RUNNING'\n     AND session.claim_owner_workflow_execution_id\n         = normalized.workflow_execution_id\n     AND session.current_stage IN\n         (normalized.expected_stage, normalized.next_stage)\n),\nexisting AS\n(\n    SELECT question_set.*\n    FROM talentai.technical_question_set AS question_set\n    JOIN eligible\n      ON question_set.session_id = eligible.session_id\n     AND question_set.round = eligible.round\n     AND question_set.content_hash = eligible.content_hash\n),\ninserted AS\n(\n    INSERT INTO talentai.technical_question_set\n    (\n        session_id,\n        round,\n        version,\n        content_hash,\n        question_plan,\n        question_count,\n        generation_model,\n        prompt_version\n    )\n    SELECT\n        eligible.session_id,\n        eligible.round,\n        COALESCE(\n            (\n                SELECT MAX(question_set.version) + 1\n                FROM talentai.technical_question_set AS question_set\n                WHERE question_set.session_id = eligible.session_id\n                  AND question_set.round = eligible.round\n            ),\n            1\n        ),\n        eligible.content_hash,\n        eligible.question_plan,\n        eligible.question_count,\n        eligible.generation_model,\n        eligible.prompt_version\n    FROM eligible\n    WHERE eligible.current_stage = eligible.expected_stage\n      AND NOT EXISTS (SELECT 1 FROM existing)\n    ON CONFLICT ON CONSTRAINT uq_technical_question_set_content\n    DO NOTHING\n    RETURNING *\n),\nresolved AS\n(\n    SELECT existing.*, FALSE AS was_inserted FROM existing\n    UNION ALL\n    SELECT inserted.*, TRUE AS was_inserted FROM inserted\n),\nadvanced AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        current_stage = eligible.next_stage,\n        last_workflow_execution_id = eligible.workflow_execution_id,\n        updated_at = now()\n    FROM eligible\n    WHERE session.id = eligible.session_id\n      AND session.current_stage = eligible.expected_stage\n      AND EXISTS (SELECT 1 FROM resolved)\n    RETURNING session.id\n)\nSELECT\n    resolved.id                              AS \"questionSetId\",\n    resolved.session_id                      AS \"sessionId\",\n    resolved.round                           AS round,\n    resolved.version                         AS version,\n    resolved.content_hash                    AS \"contentHash\",\n    resolved.question_count                  AS \"questionCount\",\n    resolved.generation_model                AS \"generationModel\",\n    resolved.prompt_version                  AS \"promptVersion\",\n    resolved.was_inserted                    AS \"wasInserted\",\n    eligible.next_stage                      AS \"currentStage\"\nFROM resolved\nJOIN eligible\n  ON eligible.session_id = resolved.session_id\n AND eligible.round = resolved.round;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), 'FOLLOW_UP', JSON.stringify($json.questionPlan), 'gpt-5.6-sol', '1.0'] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        4544,
+        -320
+      ],
+      "id": "8d910cf1-c42e-47cb-8901-fe8c4d9d93c6",
+      "name": "Persist Follow-up Question Set"
+    },
+    {
+      "parameters": {
+        "jsCode": "const persisted = $input.first().json;\n\nif (\n  !persisted.questionSetId ||\n  persisted.round !== 'FOLLOW_UP' ||\n  Number(persisted.questionCount) < 1\n) {\n  throw new Error(\n    'FOLLOW_UP_QUESTION_SET_PERSISTENCE_FAILED'\n  );\n}\n\nconst validated =\n  $('Validate Follow-up Questions').first().json;\n\nreturn [\n  {\n    json: {\n      ...validated,\n      persistence: {\n        sessionId: persisted.sessionId,\n        questionSetId: persisted.questionSetId,\n        questionSetVersion: Number(persisted.version),\n        contentHash: persisted.contentHash,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4768,
+        -320
+      ],
+      "id": "5f3d2a26-23bb-4633-93f3-6ee70a05bdee",
+      "name": "Restore Follow-up Question Form"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                              AS session_id,\n        NULLIF(BTRIM($2), '')                 AS workflow_execution_id,\n        $3::UUID                              AS question_set_id,\n        $4::JSONB                             AS answer_records\n),\neligible AS\n(\n    SELECT\n        supplied.*,\n        question_set.round,\n        question_set.question_plan,\n        question_set.question_count,\n        session.current_stage,\n        CASE question_set.round\n            WHEN 'FIRST' THEN 'FIRST_ROUND'\n            WHEN 'FOLLOW_UP' THEN 'FOLLOW_UP'\n        END AS expected_stage,\n        CASE question_set.round\n            WHEN 'FIRST' THEN 'FOLLOW_UP_GENERATION'\n            WHEN 'FOLLOW_UP' THEN 'ANSWER_EVALUATION'\n        END AS next_stage\n    FROM supplied\n    JOIN talentai.technical_question_set AS question_set\n      ON question_set.id = supplied.question_set_id\n     AND question_set.session_id = supplied.session_id\n    JOIN talentai.technical_interview_session AS session\n      ON session.id = supplied.session_id\n     AND session.status = 'RUNNING'\n     AND session.claim_owner_workflow_execution_id\n         = supplied.workflow_execution_id\n    WHERE jsonb_typeof(supplied.answer_records) = 'array'\n),\nrecords AS\n(\n    SELECT\n        eligible.*,\n        answer_record,\n        CASE answer_record ->> 'round'\n            WHEN 'first' THEN 'FIRST'\n            WHEN 'followUp' THEN 'FOLLOW_UP'\n        END AS answer_round,\n        NULLIF(BTRIM(answer_record ->> 'id'), '') AS question_id,\n        NULLIF(BTRIM(answer_record ->> 'dimensionCode'), '') AS dimension_code,\n        NULLIF(BTRIM(answer_record ->> 'type'), '') AS question_type\n    FROM eligible\n    CROSS JOIN LATERAL jsonb_array_elements(\n        eligible.answer_records\n    ) AS item(answer_record)\n),\nvalidated AS\n(\n    SELECT records.*\n    FROM records\n    WHERE records.answer_round = records.round\n      AND EXISTS\n      (\n          SELECT 1\n          FROM jsonb_array_elements(\n              records.question_plan -> 'questions'\n          ) AS planned(question)\n          WHERE planned.question ->> 'id' = records.question_id\n            AND planned.question ->> 'dimensionCode'\n                = records.dimension_code\n            AND planned.question ->> 'type' = records.question_type\n      )\n      AND records.answer_record ? 'answerLabels'\n      AND records.answer_record ? 'answerText'\n),\nvalidation AS\n(\n    SELECT\n        eligible.*,\n        COUNT(validated.question_id)::INTEGER AS valid_count,\n        COUNT(DISTINCT validated.question_id)::INTEGER AS unique_count\n    FROM eligible\n    LEFT JOIN validated\n      ON validated.session_id = eligible.session_id\n     AND validated.question_set_id = eligible.question_set_id\n    GROUP BY\n        eligible.session_id,\n        eligible.workflow_execution_id,\n        eligible.question_set_id,\n        eligible.answer_records,\n        eligible.round,\n        eligible.question_plan,\n        eligible.question_count,\n        eligible.current_stage,\n        eligible.expected_stage,\n        eligible.next_stage\n),\npersisted AS\n(\n    INSERT INTO talentai.technical_interview_answer AS existing\n    (\n        session_id,\n        question_set_id,\n        round,\n        question_id,\n        dimension_code,\n        question_type,\n        answer_payload,\n        deterministic_score,\n        model_score,\n        final_score,\n        rationale,\n        status,\n        evaluated_at\n    )\n    SELECT\n        validated.session_id,\n        validated.question_set_id,\n        validated.round,\n        validated.question_id,\n        validated.dimension_code,\n        validated.question_type,\n        jsonb_build_object(\n            'questionText', validated.answer_record ->> 'questionText',\n            'answerLabels', validated.answer_record -> 'answerLabels',\n            'answerText', validated.answer_record ->> 'answerText'\n        ),\n        NULLIF(validated.answer_record ->> 'mcqScore', '')::NUMERIC,\n        NULLIF(validated.answer_record ->> 'llmScore', '')::NUMERIC,\n        NULLIF(validated.answer_record ->> 'finalScore', '')::NUMERIC,\n        COALESCE(validated.answer_record ->> 'llmRationale', ''),\n        CASE\n            WHEN validated.answer_record ->> 'finalScore' IS NULL\n                THEN 'SUBMITTED'\n            ELSE 'EVALUATED'\n        END,\n        CASE\n            WHEN validated.answer_record ->> 'finalScore' IS NULL\n                THEN NULL\n            ELSE now()\n        END\n    FROM validated\n    JOIN validation\n      ON validation.session_id = validated.session_id\n     AND validation.question_set_id = validated.question_set_id\n     AND validation.valid_count = validation.question_count\n     AND validation.unique_count = validation.question_count\n     AND validation.current_stage IN\n         (validation.expected_stage, validation.next_stage)\n    ON CONFLICT ON CONSTRAINT uq_technical_interview_answer_question\n    DO UPDATE SET\n        answer_payload = existing.answer_payload\n    WHERE existing.question_set_id = EXCLUDED.question_set_id\n      AND existing.dimension_code = EXCLUDED.dimension_code\n      AND existing.question_type = EXCLUDED.question_type\n      AND existing.answer_payload = EXCLUDED.answer_payload\n      AND existing.deterministic_score IS NOT DISTINCT FROM\n          EXCLUDED.deterministic_score\n      AND existing.model_score IS NOT DISTINCT FROM EXCLUDED.model_score\n      AND existing.final_score IS NOT DISTINCT FROM EXCLUDED.final_score\n      AND existing.rationale = EXCLUDED.rationale\n    RETURNING existing.*\n),\npersisted_count AS\n(\n    SELECT COUNT(*)::INTEGER AS value FROM persisted\n),\nadvanced AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        current_stage = validation.next_stage,\n        last_workflow_execution_id = validation.workflow_execution_id,\n        updated_at = now()\n    FROM validation, persisted_count\n    WHERE session.id = validation.session_id\n      AND session.current_stage = validation.expected_stage\n      AND validation.valid_count = validation.question_count\n      AND validation.unique_count = validation.question_count\n      AND persisted_count.value = validation.question_count\n    RETURNING session.id\n)\nSELECT\n    validation.session_id                     AS \"sessionId\",\n    validation.question_set_id                AS \"questionSetId\",\n    validation.round                          AS round,\n    persisted_count.value                     AS \"persistedCount\",\n    validation.question_count                 AS \"expectedCount\",\n    (\n        persisted_count.value = validation.question_count\n    )                                         AS \"complete\",\n    CASE\n        WHEN persisted_count.value = validation.question_count\n            THEN validation.next_stage\n        ELSE validation.current_stage\n    END                                       AS \"currentStage\"\nFROM validation\nCROSS JOIN persisted_count;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), $('Persist Follow-up Question Set').first().json.questionSetId, JSON.stringify($json.answerRecords)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        5440,
+        -320
+      ],
+      "id": "e9565333-830d-4c37-95ef-8c6674f70518",
+      "name": "Persist Follow-up Answers"
+    },
+    {
+      "parameters": {
+        "jsCode": "const persisted = $input.first().json;\n\nif (\n  persisted.complete !== true ||\n  Number(persisted.persistedCount) !==\n    Number(persisted.expectedCount)\n) {\n  throw new Error(\n    'FOLLOW_UP_ANSWER_PERSISTENCE_FAILED'\n  );\n}\n\nconst normalized =\n  $('Normalize Follow-up Answers').first().json;\n\nreturn [\n  {\n    json: {\n      ...normalized,\n      persistence: {\n        sessionId: persisted.sessionId,\n        questionSetId: persisted.questionSetId,\n        answerCount: Number(persisted.persistedCount),\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5664,
+        -320
+      ],
+      "id": "e03e14b2-c86a-43c7-8fa2-f95a9dc55d99",
+      "name": "Restore Follow-up Answers"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                              AS session_id,\n        NULLIF(BTRIM($2), '')                 AS workflow_execution_id,\n        $3::JSONB                             AS answer_records\n),\neligible AS\n(\n    SELECT supplied.*\n    FROM supplied\n    JOIN talentai.technical_interview_session AS session\n      ON session.id = supplied.session_id\n     AND session.status = 'RUNNING'\n     AND session.current_stage IN\n         ('ANSWER_EVALUATION', 'RESULT_PERSISTENCE')\n     AND session.claim_owner_workflow_execution_id\n         = supplied.workflow_execution_id\n    WHERE jsonb_typeof(supplied.answer_records) = 'array'\n),\nrecords AS\n(\n    SELECT\n        eligible.session_id,\n        eligible.workflow_execution_id,\n        answer_record,\n        CASE answer_record ->> 'round'\n            WHEN 'first' THEN 'FIRST'\n            WHEN 'followUp' THEN 'FOLLOW_UP'\n        END AS round,\n        NULLIF(BTRIM(answer_record ->> 'id'), '') AS question_id\n    FROM eligible\n    CROSS JOIN LATERAL jsonb_array_elements(\n        eligible.answer_records\n    ) AS item(answer_record)\n    WHERE NULLIF(answer_record ->> 'finalScore', '')::NUMERIC\n          BETWEEN 0 AND 4\n),\nupdated AS\n(\n    UPDATE talentai.technical_interview_answer AS answer\n    SET\n        model_score = NULLIF(records.answer_record ->> 'llmScore', '')::NUMERIC,\n        final_score = NULLIF(records.answer_record ->> 'finalScore', '')::NUMERIC,\n        rationale = COALESCE(records.answer_record ->> 'llmRationale', ''),\n        status = 'EVALUATED',\n        evaluated_at = COALESCE(answer.evaluated_at, now())\n    FROM records\n    WHERE answer.session_id = records.session_id\n      AND answer.round = records.round\n      AND answer.question_id = records.question_id\n      AND answer.dimension_code = records.answer_record ->> 'dimensionCode'\n      AND answer.question_type = records.answer_record ->> 'type'\n    RETURNING answer.id\n),\ncounts AS\n(\n    SELECT\n        (SELECT COUNT(*) FROM records)::INTEGER AS supplied_count,\n        (\n            SELECT COUNT(*)\n            FROM talentai.technical_interview_answer AS answer\n            WHERE answer.session_id = eligible.session_id\n        )::INTEGER AS answer_count,\n        (SELECT COUNT(*) FROM updated)::INTEGER AS evaluated_count\n    FROM eligible\n),\nadvanced AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        current_stage = 'RESULT_PERSISTENCE',\n        last_workflow_execution_id = eligible.workflow_execution_id,\n        updated_at = now()\n    FROM eligible, counts\n    WHERE session.id = eligible.session_id\n      AND session.current_stage = 'ANSWER_EVALUATION'\n      AND counts.supplied_count = counts.answer_count\n      AND counts.evaluated_count = counts.answer_count\n      AND counts.answer_count > 0\n    RETURNING session.id\n)\nSELECT\n    eligible.session_id                      AS \"sessionId\",\n    counts.supplied_count                    AS \"suppliedCount\",\n    counts.answer_count                      AS \"answerCount\",\n    counts.evaluated_count                   AS \"evaluatedCount\",\n    (\n        counts.answer_count > 0\n        AND counts.supplied_count = counts.answer_count\n        AND counts.evaluated_count = counts.answer_count\n    )                                        AS \"complete\",\n    CASE\n        WHEN counts.answer_count > 0\n         AND counts.supplied_count = counts.answer_count\n         AND counts.evaluated_count = counts.answer_count\n            THEN 'RESULT_PERSISTENCE'\n        ELSE 'ANSWER_EVALUATION'\n    END                                      AS \"currentStage\"\nFROM eligible\nCROSS JOIN counts;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), JSON.stringify($json.answerRecords)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        6560,
+        -320
+      ],
+      "id": "9db1ce3b-8d8d-479a-b0cf-5c136c720394",
+      "name": "Apply Answer Evaluations"
+    },
+    {
+      "parameters": {
+        "jsCode": "const persisted = $input.first().json;\n\nif (\n  persisted.complete !== true ||\n  Number(persisted.answerCount) !==\n    Number(persisted.evaluatedCount)\n) {\n  throw new Error(\n    'ANSWER_EVALUATION_PERSISTENCE_FAILED'\n  );\n}\n\nconst validated =\n  $('Validate Answer Scores').first().json;\n\nreturn [\n  {\n    json: {\n      ...validated,\n      persistence: {\n        sessionId: persisted.sessionId,\n        answerCount: Number(persisted.answerCount),\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6784,
+        -320
+      ],
+      "id": "bd156ad7-12c0-4af8-ac6a-18dd2a2e093d",
+      "name": "Restore Validated Answer Scores"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                              AS session_id,\n        NULLIF(BTRIM($2), '')                 AS workflow_execution_id,\n        $3::JSONB                             AS result_payload\n),\neligible AS\n(\n    SELECT supplied.*, session.current_stage\n    FROM supplied\n    JOIN talentai.technical_interview_session AS session\n      ON session.id = supplied.session_id\n     AND session.status IN ('RUNNING', 'COMPLETED')\n     AND session.current_stage IN ('RESULT_PERSISTENCE', 'COMPLETED')\n     AND session.claim_owner_workflow_execution_id\n         = supplied.workflow_execution_id\n    WHERE jsonb_typeof(supplied.result_payload) = 'object'\n      AND jsonb_typeof(supplied.result_payload #> '{score,dimensions}')\n          = 'array'\n      AND jsonb_typeof(supplied.result_payload -> 'gradeChecks') = 'array'\n      AND jsonb_typeof(supplied.result_payload #> '{interview,warnings}')\n          = 'array'\n      AND NOT EXISTS\n      (\n          SELECT 1\n          FROM talentai.technical_interview_answer AS answer\n          WHERE answer.session_id = supplied.session_id\n            AND answer.status <> 'EVALUATED'\n      )\n),\nexisting AS\n(\n    SELECT result.*\n    FROM talentai.technical_interview_result AS result\n    JOIN eligible\n      ON result.session_id = eligible.session_id\n     AND result.result_version = 1\n     AND result.result_payload = eligible.result_payload\n),\ninserted AS\n(\n    INSERT INTO talentai.technical_interview_result\n    (\n        session_id,\n        result_version,\n        workflow_execution_id,\n        assigned_grade_code,\n        overall_score,\n        dimension_scores,\n        grade_checks,\n        interview_summary,\n        warnings,\n        result_payload\n    )\n    SELECT\n        eligible.session_id,\n        1,\n        eligible.workflow_execution_id,\n        eligible.result_payload #>> '{assignedGrade,code}',\n        (eligible.result_payload #>> '{score,overall}')::NUMERIC,\n        eligible.result_payload #> '{score,dimensions}',\n        eligible.result_payload -> 'gradeChecks',\n        eligible.result_payload #>> '{interview,summary}',\n        eligible.result_payload #> '{interview,warnings}',\n        eligible.result_payload\n    FROM eligible\n    WHERE eligible.current_stage = 'RESULT_PERSISTENCE'\n      AND NOT EXISTS (SELECT 1 FROM existing)\n    ON CONFLICT ON CONSTRAINT uq_technical_interview_result_session_version\n    DO NOTHING\n    RETURNING *\n),\nresolved AS\n(\n    SELECT existing.*, FALSE AS was_inserted FROM existing\n    UNION ALL\n    SELECT inserted.*, TRUE AS was_inserted FROM inserted\n),\ncompleted AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        status = 'COMPLETED',\n        current_stage = 'COMPLETED',\n        last_workflow_execution_id = eligible.workflow_execution_id,\n        failure_category = NULL,\n        failure_code = NULL,\n        failure_message = NULL,\n        retryable = NULL,\n        failed_at = NULL,\n        updated_at = now(),\n        completed_at = COALESCE(session.completed_at, now())\n    FROM eligible\n    WHERE session.id = eligible.session_id\n      AND EXISTS (SELECT 1 FROM resolved)\n    RETURNING session.*\n)\nSELECT\n    resolved.id                              AS \"resultId\",\n    resolved.session_id                      AS \"sessionId\",\n    resolved.result_version                  AS \"resultVersion\",\n    resolved.assigned_grade_code             AS \"assignedGradeCode\",\n    resolved.overall_score                   AS \"overallScore\",\n    resolved.result_payload                  AS \"resultPayload\",\n    resolved.was_inserted                    AS \"wasInserted\",\n    completed.status                         AS status,\n    completed.current_stage                  AS \"currentStage\",\n    completed.attempt_count                  AS \"attemptCount\",\n    completed.completed_at                   AS \"completedAt\"\nFROM resolved\nJOIN completed ON completed.id = resolved.session_id;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), JSON.stringify($json)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        7232,
+        -320
+      ],
+      "id": "bf8e141b-bc52-4788-81ce-5f5235208ebf",
+      "name": "Complete Technical Interview"
+    },
+    {
+      "parameters": {
+        "jsCode": "const persisted = $input.first().json;\n\nlet result = persisted.resultPayload;\n\nif (typeof result === 'string') {\n  result = JSON.parse(result);\n}\n\nif (\n  !result ||\n  typeof result !== 'object' ||\n  Array.isArray(result) ||\n  !persisted.sessionId ||\n  !persisted.resultId\n) {\n  throw new Error(\n    'COMPLETED_INTERVIEW_RESULT_NOT_AVAILABLE'\n  );\n}\n\nconst replayed =\n  persisted.wasInserted === undefined\n    ? true\n    : persisted.wasInserted !== true;\n\nreturn [\n  {\n    json: {\n      ...result,\n      persistence: {\n        sessionId: persisted.sessionId,\n        resultId: persisted.resultId,\n        resultVersion: Number(persisted.resultVersion),\n        attemptCount: Number(persisted.attemptCount),\n        replayed,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7456,
+        -320
+      ],
+      "id": "f22a89d9-c247-49ac-b557-b7d01c49d37a",
+      "name": "Build Persisted Interview Result"
     }
   ],
   "connections": {
@@ -598,7 +893,7 @@
       "main": [
         [
           {
-            "node": "Candidate Interview Form",
+            "node": "Persist First Question Set",
             "type": "main",
             "index": 0
           }
@@ -620,7 +915,7 @@
       "main": [
         [
           {
-            "node": "Build Follow-up Question Prompt",
+            "node": "Persist First Round Answers",
             "type": "main",
             "index": 0
           }
@@ -675,7 +970,7 @@
       "main": [
         [
           {
-            "node": "Follow-up Interview Form",
+            "node": "Persist Follow-up Question Set",
             "type": "main",
             "index": 0
           }
@@ -697,7 +992,7 @@
       "main": [
         [
           {
-            "node": "Build Answer Scoring Prompt",
+            "node": "Persist Follow-up Answers",
             "type": "main",
             "index": 0
           }
@@ -752,7 +1047,7 @@
       "main": [
         [
           {
-            "node": "Calculate Final Grade",
+            "node": "Apply Answer Evaluations",
             "type": "main",
             "index": 0
           }
@@ -763,7 +1058,7 @@
       "main": [
         [
           {
-            "node": "Build Final Grade Summary",
+            "node": "Complete Technical Interview",
             "type": "main",
             "index": 0
           }
@@ -818,7 +1113,7 @@
       "main": [
         [
           {
-            "node": "Interview Configuration",
+            "node": "Claim Technical Interview Session",
             "type": "main",
             "index": 0
           }
@@ -830,6 +1125,196 @@
         [
           {
             "node": "Validate Phase 3 Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Technical Interview Session": {
+      "main": [
+        [
+          {
+            "node": "Interview Claim Can Continue?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interview Claim Can Continue?": {
+      "main": [
+        [
+          {
+            "node": "Interview Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Completed Interview Replay?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completed Interview Replay?": {
+      "main": [
+        [
+          {
+            "node": "Load Completed Technical Interview",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Technical Interview Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Completed Technical Interview": {
+      "main": [
+        [
+          {
+            "node": "Build Persisted Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist First Question Set": {
+      "main": [
+        [
+          {
+            "node": "Restore First Question Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore First Question Form": {
+      "main": [
+        [
+          {
+            "node": "Candidate Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist First Round Answers": {
+      "main": [
+        [
+          {
+            "node": "Restore First Round Answers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore First Round Answers": {
+      "main": [
+        [
+          {
+            "node": "Build Follow-up Question Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Follow-up Question Set": {
+      "main": [
+        [
+          {
+            "node": "Restore Follow-up Question Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Follow-up Question Form": {
+      "main": [
+        [
+          {
+            "node": "Follow-up Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Follow-up Answers": {
+      "main": [
+        [
+          {
+            "node": "Restore Follow-up Answers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Follow-up Answers": {
+      "main": [
+        [
+          {
+            "node": "Build Answer Scoring Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Answer Evaluations": {
+      "main": [
+        [
+          {
+            "node": "Restore Validated Answer Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Validated Answer Scores": {
+      "main": [
+        [
+          {
+            "node": "Calculate Final Grade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete Technical Interview": {
+      "main": [
+        [
+          {
+            "node": "Build Persisted Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Persisted Interview Result": {
+      "main": [
+        [
+          {
+            "node": "Build Final Grade Summary",
             "type": "main",
             "index": 0
           }

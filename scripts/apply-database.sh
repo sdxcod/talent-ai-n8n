@@ -33,7 +33,11 @@ SELECT
   to_regclass('talentai.resume_extraction') AS resume_extraction,
   to_regclass('talentai.grade_guide') AS grade_guide,
   to_regclass('talentai.grade_assessment') AS grade_assessment,
-  to_regclass('talentai.assessment_execution') AS assessment_execution;
+  to_regclass('talentai.assessment_execution') AS assessment_execution,
+  to_regclass('talentai.technical_interview_session') AS interview_session,
+  to_regclass('talentai.technical_question_set') AS question_set,
+  to_regclass('talentai.technical_interview_answer') AS interview_answer,
+  to_regclass('talentai.technical_interview_result') AS interview_result;
 SQL
 
 echo 'TalentAI database migrations and reference seeds were applied.'

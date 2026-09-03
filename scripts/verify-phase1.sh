@@ -45,6 +45,16 @@ required_operational_files=(
   "$TALENTAI_REPOSITORY_ROOT/docs/quality/phase3-calibration-v1.md"
   "$TALENTAI_REPOSITORY_ROOT/workflows/phase-4-5/manifest.json"
   "$TALENTAI_REPOSITORY_ROOT/workflows/phase-4-5/TAI-04-candidate-interview-final-grade-v1.json"
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V009__create_technical_interview_persistence.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q013__claim_technical_interview_session.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q014__persist_technical_question_set.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q015__persist_technical_interview_answers.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q016__apply_technical_answer_evaluations.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q017__complete_technical_interview.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q018__load_completed_technical_interview.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/tests/T003__technical_interview_persistence_contract.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/tests/T004__technical_interview_queries.sql"
+  "$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"
 )
 
 for required_workflow_file in "${required_workflow_files[@]}"; do
@@ -330,6 +340,7 @@ SQL
 
 "$TALENTAI_SCRIPT_DIR/test-assessment-execution-contract.sh"
 "$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
+"$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"
 "$TALENTAI_SCRIPT_DIR/test-phase1-operational-workflows.sh"
 
-echo 'TalentAI Phase 1 repository and runtime verification passed.'
+echo 'TalentAI repository and runtime verification passed.'

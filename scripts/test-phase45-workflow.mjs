@@ -29,6 +29,17 @@ assert.deepEqual(manifest.upstreamContract, {
   version: '1.0.0',
 });
 assert.equal(manifest.workflows.length, 1);
+assert.deepEqual(manifest.persistence, {
+  schemaVersion: '1.0.0',
+  migration: 'database/migrations/V009__create_technical_interview_persistence.sql',
+  tables: [
+    'talentai.technical_interview_session',
+    'talentai.technical_question_set',
+    'talentai.technical_interview_answer',
+    'talentai.technical_interview_result',
+  ],
+  queryRange: 'Q013-Q018',
+});
 assert.deepEqual(
   [...manifest.requiredCredentialTypes].sort(),
   ['openAiApi', 'postgres'],
@@ -79,13 +90,30 @@ for (const requiredNode of [
   'Load Completed Phase 3 Assessment',
   'Build Demo Phase 3 Handoff',
   'Validate Phase 3 Handoff',
+  'Claim Technical Interview Session',
+  'Interview Claim Can Continue?',
+  'Completed Interview Replay?',
+  'Load Completed Technical Interview',
+  'Reject Technical Interview Claim',
   'Generate Interview Questions',
   'Validate Interview Questions',
+  'Persist First Question Set',
+  'Restore First Question Form',
+  'Persist First Round Answers',
+  'Restore First Round Answers',
   'Generate Follow-up Questions',
   'Validate Follow-up Questions',
+  'Persist Follow-up Question Set',
+  'Restore Follow-up Question Form',
+  'Persist Follow-up Answers',
+  'Restore Follow-up Answers',
   'Score Interview Answers',
   'Validate Answer Scores',
+  'Apply Answer Evaluations',
+  'Restore Validated Answer Scores',
   'Calculate Final Grade',
+  'Complete Technical Interview',
+  'Build Persisted Interview Result',
   'Show Final Grade',
 ]) {
   assert.ok(nodeByName.has(requiredNode), `Required node is missing: ${requiredNode}`);
@@ -120,6 +148,86 @@ assert.deepEqual(
   connectionTargets('Build Demo Phase 3 Handoff'),
   ['Validate Phase 3 Handoff'],
 );
+assert.deepEqual(
+  connectionTargets('Validate Phase 3 Handoff'),
+  ['Claim Technical Interview Session'],
+);
+assert.deepEqual(
+  connectionTargets('Claim Technical Interview Session'),
+  ['Interview Claim Can Continue?'],
+);
+assert.deepEqual(
+  connectionTargets('Interview Claim Can Continue?', 0),
+  ['Interview Configuration'],
+);
+assert.deepEqual(
+  connectionTargets('Interview Claim Can Continue?', 1),
+  ['Completed Interview Replay?'],
+);
+assert.deepEqual(
+  connectionTargets('Completed Interview Replay?', 0),
+  ['Load Completed Technical Interview'],
+);
+assert.deepEqual(
+  connectionTargets('Completed Interview Replay?', 1),
+  ['Reject Technical Interview Claim'],
+);
+assert.deepEqual(
+  connectionTargets('Load Completed Technical Interview'),
+  ['Build Persisted Interview Result'],
+);
+assert.deepEqual(
+  connectionTargets('Validate Interview Questions'),
+  ['Persist First Question Set'],
+);
+assert.deepEqual(
+  connectionTargets('Persist First Question Set'),
+  ['Restore First Question Form'],
+);
+assert.deepEqual(
+  connectionTargets('Normalize Interview Answers'),
+  ['Persist First Round Answers'],
+);
+assert.deepEqual(
+  connectionTargets('Persist First Round Answers'),
+  ['Restore First Round Answers'],
+);
+assert.deepEqual(
+  connectionTargets('Validate Follow-up Questions'),
+  ['Persist Follow-up Question Set'],
+);
+assert.deepEqual(
+  connectionTargets('Persist Follow-up Question Set'),
+  ['Restore Follow-up Question Form'],
+);
+assert.deepEqual(
+  connectionTargets('Normalize Follow-up Answers'),
+  ['Persist Follow-up Answers'],
+);
+assert.deepEqual(
+  connectionTargets('Persist Follow-up Answers'),
+  ['Restore Follow-up Answers'],
+);
+assert.deepEqual(
+  connectionTargets('Validate Answer Scores'),
+  ['Apply Answer Evaluations'],
+);
+assert.deepEqual(
+  connectionTargets('Apply Answer Evaluations'),
+  ['Restore Validated Answer Scores'],
+);
+assert.deepEqual(
+  connectionTargets('Calculate Final Grade'),
+  ['Complete Technical Interview'],
+);
+assert.deepEqual(
+  connectionTargets('Complete Technical Interview'),
+  ['Build Persisted Interview Result'],
+);
+assert.deepEqual(
+  connectionTargets('Build Persisted Interview Result'),
+  ['Build Final Grade Summary'],
+);
 
 assert.deepEqual(
   nodeByName.get('When Executed by Another Workflow').parameters.workflowInputs,
@@ -145,11 +253,38 @@ for (const [nodeName, sourceName] of [
   ['Validate Demo Interview Request', 'tai04-validate-demo-interview-request'],
   ['Build Demo Phase 3 Handoff', 'tai04-build-demo-phase3-handoff'],
   ['Validate Phase 3 Handoff', 'tai04-validate-phase3-handoff'],
+  ['Restore First Question Form', 'tai04-restore-first-question-form'],
+  ['Restore First Round Answers', 'tai04-restore-first-round-answers'],
+  ['Restore Follow-up Question Form', 'tai04-restore-follow-up-question-form'],
+  ['Restore Follow-up Answers', 'tai04-restore-follow-up-answers'],
+  ['Restore Validated Answer Scores', 'tai04-restore-validated-answer-scores'],
+  ['Build Persisted Interview Result', 'tai04-build-persisted-interview-result'],
 ]) {
   assert.equal(
     nodeByName.get(nodeName).parameters.jsCode,
     sourceCode(sourceName),
     `${nodeName} is not synchronized with ${sourceName}.js`,
+  );
+}
+
+const databaseQueryDirectory = path.join(repositoryRoot, 'database', 'queries');
+const databaseQuery = (name) =>
+  fs.readFileSync(path.join(databaseQueryDirectory, `${name}.sql`), 'utf8');
+
+for (const [nodeName, queryName] of [
+  ['Claim Technical Interview Session', 'Q013__claim_technical_interview_session'],
+  ['Load Completed Technical Interview', 'Q018__load_completed_technical_interview'],
+  ['Persist First Question Set', 'Q014__persist_technical_question_set'],
+  ['Persist First Round Answers', 'Q015__persist_technical_interview_answers'],
+  ['Persist Follow-up Question Set', 'Q014__persist_technical_question_set'],
+  ['Persist Follow-up Answers', 'Q015__persist_technical_interview_answers'],
+  ['Apply Answer Evaluations', 'Q016__apply_technical_answer_evaluations'],
+  ['Complete Technical Interview', 'Q017__complete_technical_interview'],
+]) {
+  assert.equal(
+    nodeByName.get(nodeName).parameters.query,
+    databaseQuery(queryName),
+    `${nodeName} is not synchronized with ${queryName}.sql`,
   );
 }
 
