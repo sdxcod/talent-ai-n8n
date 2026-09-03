@@ -872,6 +872,40 @@
       ],
       "id": "4f4e9083-192f-43bd-b8e3-43de68062e56",
       "name": "Stale Recovery Failure"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "نتیجه ارزیابی رزومه TalentAI",
+        "completionMessage": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        2048,
+        224
+      ],
+      "id": "57a1b2c3-d4e5-4f67-8a90-b1c2d3e4f501",
+      "name": "Show Assessment Result",
+      "webhookId": "59c3d4e5-f607-4189-ab12-d3e4f5061723"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "ارزیابی رزومه TalentAI تکمیل نشد",
+        "completionMessage": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1600,
+        -304
+      ],
+      "id": "58b2c3d4-e5f6-4078-9ab1-c2d3e4f50612",
+      "name": "Show Assessment Failure",
+      "webhookId": "5ad4e5f6-0718-429a-bc23-e4f506172834"
     }
   ],
   "connections": {
@@ -1130,7 +1164,13 @@
     },
     "Build TalentAI Assessment Result": {
       "main": [
-        [],
+        [
+          {
+            "node": "Show Assessment Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Result Assembly Failure",
@@ -1302,6 +1342,50 @@
         [
           {
             "node": "Build Failure Recording Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Failed Assessment Result": {
+      "main": [
+        [
+          {
+            "node": "Show Assessment Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Failure Recording Fallback": {
+      "main": [
+        [
+          {
+            "node": "Show Assessment Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Unrecorded Failure Result": {
+      "main": [
+        [
+          {
+            "node": "Show Assessment Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Rejected Assessment Result": {
+      "main": [
+        [
+          {
+            "node": "Show Assessment Failure",
             "type": "main",
             "index": 0
           }

@@ -140,6 +140,27 @@ const stopNode = (name, id, position, errorMessage) => ({
   name,
 });
 
+const completionFormNode = (
+  name,
+  id,
+  webhookId,
+  position,
+  completionTitle,
+) => ({
+  parameters: {
+    operation: 'completion',
+    completionTitle,
+    completionMessage: '={{ $json.output }}',
+    options: {},
+  },
+  type: 'n8n-nodes-base.form',
+  typeVersion: 2.5,
+  position,
+  id,
+  name,
+  webhookId,
+});
+
 const mainConnection = (node, index = 0) => ({
   node,
   type: 'main',
@@ -390,6 +411,22 @@ const transformTai01 = () => {
     code('tai01-build-rejected-assessment-result')
   ));
 
+  upsertNode(completionFormNode(
+    'Show Assessment Result',
+    '57a1b2c3-d4e5-4f67-8a90-b1c2d3e4f501',
+    '59c3d4e5-f607-4189-ab12-d3e4f5061723',
+    [2048, 224],
+    'نتیجه ارزیابی رزومه TalentAI'
+  ));
+
+  upsertNode(completionFormNode(
+    'Show Assessment Failure',
+    '58b2c3d4-e5f6-4078-9ab1-c2d3e4f50612',
+    '5ad4e5f6-0718-429a-bc23-e4f506172834',
+    [1600, -304],
+    'ارزیابی رزومه TalentAI تکمیل نشد'
+  ));
+
   upsertNode(postgresNode(
     'Claim Assessment Execution',
     'b07fc30d-1d75-4679-914c-a74e9b4104b0',
@@ -494,7 +531,12 @@ const transformTai01 = () => {
     'Prepare Grading Request': { main: [[mainConnection('Resolve Grade Engine Input')]] },
     'Resolve Grade Engine Input': { main: [[mainConnection('Run Deterministic Grade Engine')], [mainConnection('Grade Guide Failure')]] },
     'Run Deterministic Grade Engine': { main: [[mainConnection('Build TalentAI Assessment Result')], [mainConnection('Grade Engine Failure')]] },
-    'Build TalentAI Assessment Result': { main: [[], [mainConnection('Result Assembly Failure')]] },
+    'Build TalentAI Assessment Result': {
+      main: [
+        [mainConnection('Show Assessment Result')],
+        [mainConnection('Result Assembly Failure')],
+      ],
+    },
     'Completed Replay?': {
       main: [
         [mainConnection('Load Completed Assessment')],
@@ -518,6 +560,18 @@ const transformTai01 = () => {
     'Grade Engine Failure': { main: [[mainConnection('Record Assessment Failure')]] },
     'Result Assembly Failure': { main: [[mainConnection('Record Assessment Failure')]] },
     'Record Assessment Failure': { main: [[mainConnection('Build Failed Assessment Result')], [mainConnection('Build Failure Recording Fallback')]] },
+    'Build Failed Assessment Result': {
+      main: [[mainConnection('Show Assessment Failure')]],
+    },
+    'Build Failure Recording Fallback': {
+      main: [[mainConnection('Show Assessment Failure')]],
+    },
+    'Build Unrecorded Failure Result': {
+      main: [[mainConnection('Show Assessment Failure')]],
+    },
+    'Build Rejected Assessment Result': {
+      main: [[mainConnection('Show Assessment Failure')]],
+    },
   };
 };
 
