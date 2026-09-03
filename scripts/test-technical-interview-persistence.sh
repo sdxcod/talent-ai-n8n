@@ -17,6 +17,7 @@ required_files=(
   "$TALENTAI_QUERY_DIR/Q016__apply_technical_answer_evaluations.sql"
   "$TALENTAI_QUERY_DIR/Q017__complete_technical_interview.sql"
   "$TALENTAI_QUERY_DIR/Q018__load_completed_technical_interview.sql"
+  "$TALENTAI_QUERY_DIR/Q019__fail_technical_interview_session.sql"
   "$TALENTAI_CONTRACT_TEST"
   "$TALENTAI_QUERY_TEST"
 )
@@ -153,6 +154,26 @@ RETURNS TABLE (
   "resultVersion" INTEGER,
   "resultPayload" JSONB
 )' "$TALENTAI_QUERY_DIR/Q018__load_completed_technical_interview.sql"
+
+  emit_sql_function '
+CREATE FUNCTION pg_temp.fail_technical_interview_session(
+  UUID, TEXT, TEXT, TEXT, TEXT, TEXT, BOOLEAN
+)
+RETURNS TABLE (
+  "sessionId" UUID,
+  "requestId" UUID,
+  "assessmentId" UUID,
+  "extractionId" UUID,
+  status VARCHAR,
+  "currentStage" VARCHAR,
+  "attemptCount" INTEGER,
+  "failureCategory" VARCHAR,
+  "failureCode" VARCHAR,
+  "failureMessage" VARCHAR,
+  retryable BOOLEAN,
+  "startedAt" TIMESTAMP WITH TIME ZONE,
+  "failedAt" TIMESTAMP WITH TIME ZONE
+)' "$TALENTAI_QUERY_DIR/Q019__fail_technical_interview_session.sql"
 
   sed -n '1,$p' "$TALENTAI_QUERY_TEST"
   printf '%s\n' 'ROLLBACK;'

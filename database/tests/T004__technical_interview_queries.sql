@@ -10,6 +10,7 @@ DECLARE
     v_first_question_set_id UUID;
     v_follow_up_question_set_id UUID;
     v_result_id UUID;
+    v_retry_session_id UUID;
     v_row RECORD;
     v_count INTEGER;
 BEGIN
@@ -323,16 +324,43 @@ BEGIN
         'interview-query-retry-1'
     );
 
-    UPDATE talentai.technical_interview_session
-    SET
-        status = 'FAILED',
-        failure_category = 'PROVIDER',
-        failure_code = 'QUESTION_GENERATION_FAILED',
-        failure_message = 'Synthetic retryable failure.',
-        retryable = TRUE,
-        failed_at = now(),
-        updated_at = now()
-    WHERE id = v_row."sessionId";
+    v_retry_session_id := v_row."sessionId";
+
+    SELECT * INTO STRICT v_row
+    FROM pg_temp.fail_technical_interview_session(
+        v_retry_session_id,
+        'interview-query-retry-1',
+        'QUESTION_GENERATION',
+        'PROVIDER',
+        'QUESTION_GENERATION_FAILED',
+        E'Synthetic retryable\tfailure.\nPrivate payload omitted.',
+        TRUE
+    );
+
+    IF v_row.status <> 'FAILED'
+       OR v_row."currentStage" <> 'QUESTION_GENERATION'
+       OR v_row."failureCategory" <> 'PROVIDER'
+       OR v_row."failureCode" <> 'QUESTION_GENERATION_FAILED'
+       OR v_row."failureMessage" ~ E'[\r\n\t]'
+       OR v_row.retryable IS NOT TRUE
+       OR v_row."failedAt" IS NULL THEN
+        RAISE EXCEPTION 'Controlled interview failure was not recorded: %', v_row;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM pg_temp.fail_technical_interview_session(
+        v_retry_session_id,
+        'interview-query-retry-wrong-owner',
+        'QUESTION_GENERATION',
+        'PROVIDER',
+        'SHOULD_NOT_BE_RECORDED',
+        'Wrong owner must not overwrite the failure.',
+        TRUE
+    );
+
+    IF v_count <> 0 THEN
+        RAISE EXCEPTION 'Non-owner workflow overwrote interview failure state';
+    END IF;
 
     SELECT * INTO STRICT v_row
     FROM pg_temp.claim_technical_interview_session(

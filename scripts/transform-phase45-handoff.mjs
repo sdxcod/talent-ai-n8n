@@ -20,6 +20,9 @@ const readRepositoryFile = (relativePath) =>
 const code = (name) =>
   readRepositoryFile(`workflows/phase-4-5/code/${name}.js`).trimEnd();
 
+const failureCode = (sourceName, definition) =>
+  `const failureDefinition = ${JSON.stringify(definition, null, 2)};\n${code(sourceName)}`;
+
 const sql = (name) =>
   readRepositoryFile(`workflows/phase-4-5/sql/${name}.sql`);
 
@@ -89,6 +92,10 @@ const upsertNode = (node) => {
   } else {
     workflow.nodes.push(node);
   }
+};
+
+const enableErrorOutput = (node) => {
+  node.onError = 'continueErrorOutput';
 };
 
 const mainConnection = (node, index = 0) => ({
@@ -161,6 +168,23 @@ const codeNode = ({ name, id, position, sourceName }) => ({
   name,
 });
 
+const failureNode = ({
+  name,
+  id,
+  position,
+  sourceName = 'tai04-classify-interview-failure',
+  definition,
+}) => ({
+  parameters: {
+    jsCode: failureCode(sourceName, definition),
+  },
+  type: 'n8n-nodes-base.code',
+  typeVersion: 2,
+  position,
+  id,
+  name,
+});
+
 const stopAndErrorNode = ({ name, id, position, errorMessage }) => ({
   parameters: {
     errorMessage,
@@ -196,8 +220,26 @@ loadCompletedAssessment.position = [64, -256];
 const resolved = requireNode('Interview Context Resolved?');
 resolved.position = [288, -256];
 
-const failSetup = requireNode('Fail Interview Setup');
-failSetup.position = [512, -128];
+const phase3ResolutionFailure = renameNode(
+  'Fail Interview Setup',
+  'Phase 3 Resolution Failure'
+);
+Object.assign(
+  phase3ResolutionFailure,
+  failureNode({
+    name: 'Phase 3 Resolution Failure',
+    id: phase3ResolutionFailure.id,
+    position: [512, -128],
+    sourceName: 'tai04-classify-unclaimed-failure',
+    definition: {
+      stage: '',
+      category: 'VALIDATION',
+      code: 'COMPLETED_PHASE3_ASSESSMENT_NOT_FOUND',
+      message: 'A completed Phase 3 assessment could not be resolved for the supplied extraction.',
+      retryable: false,
+    },
+  })
+);
 
 const validateHandoff = renameNode(
   'Build Interview Context',
@@ -266,12 +308,16 @@ upsertNode(postgresQueryNode({
     "={{ [$('Validate Phase 3 Handoff').first().json.correlation.contractVersion, $('Validate Phase 3 Handoff').first().json.correlation.requestId, $('Validate Phase 3 Handoff').first().json.correlation.assessmentId] }}",
 }));
 
-upsertNode(stopAndErrorNode({
-  name: 'Reject Technical Interview Claim',
-  id: '26379c3d-96e2-41d2-a4ed-3595603cc5dc',
+const rejectedClaim = findNode('Build Rejected Technical Interview Result') ??
+  renameNode(
+    'Reject Technical Interview Claim',
+    'Build Rejected Technical Interview Result'
+  );
+Object.assign(rejectedClaim, codeNode({
+  name: 'Build Rejected Technical Interview Result',
+  id: rejectedClaim.id,
   position: [1632, -128],
-  errorMessage:
-    "={{ 'TECHNICAL_INTERVIEW_CLAIM_REJECTED: ' + String($json.claimStatus ?? 'UNKNOWN') + ' [requestId=' + String($json.requestId ?? '') + ', assessmentId=' + String($json.assessmentId ?? '') + ']' }}",
+  sourceName: 'tai04-build-rejected-interview-result',
 }));
 
 upsertNode(postgresQueryNode({
@@ -370,6 +416,342 @@ upsertNode(codeNode({
   sourceName: 'tai04-build-persisted-interview-result',
 }));
 
+upsertNode(postgresQueryNode({
+  name: 'Record Technical Interview Failure',
+  id: 'fc546a2e-f315-4e09-838f-cf11df3adc01',
+  position: [7008, 416],
+  queryName: 'Q019__fail_technical_interview_session',
+  queryReplacement:
+    '={{ [$json.sessionId, $json.workflowExecutionId, $json.currentStage, $json.failureCategory, $json.failureCode, $json.failureMessage, $json.retryable] }}',
+}));
+enableErrorOutput(requireNode('Record Technical Interview Failure'));
+
+upsertNode(codeNode({
+  name: 'Build Failed Technical Interview Result',
+  id: '2aae260f-1cf2-48f7-9bed-9586bf613202',
+  position: [7232, 352],
+  sourceName: 'tai04-build-failed-interview-result',
+}));
+
+upsertNode(codeNode({
+  name: 'Build Interview Failure Recording Fallback',
+  id: 'fe55a7c4-40e4-4d57-a6ea-b829f141d303',
+  position: [7232, 480],
+  sourceName: 'tai04-build-failure-recording-fallback',
+}));
+
+upsertNode(codeNode({
+  name: 'Build Unrecorded Technical Interview Result',
+  id: '9e21b709-a1c7-489c-8a12-280df89d8404',
+  position: [960, 416],
+  sourceName: 'tai04-build-unrecorded-interview-result',
+}));
+
+const unclaimedFailures = [
+  {
+    name: 'Demo Request Failure',
+    id: '63e0d476-4644-4a94-aa0b-3b6a9abdf105',
+    position: [-160, 64],
+    definition: {
+      stage: '',
+      category: 'VALIDATION',
+      code: 'TECHNICAL_INTERVIEW_REQUEST_VALIDATION_FAILED',
+      message: 'The demo interview request did not satisfy the required contract.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'Phase 3 Lookup Failure',
+    id: '96469124-e34d-4d96-a442-9a4c6e13b106',
+    position: [64, 64],
+    definition: {
+      stage: '',
+      category: 'PERSISTENCE',
+      code: 'PHASE3_HANDOFF_LOOKUP_FAILED',
+      message: 'The completed Phase 3 assessment could not be loaded.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Demo Handoff Assembly Failure',
+    id: '1f7d7540-6973-4812-8d17-86f18ebf9107',
+    position: [512, 64],
+    definition: {
+      stage: '',
+      category: 'ORCHESTRATION',
+      code: 'PHASE3_HANDOFF_ASSEMBLY_FAILED',
+      message: 'The demo Phase 3 handoff could not be assembled.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Phase 3 Contract Failure',
+    id: '7b67d3a1-8b5b-43c9-bda6-2d7468e1d108',
+    position: [736, 64],
+    definition: {
+      stage: '',
+      category: 'VALIDATION',
+      code: 'PHASE3_HANDOFF_VALIDATION_FAILED',
+      message: 'The Phase 3 handoff did not satisfy contract version 1.0.0.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'Interview Claim Failure',
+    id: '36134c02-a145-48ac-aad1-bbce7770b109',
+    position: [960, 64],
+    definition: {
+      stage: 'QUESTION_GENERATION',
+      category: 'PERSISTENCE',
+      code: 'TECHNICAL_INTERVIEW_CLAIM_FAILED',
+      message: 'The technical interview session could not be claimed.',
+      retryable: true,
+    },
+  },
+];
+
+for (const failure of unclaimedFailures) {
+  upsertNode(failureNode({
+    ...failure,
+    sourceName: 'tai04-classify-unclaimed-failure',
+  }));
+}
+
+const interviewFailures = [
+  {
+    name: 'Interview Configuration Failure',
+    id: '559d335e-d37e-4fd0-b4d5-af314d4e1110',
+    position: [1408, 64],
+    definition: {
+      stage: 'QUESTION_GENERATION',
+      category: 'CONFIGURATION',
+      code: 'TECHNICAL_INTERVIEW_CONFIGURATION_FAILED',
+      message: 'The technical interview configuration is invalid.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'Question Prompt Failure',
+    id: 'e31f8d53-61f4-4aa1-8510-e5b967de7111',
+    position: [1632, 64],
+    definition: {
+      stage: 'QUESTION_GENERATION',
+      category: 'ORCHESTRATION',
+      code: 'INTERVIEW_QUESTION_PROMPT_FAILED',
+      message: 'The interview question prompt could not be assembled.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Question Generation Failure',
+    id: '24f2bc43-8e18-4823-afb5-dba62d3d7112',
+    position: [1856, 64],
+    definition: {
+      stage: 'QUESTION_GENERATION',
+      category: 'PROVIDER',
+      code: 'INTERVIEW_QUESTION_GENERATION_FAILED',
+      message: 'Interview question generation failed; provider payload omitted.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Question Validation Failure',
+    id: '99aaf2cd-a394-41f8-a34d-4a6d01ba7113',
+    position: [2080, 64],
+    definition: {
+      stage: 'QUESTION_GENERATION',
+      category: 'PROVIDER',
+      code: 'INTERVIEW_QUESTION_RESPONSE_INVALID',
+      message: 'Generated interview questions did not satisfy the required schema.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'First Question Persistence Failure',
+    id: '2b4253d2-78ec-4e66-93f8-789fb3fb7114',
+    position: [2416, 64],
+    definition: {
+      stage: 'QUESTION_GENERATION',
+      category: 'PERSISTENCE',
+      code: 'FIRST_QUESTION_SET_PERSISTENCE_FAILED',
+      message: 'The first-round question set could not be persisted.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'First Answer Validation Failure',
+    id: '08b9b125-3121-4a63-a11d-e4d3cfc47115',
+    position: [2976, 64],
+    definition: {
+      stage: 'FIRST_ROUND',
+      category: 'VALIDATION',
+      code: 'FIRST_ROUND_ANSWER_VALIDATION_FAILED',
+      message: 'The first-round interview answers are invalid.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'First Answer Persistence Failure',
+    id: 'f626697f-4c64-424e-a1c6-10d638737116',
+    position: [3312, 64],
+    definition: {
+      stage: 'FIRST_ROUND',
+      category: 'PERSISTENCE',
+      code: 'FIRST_ROUND_ANSWER_PERSISTENCE_FAILED',
+      message: 'The first-round interview answers could not be persisted.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Follow-up Prompt Failure',
+    id: 'a1a0473f-33cc-469d-9803-032c6bea7117',
+    position: [3648, 64],
+    definition: {
+      stage: 'FOLLOW_UP_GENERATION',
+      category: 'ORCHESTRATION',
+      code: 'FOLLOW_UP_PROMPT_FAILED',
+      message: 'The follow-up question prompt could not be assembled.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Follow-up Generation Failure',
+    id: 'ec64f6ce-02b9-45a4-974e-19f3e9cd7118',
+    position: [3872, 64],
+    definition: {
+      stage: 'FOLLOW_UP_GENERATION',
+      category: 'PROVIDER',
+      code: 'FOLLOW_UP_QUESTION_GENERATION_FAILED',
+      message: 'Follow-up question generation failed; provider payload omitted.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Follow-up Validation Failure',
+    id: '64cb60a0-911d-4e1c-86ca-314a05a37119',
+    position: [4320, 64],
+    definition: {
+      stage: 'FOLLOW_UP_GENERATION',
+      category: 'PROVIDER',
+      code: 'FOLLOW_UP_QUESTION_RESPONSE_INVALID',
+      message: 'Generated follow-up questions did not satisfy the required schema.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Follow-up Question Persistence Failure',
+    id: 'a48bdbca-a3f7-46ce-ab29-5b15d3927120',
+    position: [4656, 64],
+    definition: {
+      stage: 'FOLLOW_UP_GENERATION',
+      category: 'PERSISTENCE',
+      code: 'FOLLOW_UP_QUESTION_SET_PERSISTENCE_FAILED',
+      message: 'The follow-up question set could not be persisted.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Follow-up Answer Validation Failure',
+    id: '4f38c9bc-4208-4696-8a30-741691f47121',
+    position: [5216, 64],
+    definition: {
+      stage: 'FOLLOW_UP',
+      category: 'VALIDATION',
+      code: 'FOLLOW_UP_ANSWER_VALIDATION_FAILED',
+      message: 'The follow-up interview answers are invalid.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Follow-up Answer Persistence Failure',
+    id: '9ae6df5b-886e-49c1-b0dd-273fac207122',
+    position: [5552, 64],
+    definition: {
+      stage: 'FOLLOW_UP',
+      category: 'PERSISTENCE',
+      code: 'FOLLOW_UP_ANSWER_PERSISTENCE_FAILED',
+      message: 'The follow-up interview answers could not be persisted.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Answer Scoring Prompt Failure',
+    id: '6d168f26-c595-4c76-9b57-1976a8b17123',
+    position: [5888, 64],
+    definition: {
+      stage: 'ANSWER_EVALUATION',
+      category: 'ORCHESTRATION',
+      code: 'ANSWER_SCORING_PROMPT_FAILED',
+      message: 'The answer-scoring prompt could not be assembled.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Answer Scoring Failure',
+    id: '6589c86b-0350-44a4-a03c-4c60bec87124',
+    position: [6112, 64],
+    definition: {
+      stage: 'ANSWER_EVALUATION',
+      category: 'PROVIDER',
+      code: 'INTERVIEW_ANSWER_SCORING_FAILED',
+      message: 'Interview answer scoring failed; provider payload omitted.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Answer Score Validation Failure',
+    id: '3fb0f7c0-a247-4b97-b12e-61c071367125',
+    position: [6336, 64],
+    definition: {
+      stage: 'ANSWER_EVALUATION',
+      category: 'PROVIDER',
+      code: 'INTERVIEW_ANSWER_SCORING_RESPONSE_INVALID',
+      message: 'Answer scoring did not satisfy the required schema.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Answer Evaluation Persistence Failure',
+    id: '776fb70f-ab1c-4f83-8b41-ffea7d067126',
+    position: [6672, 64],
+    definition: {
+      stage: 'ANSWER_EVALUATION',
+      category: 'PERSISTENCE',
+      code: 'ANSWER_EVALUATION_PERSISTENCE_FAILED',
+      message: 'Interview answer evaluations could not be persisted.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Final Grade Failure',
+    id: '9ea8132d-a93a-4414-b293-d99cb4997127',
+    position: [7008, 64],
+    definition: {
+      stage: 'RESULT_PERSISTENCE',
+      category: 'ORCHESTRATION',
+      code: 'FINAL_GRADE_CALCULATION_FAILED',
+      message: 'The final technical grade could not be calculated.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Interview Completion Failure',
+    id: 'b0126c3f-332a-4437-ad5b-e50bbc507128',
+    position: [7344, 64],
+    definition: {
+      stage: 'RESULT_PERSISTENCE',
+      category: 'PERSISTENCE',
+      code: 'TECHNICAL_INTERVIEW_COMPLETION_FAILED',
+      message: 'The final technical interview result could not be persisted.',
+      retryable: true,
+    },
+  },
+];
+
+for (const failure of interviewFailures) {
+  upsertNode(failureNode(failure));
+}
+
 const promptNode = requireNode('Build Interview Question Prompt');
 promptNode.parameters.jsCode = promptNode.parameters.jsCode
   .replace(
@@ -422,7 +804,7 @@ workflow.connections['Load Completed Phase 3 Assessment'] = {
 workflow.connections['Interview Context Resolved?'] = {
   main: [
     [mainConnection('Build Demo Phase 3 Handoff')],
-    [mainConnection('Fail Interview Setup')],
+    [mainConnection('Phase 3 Resolution Failure')],
   ],
 };
 workflow.connections['Build Demo Phase 3 Handoff'] = {
@@ -446,7 +828,7 @@ workflow.connections['Interview Claim Can Continue?'] = {
 workflow.connections['Completed Interview Replay?'] = {
   main: [
     [mainConnection('Load Completed Technical Interview')],
-    [mainConnection('Reject Technical Interview Claim')],
+    [mainConnection('Build Rejected Technical Interview Result')],
   ],
 };
 workflow.connections['Load Completed Technical Interview'] = {
@@ -535,6 +917,194 @@ workflow.connections['Build Persisted Interview Result'] = {
 };
 workflow.connections['Build Final Grade Summary'] = {
   main: [[mainConnection('Show Final Grade')]],
+};
+
+const connectWithFailure = (source, success, failure) => {
+  enableErrorOutput(requireNode(source));
+  workflow.connections[source] = {
+    main: [
+      [mainConnection(success)],
+      [mainConnection(failure)],
+    ],
+  };
+};
+
+connectWithFailure(
+  'Validate Demo Interview Request',
+  'Load Completed Phase 3 Assessment',
+  'Demo Request Failure'
+);
+connectWithFailure(
+  'Load Completed Phase 3 Assessment',
+  'Interview Context Resolved?',
+  'Phase 3 Lookup Failure'
+);
+connectWithFailure(
+  'Build Demo Phase 3 Handoff',
+  'Validate Phase 3 Handoff',
+  'Demo Handoff Assembly Failure'
+);
+connectWithFailure(
+  'Validate Phase 3 Handoff',
+  'Claim Technical Interview Session',
+  'Phase 3 Contract Failure'
+);
+connectWithFailure(
+  'Claim Technical Interview Session',
+  'Interview Claim Can Continue?',
+  'Interview Claim Failure'
+);
+connectWithFailure(
+  'Interview Configuration',
+  'Build Interview Question Prompt',
+  'Interview Configuration Failure'
+);
+connectWithFailure(
+  'Build Interview Question Prompt',
+  'Generate Interview Questions',
+  'Question Prompt Failure'
+);
+connectWithFailure(
+  'Generate Interview Questions',
+  'Validate Interview Questions',
+  'Question Generation Failure'
+);
+connectWithFailure(
+  'Validate Interview Questions',
+  'Persist First Question Set',
+  'Question Validation Failure'
+);
+connectWithFailure(
+  'Persist First Question Set',
+  'Restore First Question Form',
+  'First Question Persistence Failure'
+);
+connectWithFailure(
+  'Restore First Question Form',
+  'Candidate Interview Form',
+  'First Question Persistence Failure'
+);
+connectWithFailure(
+  'Normalize Interview Answers',
+  'Persist First Round Answers',
+  'First Answer Validation Failure'
+);
+connectWithFailure(
+  'Persist First Round Answers',
+  'Restore First Round Answers',
+  'First Answer Persistence Failure'
+);
+connectWithFailure(
+  'Restore First Round Answers',
+  'Build Follow-up Question Prompt',
+  'First Answer Persistence Failure'
+);
+connectWithFailure(
+  'Build Follow-up Question Prompt',
+  'Generate Follow-up Questions',
+  'Follow-up Prompt Failure'
+);
+connectWithFailure(
+  'Generate Follow-up Questions',
+  'Validate Follow-up Questions',
+  'Follow-up Generation Failure'
+);
+connectWithFailure(
+  'Validate Follow-up Questions',
+  'Persist Follow-up Question Set',
+  'Follow-up Validation Failure'
+);
+connectWithFailure(
+  'Persist Follow-up Question Set',
+  'Restore Follow-up Question Form',
+  'Follow-up Question Persistence Failure'
+);
+connectWithFailure(
+  'Restore Follow-up Question Form',
+  'Follow-up Interview Form',
+  'Follow-up Question Persistence Failure'
+);
+connectWithFailure(
+  'Normalize Follow-up Answers',
+  'Persist Follow-up Answers',
+  'Follow-up Answer Validation Failure'
+);
+connectWithFailure(
+  'Persist Follow-up Answers',
+  'Restore Follow-up Answers',
+  'Follow-up Answer Persistence Failure'
+);
+connectWithFailure(
+  'Restore Follow-up Answers',
+  'Build Answer Scoring Prompt',
+  'Follow-up Answer Persistence Failure'
+);
+connectWithFailure(
+  'Build Answer Scoring Prompt',
+  'Score Interview Answers',
+  'Answer Scoring Prompt Failure'
+);
+connectWithFailure(
+  'Score Interview Answers',
+  'Validate Answer Scores',
+  'Answer Scoring Failure'
+);
+connectWithFailure(
+  'Validate Answer Scores',
+  'Apply Answer Evaluations',
+  'Answer Score Validation Failure'
+);
+connectWithFailure(
+  'Apply Answer Evaluations',
+  'Restore Validated Answer Scores',
+  'Answer Evaluation Persistence Failure'
+);
+connectWithFailure(
+  'Restore Validated Answer Scores',
+  'Calculate Final Grade',
+  'Answer Evaluation Persistence Failure'
+);
+connectWithFailure(
+  'Calculate Final Grade',
+  'Complete Technical Interview',
+  'Final Grade Failure'
+);
+connectWithFailure(
+  'Complete Technical Interview',
+  'Build Persisted Interview Result',
+  'Interview Completion Failure'
+);
+
+for (const providerNode of [
+  'Generate Interview Questions',
+  'Generate Follow-up Questions',
+  'Score Interview Answers',
+]) {
+  const node = requireNode(providerNode);
+  node.retryOnFail = true;
+  node.maxTries = 3;
+  node.waitBetweenTries = 2000;
+}
+
+for (const failure of unclaimedFailures) {
+  workflow.connections[failure.name] = {
+    main: [[mainConnection('Build Unrecorded Technical Interview Result')]],
+  };
+}
+workflow.connections['Phase 3 Resolution Failure'] = {
+  main: [[mainConnection('Build Unrecorded Technical Interview Result')]],
+};
+
+for (const failure of interviewFailures) {
+  workflow.connections[failure.name] = {
+    main: [[mainConnection('Record Technical Interview Failure')]],
+  };
+}
+workflow.connections['Record Technical Interview Failure'] = {
+  main: [
+    [mainConnection('Build Failed Technical Interview Result')],
+    [mainConnection('Build Interview Failure Recording Fallback')],
+  ],
 };
 
 writeFileSync(

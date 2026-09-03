@@ -38,7 +38,7 @@ assert.deepEqual(manifest.persistence, {
     'talentai.technical_interview_answer',
     'talentai.technical_interview_result',
   ],
-  queryRange: 'Q013-Q018',
+  queryRange: 'Q013-Q019',
 });
 assert.deepEqual(
   [...manifest.requiredCredentialTypes].sort(),
@@ -94,7 +94,7 @@ for (const requiredNode of [
   'Interview Claim Can Continue?',
   'Completed Interview Replay?',
   'Load Completed Technical Interview',
-  'Reject Technical Interview Claim',
+  'Build Rejected Technical Interview Result',
   'Generate Interview Questions',
   'Validate Interview Questions',
   'Persist First Question Set',
@@ -114,6 +114,34 @@ for (const requiredNode of [
   'Calculate Final Grade',
   'Complete Technical Interview',
   'Build Persisted Interview Result',
+  'Record Technical Interview Failure',
+  'Build Failed Technical Interview Result',
+  'Build Interview Failure Recording Fallback',
+  'Build Unrecorded Technical Interview Result',
+  'Demo Request Failure',
+  'Phase 3 Lookup Failure',
+  'Demo Handoff Assembly Failure',
+  'Phase 3 Contract Failure',
+  'Interview Claim Failure',
+  'Interview Configuration Failure',
+  'Question Prompt Failure',
+  'Question Generation Failure',
+  'Question Validation Failure',
+  'First Question Persistence Failure',
+  'First Answer Validation Failure',
+  'First Answer Persistence Failure',
+  'Follow-up Prompt Failure',
+  'Follow-up Generation Failure',
+  'Follow-up Validation Failure',
+  'Follow-up Question Persistence Failure',
+  'Follow-up Answer Validation Failure',
+  'Follow-up Answer Persistence Failure',
+  'Answer Scoring Prompt Failure',
+  'Answer Scoring Failure',
+  'Answer Score Validation Failure',
+  'Answer Evaluation Persistence Failure',
+  'Final Grade Failure',
+  'Interview Completion Failure',
   'Show Final Grade',
 ]) {
   assert.ok(nodeByName.has(requiredNode), `Required node is missing: ${requiredNode}`);
@@ -170,7 +198,7 @@ assert.deepEqual(
 );
 assert.deepEqual(
   connectionTargets('Completed Interview Replay?', 1),
-  ['Reject Technical Interview Claim'],
+  ['Build Rejected Technical Interview Result'],
 );
 assert.deepEqual(
   connectionTargets('Load Completed Technical Interview'),
@@ -259,6 +287,10 @@ for (const [nodeName, sourceName] of [
   ['Restore Follow-up Answers', 'tai04-restore-follow-up-answers'],
   ['Restore Validated Answer Scores', 'tai04-restore-validated-answer-scores'],
   ['Build Persisted Interview Result', 'tai04-build-persisted-interview-result'],
+  ['Build Rejected Technical Interview Result', 'tai04-build-rejected-interview-result'],
+  ['Build Failed Technical Interview Result', 'tai04-build-failed-interview-result'],
+  ['Build Interview Failure Recording Fallback', 'tai04-build-failure-recording-fallback'],
+  ['Build Unrecorded Technical Interview Result', 'tai04-build-unrecorded-interview-result'],
 ]) {
   assert.equal(
     nodeByName.get(nodeName).parameters.jsCode,
@@ -266,6 +298,128 @@ for (const [nodeName, sourceName] of [
     `${nodeName} is not synchronized with ${sourceName}.js`,
   );
 }
+
+const unclaimedFailureNodes = [
+  'Phase 3 Resolution Failure',
+  'Demo Request Failure',
+  'Phase 3 Lookup Failure',
+  'Demo Handoff Assembly Failure',
+  'Phase 3 Contract Failure',
+  'Interview Claim Failure',
+];
+
+const recordedFailureNodes = [
+  'Interview Configuration Failure',
+  'Question Prompt Failure',
+  'Question Generation Failure',
+  'Question Validation Failure',
+  'First Question Persistence Failure',
+  'First Answer Validation Failure',
+  'First Answer Persistence Failure',
+  'Follow-up Prompt Failure',
+  'Follow-up Generation Failure',
+  'Follow-up Validation Failure',
+  'Follow-up Question Persistence Failure',
+  'Follow-up Answer Validation Failure',
+  'Follow-up Answer Persistence Failure',
+  'Answer Scoring Prompt Failure',
+  'Answer Scoring Failure',
+  'Answer Score Validation Failure',
+  'Answer Evaluation Persistence Failure',
+  'Final Grade Failure',
+  'Interview Completion Failure',
+];
+
+for (const nodeName of unclaimedFailureNodes) {
+  assert.ok(
+    nodeByName.get(nodeName).parameters.jsCode.endsWith(
+      sourceCode('tai04-classify-unclaimed-failure')
+    ),
+    `${nodeName} does not use the canonical unclaimed failure classifier.`,
+  );
+  assert.deepEqual(
+    connectionTargets(nodeName),
+    ['Build Unrecorded Technical Interview Result'],
+  );
+}
+
+for (const nodeName of recordedFailureNodes) {
+  assert.ok(
+    nodeByName.get(nodeName).parameters.jsCode.endsWith(
+      sourceCode('tai04-classify-interview-failure')
+    ),
+    `${nodeName} does not use the canonical recorded failure classifier.`,
+  );
+  assert.deepEqual(
+    connectionTargets(nodeName),
+    ['Record Technical Interview Failure'],
+  );
+}
+
+const errorRoutes = new Map([
+  ['Validate Demo Interview Request', 'Demo Request Failure'],
+  ['Load Completed Phase 3 Assessment', 'Phase 3 Lookup Failure'],
+  ['Build Demo Phase 3 Handoff', 'Demo Handoff Assembly Failure'],
+  ['Validate Phase 3 Handoff', 'Phase 3 Contract Failure'],
+  ['Claim Technical Interview Session', 'Interview Claim Failure'],
+  ['Interview Configuration', 'Interview Configuration Failure'],
+  ['Build Interview Question Prompt', 'Question Prompt Failure'],
+  ['Generate Interview Questions', 'Question Generation Failure'],
+  ['Validate Interview Questions', 'Question Validation Failure'],
+  ['Persist First Question Set', 'First Question Persistence Failure'],
+  ['Restore First Question Form', 'First Question Persistence Failure'],
+  ['Normalize Interview Answers', 'First Answer Validation Failure'],
+  ['Persist First Round Answers', 'First Answer Persistence Failure'],
+  ['Restore First Round Answers', 'First Answer Persistence Failure'],
+  ['Build Follow-up Question Prompt', 'Follow-up Prompt Failure'],
+  ['Generate Follow-up Questions', 'Follow-up Generation Failure'],
+  ['Validate Follow-up Questions', 'Follow-up Validation Failure'],
+  ['Persist Follow-up Question Set', 'Follow-up Question Persistence Failure'],
+  ['Restore Follow-up Question Form', 'Follow-up Question Persistence Failure'],
+  ['Normalize Follow-up Answers', 'Follow-up Answer Validation Failure'],
+  ['Persist Follow-up Answers', 'Follow-up Answer Persistence Failure'],
+  ['Restore Follow-up Answers', 'Follow-up Answer Persistence Failure'],
+  ['Build Answer Scoring Prompt', 'Answer Scoring Prompt Failure'],
+  ['Score Interview Answers', 'Answer Scoring Failure'],
+  ['Validate Answer Scores', 'Answer Score Validation Failure'],
+  ['Apply Answer Evaluations', 'Answer Evaluation Persistence Failure'],
+  ['Restore Validated Answer Scores', 'Answer Evaluation Persistence Failure'],
+  ['Calculate Final Grade', 'Final Grade Failure'],
+  ['Complete Technical Interview', 'Interview Completion Failure'],
+]);
+
+for (const [source, target] of errorRoutes) {
+  assert.equal(
+    nodeByName.get(source).onError,
+    'continueErrorOutput',
+    `${source} must expose a controlled error output.`,
+  );
+  assert.deepEqual(connectionTargets(source, 1), [target]);
+}
+
+for (const providerNode of [
+  'Generate Interview Questions',
+  'Generate Follow-up Questions',
+  'Score Interview Answers',
+]) {
+  const node = nodeByName.get(providerNode);
+  assert.equal(node.retryOnFail, true);
+  assert.equal(node.maxTries, 3);
+  assert.equal(node.waitBetweenTries, 2000);
+}
+
+assert.deepEqual(
+  connectionTargets('Record Technical Interview Failure'),
+  ['Build Failed Technical Interview Result'],
+);
+assert.deepEqual(
+  connectionTargets('Record Technical Interview Failure', 1),
+  ['Build Interview Failure Recording Fallback'],
+);
+assert.equal(
+  nodeByName.get('Record Technical Interview Failure').onError,
+  'continueErrorOutput',
+);
 
 const databaseQueryDirectory = path.join(repositoryRoot, 'database', 'queries');
 const databaseQuery = (name) =>
@@ -280,6 +434,7 @@ for (const [nodeName, queryName] of [
   ['Persist Follow-up Answers', 'Q015__persist_technical_interview_answers'],
   ['Apply Answer Evaluations', 'Q016__apply_technical_answer_evaluations'],
   ['Complete Technical Interview', 'Q017__complete_technical_interview'],
+  ['Record Technical Interview Failure', 'Q019__fail_technical_interview_session'],
 ]) {
   assert.equal(
     nodeByName.get(nodeName).parameters.query,

@@ -52,6 +52,7 @@ required_operational_files=(
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q016__apply_technical_answer_evaluations.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q017__complete_technical_interview.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q018__load_completed_technical_interview.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q019__fail_technical_interview_session.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T003__technical_interview_persistence_contract.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T004__technical_interview_queries.sql"
   "$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"

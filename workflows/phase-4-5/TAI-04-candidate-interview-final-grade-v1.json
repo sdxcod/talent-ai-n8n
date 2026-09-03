@@ -39,7 +39,8 @@
       "position": [
         -160,
         -256
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -56,7 +57,8 @@
       "position": [
         64,
         -256
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -94,12 +96,12 @@
     },
     {
       "parameters": {
-        "errorMessage": "={{   $json.resolutionStatus   + ': '   + $json.resolutionMessage   + ' [extractionId='   + $json.requestedExtractionId   + ']' }}"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"COMPLETED_PHASE3_ASSESSMENT_NOT_FOUND\",\n  \"message\": \"A completed Phase 3 assessment could not be resolved for the supplied extraction.\",\n  \"retryable\": false\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "id": "066df719-54ca-4215-9a81-a6d69e130205",
-      "name": "Fail Interview Setup",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
+      "name": "Phase 3 Resolution Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         512,
         -128
@@ -116,7 +118,8 @@
       "position": [
         736,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -129,7 +132,8 @@
       "position": [
         1408,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -142,7 +146,8 @@
       "position": [
         1632,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -158,7 +163,11 @@
       "position": [
         1856,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -207,7 +216,8 @@
       "position": [
         2080,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -240,7 +250,8 @@
       "position": [
         2976,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -253,7 +264,8 @@
       "position": [
         3648,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -269,7 +281,11 @@
       "position": [
         3872,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -318,7 +334,8 @@
       "position": [
         4320,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -351,7 +368,8 @@
       "position": [
         5216,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -364,7 +382,8 @@
       "position": [
         5888,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -380,7 +399,11 @@
       "position": [
         6112,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -429,7 +452,8 @@
       "position": [
         6336,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -442,7 +466,8 @@
       "position": [
         7008,
         -320
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -506,7 +531,8 @@
         -320
       ],
       "id": "ad4e2705-1e38-4a71-9456-b9a5f9d4e201",
-      "name": "Build Demo Phase 3 Handoff"
+      "name": "Build Demo Phase 3 Handoff",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -523,7 +549,8 @@
         -320
       ],
       "id": "22dc1a92-e189-47c5-91c4-498c11ec45d7",
-      "name": "Claim Technical Interview Session"
+      "name": "Claim Technical Interview Session",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -612,16 +639,16 @@
     },
     {
       "parameters": {
-        "errorMessage": "={{ 'TECHNICAL_INTERVIEW_CLAIM_REJECTED: ' + String($json.claimStatus ?? 'UNKNOWN') + ' [requestId=' + String($json.requestId ?? '') + ', assessmentId=' + String($json.assessmentId ?? '') + ']' }}"
+        "jsCode": "const claim = $input.first().json;\nconst claimStatus = String(claim.claimStatus ?? 'CLAIM_REJECTED');\n\nconst definitions = {\n  HANDOFF_CONFLICT: {\n    category: 'VALIDATION',\n    code: 'TECHNICAL_INTERVIEW_HANDOFF_CONFLICT',\n    message: 'The interview session is bound to a different Phase 3 handoff.',\n    retryable: false,\n  },\n  ALREADY_RUNNING: {\n    category: 'ORCHESTRATION',\n    code: 'TECHNICAL_INTERVIEW_ALREADY_RUNNING',\n    message: 'The technical interview session is already running.',\n    retryable: true,\n  },\n  FAILED_NOT_RETRYABLE: {\n    category: String(claim.failureCategory ?? 'ORCHESTRATION'),\n    code: String(\n      claim.failureCode ?? 'TECHNICAL_INTERVIEW_NOT_RETRYABLE'\n    ),\n    message: 'The previous technical interview attempt is not retryable.',\n    retryable: false,\n  },\n  CLAIM_REJECTED: {\n    category: 'ORCHESTRATION',\n    code: 'TECHNICAL_INTERVIEW_CLAIM_REJECTED',\n    message: 'The technical interview session could not be claimed.',\n    retryable: false,\n  },\n};\n\nconst failure = definitions[claimStatus] ?? definitions.CLAIM_REJECTED;\nconst requestId = String(claim.requestId ?? '');\nconst assessmentId = String(claim.assessmentId ?? '');\n\nconst output = [\n  'TalentAI technical interview request rejected.',\n  '',\n  `Request ID: ${requestId}`,\n  `Assessment ID: ${assessmentId}`,\n  `Claim Status: ${claimStatus}`,\n  `Failure Category: ${failure.category}`,\n  `Failure Code: ${failure.code}`,\n  `Retryable: ${failure.retryable ? 'YES' : 'NO'}`,\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      output,\n      success: false,\n      sessionId: String(claim.sessionId ?? ''),\n      requestId,\n      assessmentId,\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      executionStatus: claim.status ?? 'REJECTED',\n      claimStatus,\n      currentStage: claim.currentStage ?? '',\n      attemptCount: Number(claim.attemptCount ?? 0),\n      failureCategory: failure.category,\n      failureCode: failure.code,\n      failureMessage: failure.message,\n      retryable: failure.retryable,\n      failureRecorded: claimStatus === 'FAILED_NOT_RETRYABLE',\n    },\n  },\n];"
       },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1632,
         -128
       ],
       "id": "26379c3d-96e2-41d2-a4ed-3595603cc5dc",
-      "name": "Reject Technical Interview Claim"
+      "name": "Build Rejected Technical Interview Result"
     },
     {
       "parameters": {
@@ -638,7 +665,8 @@
         -320
       ],
       "id": "bb866eb9-7e7d-45be-b04b-e2ce483fc056",
-      "name": "Persist First Question Set"
+      "name": "Persist First Question Set",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -651,7 +679,8 @@
         -320
       ],
       "id": "5ff3bc18-ae39-49d2-8283-8158d73e2d50",
-      "name": "Restore First Question Form"
+      "name": "Restore First Question Form",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -668,7 +697,8 @@
         -320
       ],
       "id": "6f24d56e-9057-4824-8e6a-d51a316e0b64",
-      "name": "Persist First Round Answers"
+      "name": "Persist First Round Answers",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -681,7 +711,8 @@
         -320
       ],
       "id": "55e8b39b-2735-4183-9e80-681768272581",
-      "name": "Restore First Round Answers"
+      "name": "Restore First Round Answers",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -698,7 +729,8 @@
         -320
       ],
       "id": "8d910cf1-c42e-47cb-8901-fe8c4d9d93c6",
-      "name": "Persist Follow-up Question Set"
+      "name": "Persist Follow-up Question Set",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -711,7 +743,8 @@
         -320
       ],
       "id": "5f3d2a26-23bb-4633-93f3-6ee70a05bdee",
-      "name": "Restore Follow-up Question Form"
+      "name": "Restore Follow-up Question Form",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -728,7 +761,8 @@
         -320
       ],
       "id": "e9565333-830d-4c37-95ef-8c6674f70518",
-      "name": "Persist Follow-up Answers"
+      "name": "Persist Follow-up Answers",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -741,7 +775,8 @@
         -320
       ],
       "id": "e03e14b2-c86a-43c7-8fa2-f95a9dc55d99",
-      "name": "Restore Follow-up Answers"
+      "name": "Restore Follow-up Answers",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -758,7 +793,8 @@
         -320
       ],
       "id": "9db1ce3b-8d8d-479a-b0cf-5c136c720394",
-      "name": "Apply Answer Evaluations"
+      "name": "Apply Answer Evaluations",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -771,7 +807,8 @@
         -320
       ],
       "id": "bd156ad7-12c0-4af8-ac6a-18dd2a2e093d",
-      "name": "Restore Validated Answer Scores"
+      "name": "Restore Validated Answer Scores",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -788,7 +825,8 @@
         -320
       ],
       "id": "bf8e141b-bc52-4788-81ce-5f5235208ebf",
-      "name": "Complete Technical Interview"
+      "name": "Complete Technical Interview",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -802,6 +840,375 @@
       ],
       "id": "f22a89d9-c247-49ac-b557-b7d01c49d37a",
       "name": "Build Persisted Interview Result"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE talentai.technical_interview_session AS session\nSET\n    last_workflow_execution_id = NULLIF(BTRIM($2), ''),\n    current_stage = COALESCE(\n        NULLIF(UPPER(BTRIM($3)), ''),\n        session.current_stage\n    ),\n    status = 'FAILED',\n    failure_category = UPPER(BTRIM($4)),\n    failure_code = UPPER(BTRIM($5)),\n    failure_message = LEFT(\n        REGEXP_REPLACE(\n            BTRIM($6),\n            '[\\r\\n\\t]+',\n            ' ',\n            'g'\n        ),\n        1000\n    ),\n    retryable = $7::BOOLEAN,\n    completed_at = NULL,\n    failed_at = now(),\n    updated_at = now()\nWHERE session.id = $1::UUID\n  AND session.status = 'RUNNING'\n  AND NULLIF(BTRIM($2), '') IS NOT NULL\n  AND session.claim_owner_workflow_execution_id = NULLIF(BTRIM($2), '')\n  AND NULLIF(BTRIM($4), '') IS NOT NULL\n  AND NULLIF(BTRIM($5), '') IS NOT NULL\n  AND NULLIF(BTRIM($6), '') IS NOT NULL\nRETURNING\n    session.id                         AS \"sessionId\",\n    session.request_id                 AS \"requestId\",\n    session.assessment_id              AS \"assessmentId\",\n    session.extraction_id              AS \"extractionId\",\n    session.status,\n    session.current_stage              AS \"currentStage\",\n    session.attempt_count              AS \"attemptCount\",\n    session.failure_category           AS \"failureCategory\",\n    session.failure_code               AS \"failureCode\",\n    session.failure_message            AS \"failureMessage\",\n    session.retryable,\n    session.started_at                 AS \"startedAt\",\n    session.failed_at                  AS \"failedAt\";\n",
+        "options": {
+          "queryReplacement": "={{ [$json.sessionId, $json.workflowExecutionId, $json.currentStage, $json.failureCategory, $json.failureCode, $json.failureMessage, $json.retryable] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        7008,
+        416
+      ],
+      "id": "fc546a2e-f315-4e09-838f-cf11df3adc01",
+      "name": "Record Technical Interview Failure",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failure = $input.first().json;\n\nconst requestId = String(failure.requestId ?? '');\nconst assessmentId = String(failure.assessmentId ?? '');\nconst sessionId = String(failure.sessionId ?? '');\nconst attemptCount = Number(failure.attemptCount ?? 1);\nconst retryable = failure.retryable === true;\n\nconst output = [\n  'TalentAI technical interview failed.',\n  '',\n  `Request ID: ${requestId}`,\n  `Assessment ID: ${assessmentId}`,\n  `Interview Session ID: ${sessionId}`,\n  `Attempt: ${attemptCount}`,\n  `Stage: ${failure.currentStage ?? 'UNKNOWN'}`,\n  `Failure Category: ${failure.failureCategory ?? 'ORCHESTRATION'}`,\n  `Failure Code: ${failure.failureCode ?? 'TECHNICAL_INTERVIEW_FAILED'}`,\n  `Retryable: ${retryable ? 'YES' : 'NO'}`,\n  'Failure Recorded: YES',\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      output,\n      success: false,\n      sessionId,\n      requestId,\n      assessmentId,\n      extractionId: String(failure.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      executionStatus: failure.status ?? 'FAILED',\n      currentStage: String(failure.currentStage ?? ''),\n      attemptCount,\n      failureCategory: String(\n        failure.failureCategory ?? 'ORCHESTRATION'\n      ),\n      failureCode: String(\n        failure.failureCode ?? 'TECHNICAL_INTERVIEW_FAILED'\n      ),\n      failureMessage: String(\n        failure.failureMessage ??\n          'Technical interview failed; private payload omitted.'\n      ),\n      retryable,\n      failureRecorded: true,\n      failedAt: failure.failedAt,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7232,
+        352
+      ],
+      "id": "2aae260f-1cf2-48f7-9bed-9586bf613202",
+      "name": "Build Failed Technical Interview Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const claim = $('Claim Technical Interview Session').first().json;\nconst requestId = String(claim.requestId ?? '');\nconst assessmentId = String(claim.assessmentId ?? '');\nconst sessionId = String(claim.sessionId ?? '');\nconst workflowExecutionId = String($execution.id);\n\nconst output = [\n  'TalentAI technical interview failed.',\n  '',\n  `Request ID: ${requestId}`,\n  `Assessment ID: ${assessmentId}`,\n  `Interview Session ID: ${sessionId}`,\n  `Workflow Execution ID: ${workflowExecutionId}`,\n  'Failure Category: PERSISTENCE',\n  'Failure Code: INTERVIEW_FAILURE_RECORDING_FAILED',\n  'Retryable: YES',\n  'Failure Recorded: NO',\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      output,\n      success: false,\n      sessionId,\n      requestId,\n      assessmentId,\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId,\n      executionStatus: claim.status ?? 'RUNNING',\n      currentStage: claim.currentStage ?? '',\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: 'PERSISTENCE',\n      failureCode: 'INTERVIEW_FAILURE_RECORDING_FAILED',\n      failureMessage:\n        'The technical interview failed and its failure record could not be confirmed.',\n      retryable: true,\n      failureRecorded: false,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7232,
+        480
+      ],
+      "id": "fe55a7c4-40e4-4d57-a6ea-b829f141d303",
+      "name": "Build Interview Failure Recording Fallback"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failure = $input.first().json;\n\nconst requestId = String(failure.requestId ?? '');\nconst assessmentId = String(failure.assessmentId ?? '');\nconst workflowExecutionId = String(\n  failure.workflowExecutionId ?? $execution.id\n);\nconst retryable = failure.retryable === true;\n\nconst output = [\n  'TalentAI technical interview request failed.',\n  '',\n  `Request ID: ${requestId || 'NOT_ASSIGNED'}`,\n  `Assessment ID: ${assessmentId || 'NOT_ASSIGNED'}`,\n  `Workflow Execution ID: ${workflowExecutionId}`,\n  `Failure Category: ${failure.failureCategory ?? 'ORCHESTRATION'}`,\n  `Failure Code: ${failure.failureCode ?? 'TECHNICAL_INTERVIEW_REQUEST_FAILED'}`,\n  `Retryable: ${retryable ? 'YES' : 'NO'}`,\n  'Failure Recorded: NO',\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      output,\n      success: false,\n      sessionId: String(failure.sessionId ?? ''),\n      requestId,\n      assessmentId,\n      extractionId: String(failure.extractionId ?? ''),\n      workflowExecutionId,\n      executionStatus: 'REJECTED',\n      currentStage: String(failure.currentStage ?? ''),\n      attemptCount: Number(failure.attemptCount ?? 0),\n      failureCategory: String(\n        failure.failureCategory ?? 'ORCHESTRATION'\n      ),\n      failureCode: String(\n        failure.failureCode ?? 'TECHNICAL_INTERVIEW_REQUEST_FAILED'\n      ),\n      failureMessage: String(\n        failure.failureMessage ??\n          'Technical interview request failed; private payload omitted.'\n      ),\n      retryable,\n      failureRecorded: false,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        416
+      ],
+      "id": "9e21b709-a1c7-489c-8a12-280df89d8404",
+      "name": "Build Unrecorded Technical Interview Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"TECHNICAL_INTERVIEW_REQUEST_VALIDATION_FAILED\",\n  \"message\": \"The demo interview request did not satisfy the required contract.\",\n  \"retryable\": false\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        64
+      ],
+      "id": "63e0d476-4644-4a94-aa0b-3b6a9abdf105",
+      "name": "Demo Request Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"PHASE3_HANDOFF_LOOKUP_FAILED\",\n  \"message\": \"The completed Phase 3 assessment could not be loaded.\",\n  \"retryable\": true\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        64
+      ],
+      "id": "96469124-e34d-4d96-a442-9a4c6e13b106",
+      "name": "Phase 3 Lookup Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"ORCHESTRATION\",\n  \"code\": \"PHASE3_HANDOFF_ASSEMBLY_FAILED\",\n  \"message\": \"The demo Phase 3 handoff could not be assembled.\",\n  \"retryable\": true\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        64
+      ],
+      "id": "1f7d7540-6973-4812-8d17-86f18ebf9107",
+      "name": "Demo Handoff Assembly Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"PHASE3_HANDOFF_VALIDATION_FAILED\",\n  \"message\": \"The Phase 3 handoff did not satisfy contract version 1.0.0.\",\n  \"retryable\": false\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        64
+      ],
+      "id": "7b67d3a1-8b5b-43c9-bda6-2d7468e1d108",
+      "name": "Phase 3 Contract Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"QUESTION_GENERATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"TECHNICAL_INTERVIEW_CLAIM_FAILED\",\n  \"message\": \"The technical interview session could not be claimed.\",\n  \"retryable\": true\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        64
+      ],
+      "id": "36134c02-a145-48ac-aad1-bbce7770b109",
+      "name": "Interview Claim Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"QUESTION_GENERATION\",\n  \"category\": \"CONFIGURATION\",\n  \"code\": \"TECHNICAL_INTERVIEW_CONFIGURATION_FAILED\",\n  \"message\": \"The technical interview configuration is invalid.\",\n  \"retryable\": false\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        64
+      ],
+      "id": "559d335e-d37e-4fd0-b4d5-af314d4e1110",
+      "name": "Interview Configuration Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"QUESTION_GENERATION\",\n  \"category\": \"ORCHESTRATION\",\n  \"code\": \"INTERVIEW_QUESTION_PROMPT_FAILED\",\n  \"message\": \"The interview question prompt could not be assembled.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        64
+      ],
+      "id": "e31f8d53-61f4-4aa1-8510-e5b967de7111",
+      "name": "Question Prompt Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"QUESTION_GENERATION\",\n  \"category\": \"PROVIDER\",\n  \"code\": \"INTERVIEW_QUESTION_GENERATION_FAILED\",\n  \"message\": \"Interview question generation failed; provider payload omitted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        64
+      ],
+      "id": "24f2bc43-8e18-4823-afb5-dba62d3d7112",
+      "name": "Question Generation Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"QUESTION_GENERATION\",\n  \"category\": \"PROVIDER\",\n  \"code\": \"INTERVIEW_QUESTION_RESPONSE_INVALID\",\n  \"message\": \"Generated interview questions did not satisfy the required schema.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        64
+      ],
+      "id": "99aaf2cd-a394-41f8-a34d-4a6d01ba7113",
+      "name": "Question Validation Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"QUESTION_GENERATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FIRST_QUESTION_SET_PERSISTENCE_FAILED\",\n  \"message\": \"The first-round question set could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2416,
+        64
+      ],
+      "id": "2b4253d2-78ec-4e66-93f8-789fb3fb7114",
+      "name": "First Question Persistence Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FIRST_ROUND\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"FIRST_ROUND_ANSWER_VALIDATION_FAILED\",\n  \"message\": \"The first-round interview answers are invalid.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2976,
+        64
+      ],
+      "id": "08b9b125-3121-4a63-a11d-e4d3cfc47115",
+      "name": "First Answer Validation Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FIRST_ROUND\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FIRST_ROUND_ANSWER_PERSISTENCE_FAILED\",\n  \"message\": \"The first-round interview answers could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        64
+      ],
+      "id": "f626697f-4c64-424e-a1c6-10d638737116",
+      "name": "First Answer Persistence Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP_GENERATION\",\n  \"category\": \"ORCHESTRATION\",\n  \"code\": \"FOLLOW_UP_PROMPT_FAILED\",\n  \"message\": \"The follow-up question prompt could not be assembled.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3648,
+        64
+      ],
+      "id": "a1a0473f-33cc-469d-9803-032c6bea7117",
+      "name": "Follow-up Prompt Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP_GENERATION\",\n  \"category\": \"PROVIDER\",\n  \"code\": \"FOLLOW_UP_QUESTION_GENERATION_FAILED\",\n  \"message\": \"Follow-up question generation failed; provider payload omitted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3872,
+        64
+      ],
+      "id": "ec64f6ce-02b9-45a4-974e-19f3e9cd7118",
+      "name": "Follow-up Generation Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP_GENERATION\",\n  \"category\": \"PROVIDER\",\n  \"code\": \"FOLLOW_UP_QUESTION_RESPONSE_INVALID\",\n  \"message\": \"Generated follow-up questions did not satisfy the required schema.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4320,
+        64
+      ],
+      "id": "64cb60a0-911d-4e1c-86ca-314a05a37119",
+      "name": "Follow-up Validation Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP_GENERATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FOLLOW_UP_QUESTION_SET_PERSISTENCE_FAILED\",\n  \"message\": \"The follow-up question set could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4656,
+        64
+      ],
+      "id": "a48bdbca-a3f7-46ce-ab29-5b15d3927120",
+      "name": "Follow-up Question Persistence Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"FOLLOW_UP_ANSWER_VALIDATION_FAILED\",\n  \"message\": \"The follow-up interview answers are invalid.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5216,
+        64
+      ],
+      "id": "4f38c9bc-4208-4696-8a30-741691f47121",
+      "name": "Follow-up Answer Validation Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FOLLOW_UP_ANSWER_PERSISTENCE_FAILED\",\n  \"message\": \"The follow-up interview answers could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5552,
+        64
+      ],
+      "id": "9ae6df5b-886e-49c1-b0dd-273fac207122",
+      "name": "Follow-up Answer Persistence Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"ANSWER_EVALUATION\",\n  \"category\": \"ORCHESTRATION\",\n  \"code\": \"ANSWER_SCORING_PROMPT_FAILED\",\n  \"message\": \"The answer-scoring prompt could not be assembled.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5888,
+        64
+      ],
+      "id": "6d168f26-c595-4c76-9b57-1976a8b17123",
+      "name": "Answer Scoring Prompt Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"ANSWER_EVALUATION\",\n  \"category\": \"PROVIDER\",\n  \"code\": \"INTERVIEW_ANSWER_SCORING_FAILED\",\n  \"message\": \"Interview answer scoring failed; provider payload omitted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6112,
+        64
+      ],
+      "id": "6589c86b-0350-44a4-a03c-4c60bec87124",
+      "name": "Answer Scoring Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"ANSWER_EVALUATION\",\n  \"category\": \"PROVIDER\",\n  \"code\": \"INTERVIEW_ANSWER_SCORING_RESPONSE_INVALID\",\n  \"message\": \"Answer scoring did not satisfy the required schema.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6336,
+        64
+      ],
+      "id": "3fb0f7c0-a247-4b97-b12e-61c071367125",
+      "name": "Answer Score Validation Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"ANSWER_EVALUATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"ANSWER_EVALUATION_PERSISTENCE_FAILED\",\n  \"message\": \"Interview answer evaluations could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6672,
+        64
+      ],
+      "id": "776fb70f-ab1c-4f83-8b41-ffea7d067126",
+      "name": "Answer Evaluation Persistence Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"RESULT_PERSISTENCE\",\n  \"category\": \"ORCHESTRATION\",\n  \"code\": \"FINAL_GRADE_CALCULATION_FAILED\",\n  \"message\": \"The final technical grade could not be calculated.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7008,
+        64
+      ],
+      "id": "9ea8132d-a93a-4414-b293-d99cb4997127",
+      "name": "Final Grade Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"RESULT_PERSISTENCE\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"TECHNICAL_INTERVIEW_COMPLETION_FAILED\",\n  \"message\": \"The final technical interview result could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7344,
+        64
+      ],
+      "id": "b0126c3f-332a-4437-ad5b-e50bbc507128",
+      "name": "Interview Completion Failure"
     }
   ],
   "connections": {
@@ -827,7 +1234,7 @@
         ],
         [
           {
-            "node": "Fail Interview Setup",
+            "node": "Phase 3 Resolution Failure",
             "type": "main",
             "index": 0
           }
@@ -842,6 +1249,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Interview Configuration Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -850,6 +1264,13 @@
         [
           {
             "node": "Generate Interview Questions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Question Prompt Failure",
             "type": "main",
             "index": 0
           }
@@ -886,6 +1307,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Question Generation Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -894,6 +1322,13 @@
         [
           {
             "node": "Persist First Question Set",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Question Validation Failure",
             "type": "main",
             "index": 0
           }
@@ -919,6 +1354,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "First Answer Validation Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -927,6 +1369,13 @@
         [
           {
             "node": "Generate Follow-up Questions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Follow-up Prompt Failure",
             "type": "main",
             "index": 0
           }
@@ -963,6 +1412,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Follow-up Generation Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -971,6 +1427,13 @@
         [
           {
             "node": "Persist Follow-up Question Set",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Follow-up Validation Failure",
             "type": "main",
             "index": 0
           }
@@ -996,6 +1459,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Follow-up Answer Validation Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1004,6 +1474,13 @@
         [
           {
             "node": "Score Interview Answers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Answer Scoring Prompt Failure",
             "type": "main",
             "index": 0
           }
@@ -1040,6 +1517,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Answer Scoring Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1051,6 +1535,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Answer Score Validation Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1059,6 +1550,13 @@
         [
           {
             "node": "Complete Technical Interview",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Final Grade Failure",
             "type": "main",
             "index": 0
           }
@@ -1095,6 +1593,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Demo Request Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1103,6 +1608,13 @@
         [
           {
             "node": "Interview Context Resolved?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Phase 3 Lookup Failure",
             "type": "main",
             "index": 0
           }
@@ -1117,6 +1629,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Phase 3 Contract Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1128,6 +1647,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Demo Handoff Assembly Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1136,6 +1662,13 @@
         [
           {
             "node": "Interview Claim Can Continue?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Interview Claim Failure",
             "type": "main",
             "index": 0
           }
@@ -1171,7 +1704,7 @@
         ],
         [
           {
-            "node": "Reject Technical Interview Claim",
+            "node": "Build Rejected Technical Interview Result",
             "type": "main",
             "index": 0
           }
@@ -1197,6 +1730,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "First Question Persistence Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1205,6 +1745,13 @@
         [
           {
             "node": "Candidate Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "First Question Persistence Failure",
             "type": "main",
             "index": 0
           }
@@ -1219,6 +1766,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "First Answer Persistence Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1227,6 +1781,13 @@
         [
           {
             "node": "Build Follow-up Question Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "First Answer Persistence Failure",
             "type": "main",
             "index": 0
           }
@@ -1241,6 +1802,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Follow-up Question Persistence Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1249,6 +1817,13 @@
         [
           {
             "node": "Follow-up Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Follow-up Question Persistence Failure",
             "type": "main",
             "index": 0
           }
@@ -1263,6 +1838,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Follow-up Answer Persistence Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1271,6 +1853,13 @@
         [
           {
             "node": "Build Answer Scoring Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Follow-up Answer Persistence Failure",
             "type": "main",
             "index": 0
           }
@@ -1285,6 +1874,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Answer Evaluation Persistence Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1293,6 +1889,13 @@
         [
           {
             "node": "Calculate Final Grade",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Answer Evaluation Persistence Failure",
             "type": "main",
             "index": 0
           }
@@ -1307,6 +1910,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Interview Completion Failure",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1315,6 +1925,299 @@
         [
           {
             "node": "Build Final Grade Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo Request Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 3 Lookup Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo Handoff Assembly Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 3 Contract Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interview Claim Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 3 Resolution Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interview Configuration Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question Prompt Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question Generation Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question Validation Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Question Persistence Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Answer Validation Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Answer Persistence Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Prompt Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Generation Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Validation Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Question Persistence Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Answer Validation Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Answer Persistence Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Scoring Prompt Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Scoring Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Score Validation Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Evaluation Persistence Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Grade Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interview Completion Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Technical Interview Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Failed Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Interview Failure Recording Fallback",
             "type": "main",
             "index": 0
           }

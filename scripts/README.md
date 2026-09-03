@@ -33,7 +33,8 @@ macOS, Linux or WSL:
 The repository verification includes the rollback-safe Phase 4/5 persistence
 contract and query suite in `scripts/test-technical-interview-persistence.sh`.
 It never leaves synthetic interview sessions, questions, answers or results in
-the database.
+the database. The same suite verifies controlled failure recording, ownership
+checks and retry metadata without retaining provider payloads.
 
 Optional native Windows PowerShell database initialization:
 
