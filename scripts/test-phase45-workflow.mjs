@@ -39,7 +39,7 @@ assert.deepEqual(manifest.persistence, {
     'talentai.technical_interview_answer',
     'talentai.technical_interview_result',
   ],
-  queryRange: 'Q013-Q020',
+  queryRange: 'Q013-Q021',
 });
 assert.deepEqual(
   [...manifest.requiredCredentialTypes].sort(),
@@ -547,6 +547,28 @@ assert.equal(
 const databaseQueryDirectory = path.join(repositoryRoot, 'database', 'queries');
 const databaseQuery = (name) =>
   fs.readFileSync(path.join(databaseQueryDirectory, `${name}.sql`), 'utf8');
+
+const endToEndCorrelationQuery = databaseQuery(
+  'Q021__verify_phase45_end_to_end_correlation',
+);
+
+for (const requiredFragment of [
+  'talentai.assessment_execution',
+  'talentai.grade_assessment',
+  'talentai.technical_interview_session',
+  'talentai.technical_question_set',
+  'talentai.technical_interview_answer',
+  'talentai.technical_interview_result',
+  "execution.extraction_id = :'extraction_id'::UUID",
+  'expected_assigned_grade',
+  'correlation_valid',
+]) {
+  assert.match(
+    endToEndCorrelationQuery,
+    new RegExp(requiredFragment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    `End-to-end correlation query is missing: ${requiredFragment}`,
+  );
+}
 
 for (const [nodeName, queryName] of [
   ['Claim Technical Interview Session', 'Q013__claim_technical_interview_session'],

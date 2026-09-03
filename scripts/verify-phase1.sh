@@ -55,10 +55,14 @@ required_operational_files=(
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q018__load_completed_technical_interview.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q019__fail_technical_interview_session.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q020__load_technical_interview_checkpoint.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q021__verify_phase45_end_to_end_correlation.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T003__technical_interview_persistence_contract.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T004__technical_interview_queries.sql"
   "$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"
   "$TALENTAI_SCRIPT_DIR/build-phase45-mvp-package.sh"
+  "$TALENTAI_SCRIPT_DIR/verify-phase45-correlation.sh"
+  "$TALENTAI_REPOSITORY_ROOT/docs/runbooks/phase45-end-to-end.md"
+  "$TALENTAI_REPOSITORY_ROOT/docs/releases/phase45-mvp-v3.0.0.md"
 )
 
 for required_workflow_file in "${required_workflow_files[@]}"; do

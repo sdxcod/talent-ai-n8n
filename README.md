@@ -9,13 +9,14 @@ TalentAI یک سامانهٔ قابل ممیزی برای پشتیبانی از 
 
 ## وضعیت فعلی پیاده‌سازی
 
-مسیر عملیاتی موجود شامل سه Workflow وابسته است:
+مسیر عملیاتی موجود شامل چهار Workflow است:
 
 | Workflow | مسئولیت |
 | --- | --- |
 | `TAI-01 Resume Intake & Extraction v2` | دریافت رزومه، استخراج متن، تولید و اعتبارسنجی پروفایل کاندید، ذخیره Extraction و هماهنگ‌کردن مراحل بعدی |
 | `TAI-02 Grade Guide Resolver v1` | دریافت `extractionId`، بازیابی Extraction و Grade Guide فعال و ساخت ورودی استاندارد Grade Engine |
 | `TAI-03 Evidence Scoring & Deterministic Grade Engine v1` | امتیازدهی مبتنی بر شواهد، اجرای قواعد قطعی، ذخیره Assessment و تولید خروجی نهایی |
+| `TAI-04 Candidate Interview & Final Grade v1` | تولید سؤال مبتنی بر شواهد، دریافت پاسخ‌های مرحله اول و تکمیلی، ارزیابی پاسخ، مقایسه با رزومه و ذخیره نتیجه نهایی مصاحبه |
 
 جریان کلی:
 
@@ -25,9 +26,18 @@ Resume PDF
   -> TAI-02: extraction and grade-guide resolution
   -> TAI-03: evidence scoring and deterministic decision
   -> talentai.grade_assessment
+  -> asynchronous interview launch with extractionId
+  -> TAI-04: questions, answers, evaluation and final grade
 ```
 
-LLM فقط برای استخراج اطلاعات و امتیازدهی شواهد استفاده می‌شود. محاسبه امتیاز نهایی، کنترل حداقل امتیاز و بررسی حداقل سطح Dimensionهای اجباری توسط منطق قطعی انجام می‌شود.
+LLM برای استخراج اطلاعات، امتیازدهی شواهد، تولید سؤال و ارزیابی پاسخ‌ها
+استفاده می‌شود. محاسبه امتیازهای وزنی، کنترل Threshold، بررسی Dimensionهای
+اجباری و انتخاب گرید نهایی توسط منطق قطعی انجام می‌شود.
+
+مرز TAI-03 و TAI-04 آگاهانه asynchronous است: مصاحبه انسانی ممکن است بعداً
+انجام شود، بنابراین TAI-01 مستقیماً TAI-04 را فراخوانی نمی‌کند. اتصال کامل
+از طریق قرارداد نسخه‌بندی‌شدهٔ Phase 3 و شناسه‌های persisted شامل
+`requestId`، `assessmentId` و `extractionId` برقرار می‌شود.
 
 ## فناوری‌ها و نسخه‌های آزموده‌شده
 
@@ -495,8 +505,10 @@ API Key نباید در این مکان‌ها قرار گیرد:
 | TAI-02 | `Resolve Extraction and Grade Guide` | `TalentAI PostgreSQL` |
 | TAI-03 | `Persist Grade Assessment` | `TalentAI PostgreSQL` |
 | TAI-03 | `GapGPT Evidence Scoring Model` | `TalentAI OpenAI` یا Credential سازگار Provider تیم |
+| TAI-04 | Nodeهای Persistence و Checkpoint | `TalentAI PostgreSQL` |
+| TAI-04 | Nodeهای Question، Follow-up و Answer Scoring Model | `TalentAI OpenAI` یا Credential سازگار Provider تیم |
 
-پس از اتصال Credentialها، هر سه Workflow را Save کنید؛ برای Smoke Test لازم نیست آن‌ها را Publish یا Activate کنید.
+پس از اتصال Credentialها، هر چهار Workflow را Save کنید؛ برای Smoke Test لازم نیست آن‌ها را Publish یا Activate کنید.
 
 ## Import کردن Workflowها در محیط جدید
 
@@ -583,6 +595,11 @@ Folder `TalentAI - Phase 1` فقط برای سازمان‌دهی و Export در
 
 ## اجرای تست End-to-End
 
+Runbook کامل اتصال فازهای ۱ تا ۵، مسیر Import، اجرای دو فرم مصاحبه، Replay و
+کنترل حریم خصوصی در
+[`docs/runbooks/phase45-end-to-end.md`](docs/runbooks/phase45-end-to-end.md)
+ثبت شده است.
+
 برای تست کامل، از یک رزومه غیرحساس یا نمونه ساختگی استفاده کنید. فایل‌های رزومه را زیر `samples/private` نگه دارید تا توسط Git نادیده گرفته شوند.
 
 قبل از تست، این دو دستور باید موفق باشند:
@@ -634,6 +651,17 @@ createdAt
 ```
 
 مقدار دقیق امتیاز Evidence Scoring ممکن است بین اجراها کمی تغییر کند، زیرا آن بخش توسط LLM تولید می‌شود. بعد از تولید Dimension Scoreها، محاسبه امتیاز وزنی، کنترل Threshold، حداقل Dimensionها و Decision قطعی است.
+
+پس از تکمیل TAI-01 تا TAI-04، اتصال persisted همه شناسه‌ها و شمارش رکوردها را
+با `extractionId` همان اجرای ساختگی کنترل کنید:
+
+```bash
+./scripts/verify-phase45-correlation.sh '<phase3-extraction-uuid>'
+```
+
+خروجی موفق باید یک زنجیرهٔ کامل، دو Question Set، سی Answer ارزیابی‌شده و یک
+Result نسخهٔ ۱ را تأیید کند. اجرای دوبارهٔ TAI-04 با همان Extraction باید همان
+Result را Replay کند و شمارش‌ها را تغییر ندهد.
 
 ## بررسی نتیجه در PostgreSQL
 
@@ -949,6 +977,23 @@ Folder Count نیز عمداً صفر است تا Artifact روی n8n Community 
 
 ## Tag و GitHub Release
 
+برای انتشار MVP فازهای ۴ و ۵، فقط پس از Merge و اجرای Clean-install روی
+`main` بستهٔ نهایی را بسازید:
+
+```bash
+./scripts/build-phase45-mvp-package.sh 3.0.0
+shasum -a 256 exports/private/TalentAI-phase45-mvp-v3.0.0.n8np
+```
+
+سپس Tag امضاشدهٔ فرایندی و GitHub Release را از همان Commit بسازید. متن
+Release در
+[`docs/releases/phase45-mvp-v3.0.0.md`](docs/releases/phase45-mvp-v3.0.0.md)
+قرار دارد. دستورهای دقیق Tag و Release بعد از موفقیت Clean-install اجرا
+می‌شوند تا Artifact دقیقاً از Source روی `main` تولید شده باشد.
+
+دستورهای زیر مربوط به Release قدیمی Phase 1 هستند و فقط به‌عنوان سابقهٔ
+فرایند نگه‌داری شده‌اند.
+
 قبل از Tag، تمام تست‌ها و وضعیت Git را کنترل کنید:
 
 ```bash
@@ -988,13 +1033,15 @@ docker compose config --quiet
 git status --short --branch
 ```
 
-فایل‌های Workflow قابل commit باید دقیقاً این موارد باشند:
+فایل‌های Workflow قابل commit شامل Sourceهای standalone و Manifestهای زیرند:
 
 ```text
 workflows/phase-1/TAI-01-resume-intake-extraction-v2.json
 workflows/phase-1/TAI-02-grade-guide-resolver-v1.json
 workflows/phase-1/TAI-03-evidence-scoring-grade-engine-v1.json
 workflows/phase-1/manifest.json
+workflows/phase-4-5/TAI-04-candidate-interview-final-grade-v1.json
+workflows/phase-4-5/manifest.json
 ```
 
 کنترل فایل‌های حساس:
@@ -1181,7 +1228,7 @@ lsof -nP -iTCP:5434 -sTCP:LISTEN
 - امتیاز Evidence Scoring ممکن است به‌علت رفتار LLM کمی تغییر کند؛
 - Decision Engine فقط براساس Grade Guide و Dimension Scoreهای تولیدشده تصمیم می‌گیرد؛
 - Grade Guide فعلی مربوط به `JAVA_BACKEND` و نسخه `1.0.0` است؛
-- این فاز UI اختصاصی TalentAI ندارد و از Form و Editor مربوط به n8n استفاده می‌کند؛
+- این Release UI اختصاصی TalentAI ندارد و از Form و Editor مربوط به n8n استفاده می‌کند؛
 - Production hardening، Backup policy، HTTPS، SSO، Queue scaling و Monitoring خارج از محدوده این فاز هستند.
 
 ## منابع رسمی

@@ -30,6 +30,18 @@ macOS, Linux or WSL:
 ./scripts/verify-phase1.sh
 ```
 
+After one complete synthetic Phase 1 through Phase 5 run, verify that its
+persisted records form one consistent chain:
+
+```bash
+./scripts/verify-phase45-correlation.sh <phase3-extraction-uuid>
+```
+
+This live-data release gate is intentionally not part of CI: a clean CI
+database has no provider-backed interview result. It reads identifiers,
+statuses and aggregate counts only; it does not print resumes, prompts or
+answer text.
+
 The repository verification includes the rollback-safe Phase 4/5 persistence
 contract and query suite in `scripts/test-technical-interview-persistence.sh`.
 It never leaves synthetic interview sessions, questions, answers or results in

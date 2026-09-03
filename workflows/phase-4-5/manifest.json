@@ -23,7 +23,7 @@
       "talentai.technical_interview_answer",
       "talentai.technical_interview_result"
     ],
-    "queryRange": "Q013-Q020"
+    "queryRange": "Q013-Q021"
   },
   "requiredCredentialTypes": [
     "openAiApi",
