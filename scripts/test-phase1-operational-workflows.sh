@@ -42,6 +42,20 @@ jq -e '
   and any(.nodes[]; .name == "Build Failure Recording Fallback")
   and any(.nodes[]; .name == "Build Unrecorded Failure Result")
   and any(.nodes[]; .name == "Build Rejected Assessment Result")
+  and any(
+    .nodes[];
+    .name == "Show Assessment Result"
+    and .type == "n8n-nodes-base.form"
+    and .parameters.operation == "completion"
+    and .parameters.completionMessage == "={{ $json.output }}"
+  )
+  and any(
+    .nodes[];
+    .name == "Show Assessment Failure"
+    and .type == "n8n-nodes-base.form"
+    and .parameters.operation == "completion"
+    and .parameters.completionMessage == "={{ $json.output }}"
+  )
   and any(.nodes[]; .name == "Expire Stale Assessment Executions")
   and any(.nodes[]; .name == "Stale Recovery Failure")
   and (.settings.executionTimeout == 300)
@@ -87,6 +101,10 @@ jq -e '
     == "Build TalentAI Assessment Result"
   )
   and (
+    .connections["Build TalentAI Assessment Result"].main[0][0].node
+    == "Show Assessment Result"
+  )
+  and (
     .connections["Extract Structured Candidate Profile"].main[1][0].node
     == "Profile Extraction Failure"
   )
@@ -101,6 +119,22 @@ jq -e '
   and (
     .connections["Record Assessment Failure"].main[1][0].node
     == "Build Failure Recording Fallback"
+  )
+  and (
+    .connections["Build Failed Assessment Result"].main[0][0].node
+    == "Show Assessment Failure"
+  )
+  and (
+    .connections["Build Failure Recording Fallback"].main[0][0].node
+    == "Show Assessment Failure"
+  )
+  and (
+    .connections["Build Unrecorded Failure Result"].main[0][0].node
+    == "Show Assessment Failure"
+  )
+  and (
+    .connections["Build Rejected Assessment Result"].main[0][0].node
+    == "Show Assessment Failure"
   )
   and (
     [
