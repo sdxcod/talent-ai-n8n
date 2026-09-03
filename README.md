@@ -151,6 +151,11 @@ n8n-cli --version
 اجرای روزمره روی Host نیست؛ Docker آن را فقط هنگام ساخت اولین Volume
 PostgreSQL درون کانتینر اجرا می‌کند.
 
+مسیر رسمی Windows برای MVP استفاده از Docker Desktop و WSL2 است تا Bootstrap،
+Verification و Release build دقیقاً همان مسیری را طی کنند که روی Linux و CI
+آزمایش می‌شود. ابزار PowerShell موجود فقط یک Helper اختیاری دیتابیس است و به
+معنای پشتیبانی کامل Native PowerShell نیست.
+
 ## پورت‌ها، Databaseها و Roleها
 
 | کاربرد | مقدار محلی پیش‌فرض |

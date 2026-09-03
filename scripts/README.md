@@ -16,6 +16,12 @@ created. Day-to-day database synchronization uses `scripts/apply-database.sh`.
 
 ## Supported entry points
 
+The supported Windows path for the MVP is **Docker Desktop with WSL2**. This
+uses the same Bash entry points and verification path as Linux and CI, avoiding
+two implementations of release-critical behavior. Git attributes force LF line
+endings for container and Bash scripts so Git for Windows cannot corrupt their
+shebangs.
+
 macOS, Linux or WSL:
 
 ```bash
@@ -24,13 +30,13 @@ macOS, Linux or WSL:
 ./scripts/verify-phase1.sh
 ```
 
-Native Windows PowerShell database initialization:
+Optional native Windows PowerShell database initialization:
 
 ```powershell
 .\scripts\windows\initialize-database.ps1
 ```
 
-The PowerShell helper reads `.env` from the repository root, connects to the
+The PowerShell helper is not a full Windows bootstrap. It reads `.env` from the repository root, connects to the
 host-published PostgreSQL port, creates the required roles/database when needed,
 and applies the same versioned migrations and seeds. Full local-stack automation
 currently uses the Bash entry points; Windows users should run those through WSL
