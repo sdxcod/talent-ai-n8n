@@ -58,6 +58,7 @@ required_operational_files=(
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T003__technical_interview_persistence_contract.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T004__technical_interview_queries.sql"
   "$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"
+  "$TALENTAI_SCRIPT_DIR/build-phase45-mvp-package.sh"
 )
 
 for required_workflow_file in "${required_workflow_files[@]}"; do
