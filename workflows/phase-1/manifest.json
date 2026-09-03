@@ -19,11 +19,6 @@
       "id": "sGpdmxkpfQDl1uT8",
       "name": "TAI-03 Evidence Scoring & Deterministic Grade Engine v1",
       "file": "TAI-03-evidence-scoring-grade-engine-v1.json"
-    },
-    {
-      "id": "6topbXRO9Zga3l1h",
-      "name": "TAI-04 Candidate Interview & Final Grade v1",
-      "file": "TAI-04-candidate-interview-final-grade-v1.json"
     }
   ],
   "workflowDependencies": [

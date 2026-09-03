@@ -1,0 +1,20 @@
+{
+  "scope": "PHASE_4_5_MVP",
+  "schemaVersion": "1.0.0",
+  "sourceN8nVersion": "2.36.8",
+  "upstreamContract": {
+    "name": "talentai.phase3.assessment-handoff",
+    "version": "1.0.0"
+  },
+  "workflows": [
+    {
+      "id": "6topbXRO9Zga3l1h",
+      "name": "TAI-04 Candidate Interview & Final Grade v1",
+      "file": "TAI-04-candidate-interview-final-grade-v1.json"
+    }
+  ],
+  "requiredCredentialTypes": [
+    "openAiApi",
+    "postgres"
+  ]
+}
