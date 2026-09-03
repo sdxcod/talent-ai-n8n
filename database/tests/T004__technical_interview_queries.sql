@@ -224,7 +224,12 @@ BEGIN
             "llmRationale": "Concrete but limited trade-off analysis.",
             "finalScore": 2
           }
-        ]'::JSONB
+        ]'::JSONB,
+        '{
+          "schemaVersion": "1.0",
+          "interviewSummary": "Synthetic evaluation summary.",
+          "warnings": []
+        }'::JSONB
     );
 
     IF v_row."complete" IS NOT TRUE
@@ -232,6 +237,33 @@ BEGIN
        OR v_row."evaluatedCount" <> 2
        OR v_row."currentStage" <> 'RESULT_PERSISTENCE' THEN
         RAISE EXCEPTION 'Answer evaluation persistence failed: %', v_row;
+    END IF;
+
+    SELECT * INTO STRICT v_row
+    FROM pg_temp.load_technical_interview_checkpoint(
+        v_session_id,
+        'interview-query-test-1'
+    );
+
+    IF v_row."currentStage" <> 'RESULT_PERSISTENCE'
+       OR v_row."firstQuestionSetId" <> v_first_question_set_id
+       OR v_row."firstAnswerCount" <> 1
+       OR v_row."followUpQuestionSetId" <> v_follow_up_question_set_id
+       OR v_row."followUpAnswerCount" <> 1
+       OR v_row."evaluatedAnswerCount" <> 2
+       OR v_row."evaluationPayload" ->> 'interviewSummary'
+          <> 'Synthetic evaluation summary.' THEN
+        RAISE EXCEPTION 'Interview checkpoint could not be reconstructed: %', v_row;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM pg_temp.load_technical_interview_checkpoint(
+        v_session_id,
+        'interview-query-wrong-owner'
+    );
+
+    IF v_count <> 0 THEN
+        RAISE EXCEPTION 'Non-owner workflow loaded interview checkpoint';
     END IF;
 
     SELECT * INTO STRICT v_row

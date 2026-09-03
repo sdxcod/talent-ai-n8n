@@ -12,11 +12,14 @@ if (
 
 const normalized =
   $('Normalize Follow-up Answers').first().json;
+const firstRound =
+  $('Restore First Round Answers').first().json;
 
 return [
   {
     json: {
       ...normalized,
+      firstRoundAnswerRecords: firstRound.answerRecords,
       persistence: {
         sessionId: persisted.sessionId,
         questionSetId: persisted.questionSetId,

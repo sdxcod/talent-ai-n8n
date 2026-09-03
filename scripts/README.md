@@ -36,6 +36,11 @@ It never leaves synthetic interview sessions, questions, answers or results in
 the database. The same suite verifies controlled failure recording, ownership
 checks and retry metadata without retaining provider payloads.
 
+Retryable Phase 4/5 executions resume from the persisted interview stage.
+Question sets and answers are reloaded through the checkpoint query instead of
+being regenerated, and answer-evaluation metadata is retained for final-result
+recovery.
+
 Optional native Windows PowerShell database initialization:
 
 ```powershell

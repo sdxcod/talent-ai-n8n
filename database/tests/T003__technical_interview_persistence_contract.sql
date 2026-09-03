@@ -44,13 +44,14 @@ BEGIN
           'failure_code',
           'failure_message',
           'retryable',
+          'evaluation_payload',
           'started_at',
           'updated_at',
           'completed_at',
           'failed_at'
       );
 
-    IF session_column_count <> 19 THEN
+    IF session_column_count <> 20 THEN
         RAISE EXCEPTION
             'Technical interview session contract is incomplete: % columns',
             session_column_count;

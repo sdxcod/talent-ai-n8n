@@ -32,13 +32,14 @@ assert.equal(manifest.workflows.length, 1);
 assert.deepEqual(manifest.persistence, {
   schemaVersion: '1.0.0',
   migration: 'database/migrations/V009__create_technical_interview_persistence.sql',
+  checkpointMigration: 'database/migrations/V010__add_technical_interview_checkpoint_recovery.sql',
   tables: [
     'talentai.technical_interview_session',
     'talentai.technical_question_set',
     'talentai.technical_interview_answer',
     'talentai.technical_interview_result',
   ],
-  queryRange: 'Q013-Q019',
+  queryRange: 'Q013-Q020',
 });
 assert.deepEqual(
   [...manifest.requiredCredentialTypes].sort(),
@@ -92,6 +93,14 @@ for (const requiredNode of [
   'Validate Phase 3 Handoff',
   'Claim Technical Interview Session',
   'Interview Claim Can Continue?',
+  'Fresh Interview Attempt?',
+  'Load Technical Interview Checkpoint',
+  'Build Technical Interview Checkpoint',
+  'Resume First Round?',
+  'Resume Follow-up Generation?',
+  'Resume Follow-up?',
+  'Resume Answer Evaluation?',
+  'Resume Result Persistence?',
   'Completed Interview Replay?',
   'Load Completed Technical Interview',
   'Build Rejected Technical Interview Result',
@@ -99,12 +108,14 @@ for (const requiredNode of [
   'Validate Interview Questions',
   'Persist First Question Set',
   'Restore First Question Form',
+  'Prepare First Interview Form',
   'Persist First Round Answers',
   'Restore First Round Answers',
   'Generate Follow-up Questions',
   'Validate Follow-up Questions',
   'Persist Follow-up Question Set',
   'Restore Follow-up Question Form',
+  'Prepare Follow-up Interview Form',
   'Persist Follow-up Answers',
   'Restore Follow-up Answers',
   'Score Interview Answers',
@@ -142,6 +153,14 @@ for (const requiredNode of [
   'Answer Evaluation Persistence Failure',
   'Final Grade Failure',
   'Interview Completion Failure',
+  'Checkpoint Load Failure',
+  'Checkpoint Reconstruction Failure',
+  'Checkpoint Route Failure',
+  'First Question Checkpoint Failure',
+  'First Answer Checkpoint Failure',
+  'Follow-up Question Checkpoint Failure',
+  'Follow-up Answer Checkpoint Failure',
+  'Answer Evaluation Checkpoint Failure',
   'Show Final Grade',
 ]) {
   assert.ok(nodeByName.has(requiredNode), `Required node is missing: ${requiredNode}`);
@@ -205,12 +224,80 @@ assert.deepEqual(
   ['Build Persisted Interview Result'],
 );
 assert.deepEqual(
+  connectionTargets('Interview Configuration'),
+  ['Fresh Interview Attempt?'],
+);
+assert.deepEqual(
+  connectionTargets('Fresh Interview Attempt?', 0),
+  ['Build Interview Question Prompt'],
+);
+assert.deepEqual(
+  connectionTargets('Fresh Interview Attempt?', 1),
+  ['Load Technical Interview Checkpoint'],
+);
+assert.deepEqual(
+  connectionTargets('Load Technical Interview Checkpoint'),
+  ['Build Technical Interview Checkpoint'],
+);
+assert.deepEqual(
+  connectionTargets('Build Technical Interview Checkpoint'),
+  ['Resume First Round?'],
+);
+assert.deepEqual(
+  connectionTargets('Resume First Round?', 0),
+  ['Prepare First Interview Form'],
+);
+assert.deepEqual(
+  connectionTargets('Resume First Round?', 1),
+  ['Resume Follow-up Generation?'],
+);
+assert.deepEqual(
+  connectionTargets('Resume Follow-up Generation?', 0),
+  ['Build Follow-up Question Prompt'],
+);
+assert.deepEqual(
+  connectionTargets('Resume Follow-up Generation?', 1),
+  ['Resume Follow-up?'],
+);
+assert.deepEqual(
+  connectionTargets('Resume Follow-up?', 0),
+  ['Prepare Follow-up Interview Form'],
+);
+assert.deepEqual(
+  connectionTargets('Resume Follow-up?', 1),
+  ['Resume Answer Evaluation?'],
+);
+assert.deepEqual(
+  connectionTargets('Resume Answer Evaluation?', 0),
+  ['Build Answer Scoring Prompt'],
+);
+assert.deepEqual(
+  connectionTargets('Resume Answer Evaluation?', 1),
+  ['Resume Result Persistence?'],
+);
+assert.deepEqual(
+  connectionTargets('Resume Result Persistence?', 0),
+  ['Calculate Final Grade'],
+);
+assert.deepEqual(
+  connectionTargets('Resume Result Persistence?', 1),
+  ['Checkpoint Route Failure'],
+);
+assert.deepEqual(
   connectionTargets('Validate Interview Questions'),
   ['Persist First Question Set'],
 );
 assert.deepEqual(
   connectionTargets('Persist First Question Set'),
   ['Restore First Question Form'],
+);
+assert.deepEqual(
+  connectionTargets('Restore First Question Form'),
+  ['Prepare First Interview Form'],
+);
+assert.deepEqual(
+  connectionTargets('Prepare First Interview Form'),
+  ['Candidate Interview Form'],
 );
 assert.deepEqual(
   connectionTargets('Normalize Interview Answers'),
@@ -227,6 +314,14 @@ assert.deepEqual(
 assert.deepEqual(
   connectionTargets('Persist Follow-up Question Set'),
   ['Restore Follow-up Question Form'],
+);
+assert.deepEqual(
+  connectionTargets('Restore Follow-up Question Form'),
+  ['Prepare Follow-up Interview Form'],
+);
+assert.deepEqual(
+  connectionTargets('Prepare Follow-up Interview Form'),
+  ['Follow-up Interview Form'],
 );
 assert.deepEqual(
   connectionTargets('Normalize Follow-up Answers'),
@@ -281,9 +376,12 @@ for (const [nodeName, sourceName] of [
   ['Validate Demo Interview Request', 'tai04-validate-demo-interview-request'],
   ['Build Demo Phase 3 Handoff', 'tai04-build-demo-phase3-handoff'],
   ['Validate Phase 3 Handoff', 'tai04-validate-phase3-handoff'],
+  ['Build Technical Interview Checkpoint', 'tai04-build-interview-checkpoint'],
   ['Restore First Question Form', 'tai04-restore-first-question-form'],
+  ['Prepare First Interview Form', 'tai04-prepare-interview-form'],
   ['Restore First Round Answers', 'tai04-restore-first-round-answers'],
   ['Restore Follow-up Question Form', 'tai04-restore-follow-up-question-form'],
+  ['Prepare Follow-up Interview Form', 'tai04-prepare-interview-form'],
   ['Restore Follow-up Answers', 'tai04-restore-follow-up-answers'],
   ['Restore Validated Answer Scores', 'tai04-restore-validated-answer-scores'],
   ['Build Persisted Interview Result', 'tai04-build-persisted-interview-result'],
@@ -328,6 +426,14 @@ const recordedFailureNodes = [
   'Answer Evaluation Persistence Failure',
   'Final Grade Failure',
   'Interview Completion Failure',
+  'Checkpoint Load Failure',
+  'Checkpoint Reconstruction Failure',
+  'Checkpoint Route Failure',
+  'First Question Checkpoint Failure',
+  'First Answer Checkpoint Failure',
+  'Follow-up Question Checkpoint Failure',
+  'Follow-up Answer Checkpoint Failure',
+  'Answer Evaluation Checkpoint Failure',
 ];
 
 for (const nodeName of unclaimedFailureNodes) {
@@ -363,27 +469,31 @@ const errorRoutes = new Map([
   ['Validate Phase 3 Handoff', 'Phase 3 Contract Failure'],
   ['Claim Technical Interview Session', 'Interview Claim Failure'],
   ['Interview Configuration', 'Interview Configuration Failure'],
+  ['Load Technical Interview Checkpoint', 'Checkpoint Load Failure'],
+  ['Build Technical Interview Checkpoint', 'Checkpoint Reconstruction Failure'],
   ['Build Interview Question Prompt', 'Question Prompt Failure'],
   ['Generate Interview Questions', 'Question Generation Failure'],
   ['Validate Interview Questions', 'Question Validation Failure'],
   ['Persist First Question Set', 'First Question Persistence Failure'],
-  ['Restore First Question Form', 'First Question Persistence Failure'],
+  ['Restore First Question Form', 'First Question Checkpoint Failure'],
+  ['Prepare First Interview Form', 'First Question Checkpoint Failure'],
   ['Normalize Interview Answers', 'First Answer Validation Failure'],
   ['Persist First Round Answers', 'First Answer Persistence Failure'],
-  ['Restore First Round Answers', 'First Answer Persistence Failure'],
+  ['Restore First Round Answers', 'First Answer Checkpoint Failure'],
   ['Build Follow-up Question Prompt', 'Follow-up Prompt Failure'],
   ['Generate Follow-up Questions', 'Follow-up Generation Failure'],
   ['Validate Follow-up Questions', 'Follow-up Validation Failure'],
   ['Persist Follow-up Question Set', 'Follow-up Question Persistence Failure'],
-  ['Restore Follow-up Question Form', 'Follow-up Question Persistence Failure'],
+  ['Restore Follow-up Question Form', 'Follow-up Question Checkpoint Failure'],
+  ['Prepare Follow-up Interview Form', 'Follow-up Question Checkpoint Failure'],
   ['Normalize Follow-up Answers', 'Follow-up Answer Validation Failure'],
   ['Persist Follow-up Answers', 'Follow-up Answer Persistence Failure'],
-  ['Restore Follow-up Answers', 'Follow-up Answer Persistence Failure'],
+  ['Restore Follow-up Answers', 'Follow-up Answer Checkpoint Failure'],
   ['Build Answer Scoring Prompt', 'Answer Scoring Prompt Failure'],
   ['Score Interview Answers', 'Answer Scoring Failure'],
   ['Validate Answer Scores', 'Answer Score Validation Failure'],
   ['Apply Answer Evaluations', 'Answer Evaluation Persistence Failure'],
-  ['Restore Validated Answer Scores', 'Answer Evaluation Persistence Failure'],
+  ['Restore Validated Answer Scores', 'Answer Evaluation Checkpoint Failure'],
   ['Calculate Final Grade', 'Final Grade Failure'],
   ['Complete Technical Interview', 'Interview Completion Failure'],
 ]);
@@ -428,6 +538,7 @@ const databaseQuery = (name) =>
 for (const [nodeName, queryName] of [
   ['Claim Technical Interview Session', 'Q013__claim_technical_interview_session'],
   ['Load Completed Technical Interview', 'Q018__load_completed_technical_interview'],
+  ['Load Technical Interview Checkpoint', 'Q020__load_technical_interview_checkpoint'],
   ['Persist First Question Set', 'Q014__persist_technical_question_set'],
   ['Persist First Round Answers', 'Q015__persist_technical_interview_answers'],
   ['Persist Follow-up Question Set', 'Q014__persist_technical_question_set'],
@@ -442,6 +553,24 @@ for (const [nodeName, queryName] of [
     `${nodeName} is not synchronized with ${queryName}.sql`,
   );
 }
+
+assert.match(
+  nodeByName.get('Apply Answer Evaluations').parameters.options.queryReplacement,
+  /JSON\.stringify\(\$json\.answerScoring\)/,
+  'Answer-scoring metadata must be persisted with the evaluation checkpoint.',
+);
+assert.match(
+  nodeByName.get('Normalize Interview Answers').parameters.jsCode,
+  /Prepare First Interview Form/,
+);
+assert.match(
+  nodeByName.get('Normalize Follow-up Answers').parameters.jsCode,
+  /Prepare Follow-up Interview Form/,
+);
+assert.match(
+  nodeByName.get('Build Answer Scoring Prompt').parameters.jsCode,
+  /firstRoundAnswerRecords/,
+);
 
 const sqlPath = path.join(
   workflowDirectory,
@@ -466,6 +595,111 @@ const validated = executeCodeNode(
   'Validate Phase 3 Handoff',
   { phase3Handoff: exampleHandoff },
 )[0].json;
+
+const executeCheckpointNode = (input) => {
+  const source = nodeByName.get(
+    'Build Technical Interview Checkpoint'
+  ).parameters.jsCode;
+  const run = new Function('$input', '$', source);
+
+  return run(
+    {
+      first: () => ({ json: structuredClone(input) }),
+    },
+    (name) => {
+      assert.equal(name, 'Validate Phase 3 Handoff');
+      return {
+        first: () => ({ json: structuredClone(validated) }),
+      };
+    },
+  )[0].json;
+};
+
+const checkpointQuestion = {
+  id: 'Q1',
+  dimensionCode: 'JAVA_CORE',
+  type: 'single_choice',
+  questionText: 'Which Java behavior is correct?',
+  options: [
+    { label: 'A', score: 0 },
+    { label: 'B', score: 4 },
+    { label: 'C', score: 1 },
+  ],
+};
+const checkpointAnswer = {
+  round: 'first',
+  id: 'Q1',
+  dimensionCode: 'JAVA_CORE',
+  type: 'single_choice',
+  questionText: checkpointQuestion.questionText,
+  answerLabels: ['B'],
+  answerText: '',
+  mcqScore: 4,
+  llmScore: null,
+  llmRationale: '',
+  finalScore: 4,
+};
+const checkpointFollowUpAnswer = {
+  ...checkpointAnswer,
+  round: 'followUp',
+  id: 'F1',
+  type: 'explanatory',
+  answerLabels: [],
+  answerText: 'A concrete synthetic answer.',
+  mcqScore: null,
+  llmScore: 3,
+  llmRationale: 'Concrete evidence.',
+  finalScore: 3,
+};
+
+const firstRoundCheckpoint = executeCheckpointNode({
+  sessionId: '60000000-0000-4000-8000-000000000001',
+  currentStage: 'FIRST_ROUND',
+  attemptCount: 2,
+  firstQuestionPlan: {
+    schemaVersion: '1.0',
+    round: 'first',
+    questions: [checkpointQuestion],
+  },
+  firstQuestionCount: 1,
+  firstAnswerRecords: [],
+  firstAnswerCount: 0,
+  followUpQuestionPlan: null,
+  followUpQuestionCount: null,
+  followUpAnswerRecords: [],
+  followUpAnswerCount: 0,
+  evaluatedAnswerCount: 0,
+  evaluationPayload: null,
+});
+
+assert.equal(firstRoundCheckpoint.checkpointStage, 'FIRST_ROUND');
+assert.equal(firstRoundCheckpoint.formFields.length, 1);
+assert.equal(firstRoundCheckpoint.persistence.resumed, true);
+
+const resultCheckpoint = executeCheckpointNode({
+  sessionId: '60000000-0000-4000-8000-000000000001',
+  currentStage: 'RESULT_PERSISTENCE',
+  attemptCount: 2,
+  firstQuestionCount: 1,
+  firstAnswerRecords: [checkpointAnswer],
+  firstAnswerCount: 1,
+  followUpQuestionCount: 1,
+  followUpAnswerRecords: [checkpointFollowUpAnswer],
+  followUpAnswerCount: 1,
+  evaluatedAnswerCount: 2,
+  evaluationPayload: {
+    schemaVersion: '1.0',
+    interviewSummary: 'Synthetic checkpoint summary.',
+    warnings: [],
+  },
+});
+
+assert.equal(resultCheckpoint.checkpointStage, 'RESULT_PERSISTENCE');
+assert.equal(resultCheckpoint.answerRecords.length, 2);
+assert.equal(
+  resultCheckpoint.answerScoring.interviewSummary,
+  'Synthetic checkpoint summary.',
+);
 
 assert.deepEqual(validated.correlation, {
   contractVersion: '1.0.0',

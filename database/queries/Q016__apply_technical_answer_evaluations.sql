@@ -3,7 +3,8 @@ WITH supplied AS
     SELECT
         $1::UUID                              AS session_id,
         NULLIF(BTRIM($2), '')                 AS workflow_execution_id,
-        $3::JSONB                             AS answer_records
+        $3::JSONB                             AS answer_records,
+        $4::JSONB                             AS evaluation_payload
 ),
 eligible AS
 (
@@ -17,6 +18,16 @@ eligible AS
      AND session.claim_owner_workflow_execution_id
          = supplied.workflow_execution_id
     WHERE jsonb_typeof(supplied.answer_records) = 'array'
+      AND jsonb_typeof(supplied.evaluation_payload) = 'object'
+      AND jsonb_typeof(
+          supplied.evaluation_payload -> 'warnings'
+      ) = 'array'
+      AND jsonb_typeof(
+          supplied.evaluation_payload -> 'interviewSummary'
+      ) = 'string'
+      AND LENGTH(BTRIM(
+          supplied.evaluation_payload ->> 'interviewSummary'
+      )) > 0
 ),
 records AS
 (
@@ -71,6 +82,7 @@ advanced AS
     SET
         current_stage = 'RESULT_PERSISTENCE',
         last_workflow_execution_id = eligible.workflow_execution_id,
+        evaluation_payload = eligible.evaluation_payload,
         updated_at = now()
     FROM eligible, counts
     WHERE session.id = eligible.session_id

@@ -11,6 +11,7 @@ cd "$TALENTAI_REPOSITORY_ROOT"
 
 required_files=(
   "$TALENTAI_REPOSITORY_ROOT/database/migrations/V009__create_technical_interview_persistence.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V010__add_technical_interview_checkpoint_recovery.sql"
   "$TALENTAI_QUERY_DIR/Q013__claim_technical_interview_session.sql"
   "$TALENTAI_QUERY_DIR/Q014__persist_technical_question_set.sql"
   "$TALENTAI_QUERY_DIR/Q015__persist_technical_interview_answers.sql"
@@ -18,6 +19,7 @@ required_files=(
   "$TALENTAI_QUERY_DIR/Q017__complete_technical_interview.sql"
   "$TALENTAI_QUERY_DIR/Q018__load_completed_technical_interview.sql"
   "$TALENTAI_QUERY_DIR/Q019__fail_technical_interview_session.sql"
+  "$TALENTAI_QUERY_DIR/Q020__load_technical_interview_checkpoint.sql"
   "$TALENTAI_CONTRACT_TEST"
   "$TALENTAI_QUERY_TEST"
 )
@@ -106,7 +108,7 @@ RETURNS TABLE (
 
   emit_sql_function '
 CREATE FUNCTION pg_temp.apply_technical_answer_evaluations(
-  UUID, TEXT, JSONB
+  UUID, TEXT, JSONB, JSONB
 )
 RETURNS TABLE (
   "sessionId" UUID,
@@ -174,6 +176,30 @@ RETURNS TABLE (
   "startedAt" TIMESTAMP WITH TIME ZONE,
   "failedAt" TIMESTAMP WITH TIME ZONE
 )' "$TALENTAI_QUERY_DIR/Q019__fail_technical_interview_session.sql"
+
+  emit_sql_function '
+CREATE FUNCTION pg_temp.load_technical_interview_checkpoint(
+  UUID, TEXT
+)
+RETURNS TABLE (
+  "sessionId" UUID,
+  "currentStage" VARCHAR,
+  "attemptCount" INTEGER,
+  "firstQuestionSetId" UUID,
+  "firstQuestionSetVersion" INTEGER,
+  "firstQuestionPlan" JSONB,
+  "firstQuestionCount" INTEGER,
+  "firstAnswerRecords" JSONB,
+  "firstAnswerCount" INTEGER,
+  "followUpQuestionSetId" UUID,
+  "followUpQuestionSetVersion" INTEGER,
+  "followUpQuestionPlan" JSONB,
+  "followUpQuestionCount" INTEGER,
+  "followUpAnswerRecords" JSONB,
+  "followUpAnswerCount" INTEGER,
+  "evaluatedAnswerCount" INTEGER,
+  "evaluationPayload" JSONB
+)' "$TALENTAI_QUERY_DIR/Q020__load_technical_interview_checkpoint.sql"
 
   sed -n '1,$p' "$TALENTAI_QUERY_TEST"
   printf '%s\n' 'ROLLBACK;'

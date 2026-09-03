@@ -144,7 +144,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1632,
+        1856,
         -320
       ],
       "onError": "continueErrorOutput"
@@ -161,7 +161,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1856,
+        2080,
         -320
       ],
       "onError": "continueErrorOutput",
@@ -187,7 +187,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1856,
+        2080,
         -88
       ]
     },
@@ -201,7 +201,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1856,
+        2080,
         -552
       ]
     },
@@ -214,7 +214,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2080,
+        2304,
         -320
       ],
       "onError": "continueErrorOutput"
@@ -234,21 +234,21 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2752,
+        3200,
         -320
       ],
       "webhookId": "5a6b7c8d-9e0f-4a1b-2c3d-4e5f6a7b8c9d"
     },
     {
       "parameters": {
-        "jsCode": "const formAnswers = $input.first().json;\n\nconst planContext =\n  $('Validate Interview Questions').first().json;\n\nconst interviewContext =\n  planContext.interviewContext;\n\nconst questionPlan =\n  planContext.questionPlan;\n\nconst errors = [];\nconst answerRecords = [];\n\nconst toAnswerList = (value) => {\n  if (Array.isArray(value)) {\n    return value.map((item) => String(item ?? '').trim()).filter(Boolean);\n  }\n\n  const text = String(value ?? '').trim();\n  return text ? [text] : [];\n};\n\nfor (const question of questionPlan.questions) {\n  const answerList = toAnswerList(formAnswers[`q_${question.id}`]);\n\n  if (answerList.length === 0) {\n    errors.push(`${question.id}: answer is empty`);\n    continue;\n  }\n\n  if (question.type === 'explanatory') {\n    answerRecords.push({\n      round: 'first',\n      id: question.id,\n      dimensionCode: question.dimensionCode,\n      type: question.type,\n      questionText: question.questionText,\n      answerLabels: [],\n      answerText: answerList.join('\\n'),\n      mcqScore: null,\n      llmScore: null,\n      llmRationale: '',\n      finalScore: null,\n    });\n\n    continue;\n  }\n\n  const unknownOption = answerList.find(\n    (label) => !question.options.some((option) => option.label === label)\n  );\n\n  if (unknownOption !== undefined) {\n    errors.push(\n      `${question.id}: submitted option does not match the questionnaire`\n    );\n    continue;\n  }\n\n  if (question.type === 'single_choice' && answerList.length > 1) {\n    errors.push(`${question.id}: only one option can be selected`);\n    continue;\n  }\n\n  const selectedScores = answerList.map(\n    (label) =>\n      question.options.find((option) => option.label === label).score\n  );\n\n  const mcqScore =\n    question.type === 'single_choice'\n      ? selectedScores[0]\n      : Math.round(\n          (selectedScores.reduce(\n            (total, score) => total + score,\n            0\n          ) /\n            selectedScores.length) *\n            100\n        ) / 100;\n\n  answerRecords.push({\n    round: 'first',\n    id: question.id,\n    dimensionCode: question.dimensionCode,\n    type: question.type,\n    questionText: question.questionText,\n    answerLabels: answerList,\n    answerText: '',\n    mcqScore,\n    llmScore: null,\n    llmRationale: '',\n    finalScore: mcqScore,\n  });\n}\n\nif (errors.length > 0) {\n  throw new Error(`INVALID_INTERVIEW_ANSWERS: ${errors.join(\"; \")}`);\n}\n\nreturn [\n  {\n    json: {\n      interviewContext,\n      answerRecords,\n    },\n  },\n];"
+        "jsCode": "const formAnswers = $input.first().json;\n\nconst planContext =\n  $('Prepare First Interview Form').first().json;\n\nconst interviewContext =\n  planContext.interviewContext;\n\nconst questionPlan =\n  planContext.questionPlan;\n\nconst errors = [];\nconst answerRecords = [];\n\nconst toAnswerList = (value) => {\n  if (Array.isArray(value)) {\n    return value.map((item) => String(item ?? '').trim()).filter(Boolean);\n  }\n\n  const text = String(value ?? '').trim();\n  return text ? [text] : [];\n};\n\nfor (const question of questionPlan.questions) {\n  const answerList = toAnswerList(formAnswers[`q_${question.id}`]);\n\n  if (answerList.length === 0) {\n    errors.push(`${question.id}: answer is empty`);\n    continue;\n  }\n\n  if (question.type === 'explanatory') {\n    answerRecords.push({\n      round: 'first',\n      id: question.id,\n      dimensionCode: question.dimensionCode,\n      type: question.type,\n      questionText: question.questionText,\n      answerLabels: [],\n      answerText: answerList.join('\\n'),\n      mcqScore: null,\n      llmScore: null,\n      llmRationale: '',\n      finalScore: null,\n    });\n\n    continue;\n  }\n\n  const unknownOption = answerList.find(\n    (label) => !question.options.some((option) => option.label === label)\n  );\n\n  if (unknownOption !== undefined) {\n    errors.push(\n      `${question.id}: submitted option does not match the questionnaire`\n    );\n    continue;\n  }\n\n  if (question.type === 'single_choice' && answerList.length > 1) {\n    errors.push(`${question.id}: only one option can be selected`);\n    continue;\n  }\n\n  const selectedScores = answerList.map(\n    (label) =>\n      question.options.find((option) => option.label === label).score\n  );\n\n  const mcqScore =\n    question.type === 'single_choice'\n      ? selectedScores[0]\n      : Math.round(\n          (selectedScores.reduce(\n            (total, score) => total + score,\n            0\n          ) /\n            selectedScores.length) *\n            100\n        ) / 100;\n\n  answerRecords.push({\n    round: 'first',\n    id: question.id,\n    dimensionCode: question.dimensionCode,\n    type: question.type,\n    questionText: question.questionText,\n    answerLabels: answerList,\n    answerText: '',\n    mcqScore,\n    llmScore: null,\n    llmRationale: '',\n    finalScore: mcqScore,\n  });\n}\n\nif (errors.length > 0) {\n  throw new Error(`INVALID_INTERVIEW_ANSWERS: ${errors.join(\"; \")}`);\n}\n\nreturn [\n  {\n    json: {\n      interviewContext,\n      answerRecords,\n    },\n  },\n];"
       },
       "id": "1c7d1031-0fbb-47aa-b2b4-93ccfc841c26",
       "name": "Normalize Interview Answers",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2976,
+        3424,
         -320
       ],
       "onError": "continueErrorOutput"
@@ -262,7 +262,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3648,
+        4096,
         -320
       ],
       "onError": "continueErrorOutput"
@@ -279,7 +279,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        3872,
+        4320,
         -320
       ],
       "onError": "continueErrorOutput",
@@ -305,7 +305,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        3872,
+        4320,
         -88
       ]
     },
@@ -319,7 +319,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        3872,
+        4320,
         -552
       ]
     },
@@ -332,7 +332,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4320,
+        4544,
         -320
       ],
       "onError": "continueErrorOutput"
@@ -352,35 +352,35 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        4992,
+        5440,
         -320
       ],
       "webhookId": "e15c6d7e-8f9a-4bac-bdbe-2f3a4b5c6d7e"
     },
     {
       "parameters": {
-        "jsCode": "const formAnswers = $input.first().json;\n\nconst planContext =\n  $('Validate Follow-up Questions').first().json;\n\nconst interviewContext =\n  planContext.interviewContext;\n\nconst questionPlan =\n  planContext.questionPlan;\n\nconst errors = [];\nconst answerRecords = [];\n\nconst toAnswerList = (value) => {\n  if (Array.isArray(value)) {\n    return value.map((item) => String(item ?? '').trim()).filter(Boolean);\n  }\n\n  const text = String(value ?? '').trim();\n  return text ? [text] : [];\n};\n\nfor (const question of questionPlan.questions) {\n  const answerList = toAnswerList(formAnswers[`q_${question.id}`]);\n\n  if (answerList.length === 0) {\n    errors.push(`${question.id}: answer is empty`);\n    continue;\n  }\n\n  if (question.type === 'explanatory') {\n    answerRecords.push({\n      round: 'followUp',\n      id: question.id,\n      dimensionCode: question.dimensionCode,\n      type: question.type,\n      questionText: question.questionText,\n      answerLabels: [],\n      answerText: answerList.join('\\n'),\n      mcqScore: null,\n      llmScore: null,\n      llmRationale: '',\n      finalScore: null,\n    });\n\n    continue;\n  }\n\n  const unknownOption = answerList.find(\n    (label) => !question.options.some((option) => option.label === label)\n  );\n\n  if (unknownOption !== undefined) {\n    errors.push(\n      `${question.id}: submitted option does not match the questionnaire`\n    );\n    continue;\n  }\n\n  if (question.type === 'single_choice' && answerList.length > 1) {\n    errors.push(`${question.id}: only one option can be selected`);\n    continue;\n  }\n\n  const selectedScores = answerList.map(\n    (label) =>\n      question.options.find((option) => option.label === label).score\n  );\n\n  const mcqScore =\n    question.type === 'single_choice'\n      ? selectedScores[0]\n      : Math.round(\n          (selectedScores.reduce(\n            (total, score) => total + score,\n            0\n          ) /\n            selectedScores.length) *\n            100\n        ) / 100;\n\n  answerRecords.push({\n    round: 'followUp',\n    id: question.id,\n    dimensionCode: question.dimensionCode,\n    type: question.type,\n    questionText: question.questionText,\n    answerLabels: answerList,\n    answerText: '',\n    mcqScore,\n    llmScore: null,\n    llmRationale: '',\n    finalScore: mcqScore,\n  });\n}\n\nif (errors.length > 0) {\n  throw new Error(`INVALID_INTERVIEW_ANSWERS: ${errors.join(\"; \")}`);\n}\n\nreturn [\n  {\n    json: {\n      interviewContext,\n      answerRecords,\n    },\n  },\n];"
+        "jsCode": "const formAnswers = $input.first().json;\n\nconst planContext =\n  $('Prepare Follow-up Interview Form').first().json;\n\nconst interviewContext =\n  planContext.interviewContext;\n\nconst questionPlan =\n  planContext.questionPlan;\n\nconst errors = [];\nconst answerRecords = [];\n\nconst toAnswerList = (value) => {\n  if (Array.isArray(value)) {\n    return value.map((item) => String(item ?? '').trim()).filter(Boolean);\n  }\n\n  const text = String(value ?? '').trim();\n  return text ? [text] : [];\n};\n\nfor (const question of questionPlan.questions) {\n  const answerList = toAnswerList(formAnswers[`q_${question.id}`]);\n\n  if (answerList.length === 0) {\n    errors.push(`${question.id}: answer is empty`);\n    continue;\n  }\n\n  if (question.type === 'explanatory') {\n    answerRecords.push({\n      round: 'followUp',\n      id: question.id,\n      dimensionCode: question.dimensionCode,\n      type: question.type,\n      questionText: question.questionText,\n      answerLabels: [],\n      answerText: answerList.join('\\n'),\n      mcqScore: null,\n      llmScore: null,\n      llmRationale: '',\n      finalScore: null,\n    });\n\n    continue;\n  }\n\n  const unknownOption = answerList.find(\n    (label) => !question.options.some((option) => option.label === label)\n  );\n\n  if (unknownOption !== undefined) {\n    errors.push(\n      `${question.id}: submitted option does not match the questionnaire`\n    );\n    continue;\n  }\n\n  if (question.type === 'single_choice' && answerList.length > 1) {\n    errors.push(`${question.id}: only one option can be selected`);\n    continue;\n  }\n\n  const selectedScores = answerList.map(\n    (label) =>\n      question.options.find((option) => option.label === label).score\n  );\n\n  const mcqScore =\n    question.type === 'single_choice'\n      ? selectedScores[0]\n      : Math.round(\n          (selectedScores.reduce(\n            (total, score) => total + score,\n            0\n          ) /\n            selectedScores.length) *\n            100\n        ) / 100;\n\n  answerRecords.push({\n    round: 'followUp',\n    id: question.id,\n    dimensionCode: question.dimensionCode,\n    type: question.type,\n    questionText: question.questionText,\n    answerLabels: answerList,\n    answerText: '',\n    mcqScore,\n    llmScore: null,\n    llmRationale: '',\n    finalScore: mcqScore,\n  });\n}\n\nif (errors.length > 0) {\n  throw new Error(`INVALID_INTERVIEW_ANSWERS: ${errors.join(\"; \")}`);\n}\n\nreturn [\n  {\n    json: {\n      interviewContext,\n      answerRecords,\n    },\n  },\n];"
       },
       "id": "23519fd0-a9a8-40e4-9a75-a15dd56c3101",
       "name": "Normalize Follow-up Answers",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5216,
+        5664,
         -320
       ],
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "jsCode": "const roundTwoContext = $input.first().json;\n\nconst roundOneRecords =\n  $('Normalize Interview Answers').first().json.answerRecords;\n\nconst answerRecords = [\n  ...roundOneRecords,\n  ...roundTwoContext.answerRecords,\n];\n\nconst interviewContext =\n  roundTwoContext.interviewContext;\n\nconst scoringScale =\n  interviewContext.gradeGuide.scoringScale;\n\nconst explanatoryItems = answerRecords\n  .filter((record) => record.type === 'explanatory')\n  .map((record) => ({\n    round: record.round,\n    id: record.id,\n    dimensionCode: record.dimensionCode,\n    questionText: record.questionText,\n    answer: record.answerText,\n  }));\n\nif (explanatoryItems.length === 0) {\n  throw new Error('NO_EXPLANATORY_ANSWERS: nothing to score');\n}\n\nconst instructions = [\n  'You are the interview-evaluator component of TalentAI.',\n  '',\n  'Your only responsibility is to score the explanatory interview answers of the candidate.',\n  'Single-choice and multi-choice answers are scored deterministically elsewhere; you must not score them.',\n  'You must not decide the final grade.',\n  'You must not calculate the overall score.',\n  '',\n  'Rules:',\n  '1. Score every supplied explanatory answer exactly once using its exact round and id.',\n  '2. Apply the scoringScale semantics: 0 no usable evidence, 1 limited or vague,',\n  '   2 practical and concrete, 3 advanced depth with explicit trade-offs or troubleshooting,',\n  '   4 leadership-level depth or cross-cutting ownership.',\n  '3. Score only what the answer itself demonstrates. Do not give credit for claims that the answer does not support.',\n  '4. Generic, evasive, contradictory, or copied-sounding answers must receive score 0 or 1.',\n  '5. Specific first-hand experience with concrete detail must receive at least 2.',\n  '6. The follow-up round was designed from the first-round answers: if a follow-up answer stays vague while the first-round claim was strong, score it low and add a warning.',\n  '7. If answers from the two rounds contradict each other, score each answer on its own merit and add a warning.',\n  '8. Every score requires a short rationale in Persian.',\n  '9. Return interviewSummary as a short Persian (Farsi) paragraph summarizing the interview quality across dimensions.',\n  '10. Return only the object required by the connected Structured Output Parser.',\n  '',\n  'Scoring scale:',\n  JSON.stringify(scoringScale),\n  '',\n  'Resume grade context:',\n  JSON.stringify({\n    decision: interviewContext.resumeGrade.decision,\n    overallScore: interviewContext.resumeGrade.overallScore,\n    dimensions: interviewContext.resumeGrade.dimensions,\n  }),\n  '',\n  'Explanatory answers to score:',\n  JSON.stringify(explanatoryItems),\n];\n\nreturn [\n  {\n    json: {\n      interviewContext,\n      answerRecords,\n      prompt: instructions.join(\n        '\\n'\n      ),\n    },\n  },\n];"
+        "jsCode": "const roundTwoContext = $input.first().json;\n\nconst roundOneRecords = Array.isArray(\n  roundTwoContext.firstRoundAnswerRecords\n)\n  ? roundTwoContext.firstRoundAnswerRecords\n  : $('Restore First Round Answers').first().json.answerRecords;\n\nconst answerRecords = [\n  ...roundOneRecords,\n  ...roundTwoContext.answerRecords,\n];\n\nconst interviewContext =\n  roundTwoContext.interviewContext;\n\nconst scoringScale =\n  interviewContext.gradeGuide.scoringScale;\n\nconst explanatoryItems = answerRecords\n  .filter((record) => record.type === 'explanatory')\n  .map((record) => ({\n    round: record.round,\n    id: record.id,\n    dimensionCode: record.dimensionCode,\n    questionText: record.questionText,\n    answer: record.answerText,\n  }));\n\nif (explanatoryItems.length === 0) {\n  throw new Error('NO_EXPLANATORY_ANSWERS: nothing to score');\n}\n\nconst instructions = [\n  'You are the interview-evaluator component of TalentAI.',\n  '',\n  'Your only responsibility is to score the explanatory interview answers of the candidate.',\n  'Single-choice and multi-choice answers are scored deterministically elsewhere; you must not score them.',\n  'You must not decide the final grade.',\n  'You must not calculate the overall score.',\n  '',\n  'Rules:',\n  '1. Score every supplied explanatory answer exactly once using its exact round and id.',\n  '2. Apply the scoringScale semantics: 0 no usable evidence, 1 limited or vague,',\n  '   2 practical and concrete, 3 advanced depth with explicit trade-offs or troubleshooting,',\n  '   4 leadership-level depth or cross-cutting ownership.',\n  '3. Score only what the answer itself demonstrates. Do not give credit for claims that the answer does not support.',\n  '4. Generic, evasive, contradictory, or copied-sounding answers must receive score 0 or 1.',\n  '5. Specific first-hand experience with concrete detail must receive at least 2.',\n  '6. The follow-up round was designed from the first-round answers: if a follow-up answer stays vague while the first-round claim was strong, score it low and add a warning.',\n  '7. If answers from the two rounds contradict each other, score each answer on its own merit and add a warning.',\n  '8. Every score requires a short rationale in Persian.',\n  '9. Return interviewSummary as a short Persian (Farsi) paragraph summarizing the interview quality across dimensions.',\n  '10. Return only the object required by the connected Structured Output Parser.',\n  '',\n  'Scoring scale:',\n  JSON.stringify(scoringScale),\n  '',\n  'Resume grade context:',\n  JSON.stringify({\n    decision: interviewContext.resumeGrade.decision,\n    overallScore: interviewContext.resumeGrade.overallScore,\n    dimensions: interviewContext.resumeGrade.dimensions,\n  }),\n  '',\n  'Explanatory answers to score:',\n  JSON.stringify(explanatoryItems),\n];\n\nreturn [\n  {\n    json: {\n      interviewContext,\n      answerRecords,\n      prompt: instructions.join(\n        '\\n'\n      ),\n    },\n  },\n];"
       },
       "id": "401da330-9b84-461a-9d76-5641471fcc79",
       "name": "Build Answer Scoring Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5888,
+        6336,
         -320
       ],
       "onError": "continueErrorOutput"
@@ -397,7 +397,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        6112,
+        6560,
         -320
       ],
       "onError": "continueErrorOutput",
@@ -423,7 +423,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        6112,
+        6560,
         -88
       ]
     },
@@ -437,7 +437,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        6112,
+        6560,
         -552
       ]
     },
@@ -450,7 +450,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6336,
+        6784,
         -320
       ],
       "onError": "continueErrorOutput"
@@ -464,7 +464,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7008,
+        7456,
         -320
       ],
       "onError": "continueErrorOutput"
@@ -478,7 +478,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7680,
+        8128,
         -320
       ]
     },
@@ -494,7 +494,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        7904,
+        8352,
         -320
       ],
       "webhookId": "6e7f8a9b-0c1d-4e2f-3a4b-5c6d7e8f9a0c"
@@ -661,7 +661,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        2304,
+        2528,
         -320
       ],
       "id": "bb866eb9-7e7d-45be-b04b-e2ce483fc056",
@@ -675,7 +675,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2528,
+        2752,
         -320
       ],
       "id": "5ff3bc18-ae39-49d2-8283-8158d73e2d50",
@@ -693,7 +693,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        3200,
+        3648,
         -320
       ],
       "id": "6f24d56e-9057-4824-8e6a-d51a316e0b64",
@@ -707,7 +707,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3424,
+        3872,
         -320
       ],
       "id": "55e8b39b-2735-4183-9e80-681768272581",
@@ -725,7 +725,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        4544,
+        4768,
         -320
       ],
       "id": "8d910cf1-c42e-47cb-8901-fe8c4d9d93c6",
@@ -739,7 +739,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4768,
+        4992,
         -320
       ],
       "id": "5f3d2a26-23bb-4633-93f3-6ee70a05bdee",
@@ -757,7 +757,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        5440,
+        5888,
         -320
       ],
       "id": "e9565333-830d-4c37-95ef-8c6674f70518",
@@ -766,12 +766,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const persisted = $input.first().json;\n\nif (\n  persisted.complete !== true ||\n  Number(persisted.persistedCount) !==\n    Number(persisted.expectedCount)\n) {\n  throw new Error(\n    'FOLLOW_UP_ANSWER_PERSISTENCE_FAILED'\n  );\n}\n\nconst normalized =\n  $('Normalize Follow-up Answers').first().json;\n\nreturn [\n  {\n    json: {\n      ...normalized,\n      persistence: {\n        sessionId: persisted.sessionId,\n        questionSetId: persisted.questionSetId,\n        answerCount: Number(persisted.persistedCount),\n      },\n    },\n  },\n];"
+        "jsCode": "const persisted = $input.first().json;\n\nif (\n  persisted.complete !== true ||\n  Number(persisted.persistedCount) !==\n    Number(persisted.expectedCount)\n) {\n  throw new Error(\n    'FOLLOW_UP_ANSWER_PERSISTENCE_FAILED'\n  );\n}\n\nconst normalized =\n  $('Normalize Follow-up Answers').first().json;\nconst firstRound =\n  $('Restore First Round Answers').first().json;\n\nreturn [\n  {\n    json: {\n      ...normalized,\n      firstRoundAnswerRecords: firstRound.answerRecords,\n      persistence: {\n        sessionId: persisted.sessionId,\n        questionSetId: persisted.questionSetId,\n        answerCount: Number(persisted.persistedCount),\n      },\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5664,
+        6112,
         -320
       ],
       "id": "e03e14b2-c86a-43c7-8fa2-f95a9dc55d99",
@@ -781,15 +781,15 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                              AS session_id,\n        NULLIF(BTRIM($2), '')                 AS workflow_execution_id,\n        $3::JSONB                             AS answer_records\n),\neligible AS\n(\n    SELECT supplied.*\n    FROM supplied\n    JOIN talentai.technical_interview_session AS session\n      ON session.id = supplied.session_id\n     AND session.status = 'RUNNING'\n     AND session.current_stage IN\n         ('ANSWER_EVALUATION', 'RESULT_PERSISTENCE')\n     AND session.claim_owner_workflow_execution_id\n         = supplied.workflow_execution_id\n    WHERE jsonb_typeof(supplied.answer_records) = 'array'\n),\nrecords AS\n(\n    SELECT\n        eligible.session_id,\n        eligible.workflow_execution_id,\n        answer_record,\n        CASE answer_record ->> 'round'\n            WHEN 'first' THEN 'FIRST'\n            WHEN 'followUp' THEN 'FOLLOW_UP'\n        END AS round,\n        NULLIF(BTRIM(answer_record ->> 'id'), '') AS question_id\n    FROM eligible\n    CROSS JOIN LATERAL jsonb_array_elements(\n        eligible.answer_records\n    ) AS item(answer_record)\n    WHERE NULLIF(answer_record ->> 'finalScore', '')::NUMERIC\n          BETWEEN 0 AND 4\n),\nupdated AS\n(\n    UPDATE talentai.technical_interview_answer AS answer\n    SET\n        model_score = NULLIF(records.answer_record ->> 'llmScore', '')::NUMERIC,\n        final_score = NULLIF(records.answer_record ->> 'finalScore', '')::NUMERIC,\n        rationale = COALESCE(records.answer_record ->> 'llmRationale', ''),\n        status = 'EVALUATED',\n        evaluated_at = COALESCE(answer.evaluated_at, now())\n    FROM records\n    WHERE answer.session_id = records.session_id\n      AND answer.round = records.round\n      AND answer.question_id = records.question_id\n      AND answer.dimension_code = records.answer_record ->> 'dimensionCode'\n      AND answer.question_type = records.answer_record ->> 'type'\n    RETURNING answer.id\n),\ncounts AS\n(\n    SELECT\n        (SELECT COUNT(*) FROM records)::INTEGER AS supplied_count,\n        (\n            SELECT COUNT(*)\n            FROM talentai.technical_interview_answer AS answer\n            WHERE answer.session_id = eligible.session_id\n        )::INTEGER AS answer_count,\n        (SELECT COUNT(*) FROM updated)::INTEGER AS evaluated_count\n    FROM eligible\n),\nadvanced AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        current_stage = 'RESULT_PERSISTENCE',\n        last_workflow_execution_id = eligible.workflow_execution_id,\n        updated_at = now()\n    FROM eligible, counts\n    WHERE session.id = eligible.session_id\n      AND session.current_stage = 'ANSWER_EVALUATION'\n      AND counts.supplied_count = counts.answer_count\n      AND counts.evaluated_count = counts.answer_count\n      AND counts.answer_count > 0\n    RETURNING session.id\n)\nSELECT\n    eligible.session_id                      AS \"sessionId\",\n    counts.supplied_count                    AS \"suppliedCount\",\n    counts.answer_count                      AS \"answerCount\",\n    counts.evaluated_count                   AS \"evaluatedCount\",\n    (\n        counts.answer_count > 0\n        AND counts.supplied_count = counts.answer_count\n        AND counts.evaluated_count = counts.answer_count\n    )                                        AS \"complete\",\n    CASE\n        WHEN counts.answer_count > 0\n         AND counts.supplied_count = counts.answer_count\n         AND counts.evaluated_count = counts.answer_count\n            THEN 'RESULT_PERSISTENCE'\n        ELSE 'ANSWER_EVALUATION'\n    END                                      AS \"currentStage\"\nFROM eligible\nCROSS JOIN counts;\n",
+        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                              AS session_id,\n        NULLIF(BTRIM($2), '')                 AS workflow_execution_id,\n        $3::JSONB                             AS answer_records,\n        $4::JSONB                             AS evaluation_payload\n),\neligible AS\n(\n    SELECT supplied.*\n    FROM supplied\n    JOIN talentai.technical_interview_session AS session\n      ON session.id = supplied.session_id\n     AND session.status = 'RUNNING'\n     AND session.current_stage IN\n         ('ANSWER_EVALUATION', 'RESULT_PERSISTENCE')\n     AND session.claim_owner_workflow_execution_id\n         = supplied.workflow_execution_id\n    WHERE jsonb_typeof(supplied.answer_records) = 'array'\n      AND jsonb_typeof(supplied.evaluation_payload) = 'object'\n      AND jsonb_typeof(\n          supplied.evaluation_payload -> 'warnings'\n      ) = 'array'\n      AND jsonb_typeof(\n          supplied.evaluation_payload -> 'interviewSummary'\n      ) = 'string'\n      AND LENGTH(BTRIM(\n          supplied.evaluation_payload ->> 'interviewSummary'\n      )) > 0\n),\nrecords AS\n(\n    SELECT\n        eligible.session_id,\n        eligible.workflow_execution_id,\n        answer_record,\n        CASE answer_record ->> 'round'\n            WHEN 'first' THEN 'FIRST'\n            WHEN 'followUp' THEN 'FOLLOW_UP'\n        END AS round,\n        NULLIF(BTRIM(answer_record ->> 'id'), '') AS question_id\n    FROM eligible\n    CROSS JOIN LATERAL jsonb_array_elements(\n        eligible.answer_records\n    ) AS item(answer_record)\n    WHERE NULLIF(answer_record ->> 'finalScore', '')::NUMERIC\n          BETWEEN 0 AND 4\n),\nupdated AS\n(\n    UPDATE talentai.technical_interview_answer AS answer\n    SET\n        model_score = NULLIF(records.answer_record ->> 'llmScore', '')::NUMERIC,\n        final_score = NULLIF(records.answer_record ->> 'finalScore', '')::NUMERIC,\n        rationale = COALESCE(records.answer_record ->> 'llmRationale', ''),\n        status = 'EVALUATED',\n        evaluated_at = COALESCE(answer.evaluated_at, now())\n    FROM records\n    WHERE answer.session_id = records.session_id\n      AND answer.round = records.round\n      AND answer.question_id = records.question_id\n      AND answer.dimension_code = records.answer_record ->> 'dimensionCode'\n      AND answer.question_type = records.answer_record ->> 'type'\n    RETURNING answer.id\n),\ncounts AS\n(\n    SELECT\n        (SELECT COUNT(*) FROM records)::INTEGER AS supplied_count,\n        (\n            SELECT COUNT(*)\n            FROM talentai.technical_interview_answer AS answer\n            WHERE answer.session_id = eligible.session_id\n        )::INTEGER AS answer_count,\n        (SELECT COUNT(*) FROM updated)::INTEGER AS evaluated_count\n    FROM eligible\n),\nadvanced AS\n(\n    UPDATE talentai.technical_interview_session AS session\n    SET\n        current_stage = 'RESULT_PERSISTENCE',\n        last_workflow_execution_id = eligible.workflow_execution_id,\n        evaluation_payload = eligible.evaluation_payload,\n        updated_at = now()\n    FROM eligible, counts\n    WHERE session.id = eligible.session_id\n      AND session.current_stage = 'ANSWER_EVALUATION'\n      AND counts.supplied_count = counts.answer_count\n      AND counts.evaluated_count = counts.answer_count\n      AND counts.answer_count > 0\n    RETURNING session.id\n)\nSELECT\n    eligible.session_id                      AS \"sessionId\",\n    counts.supplied_count                    AS \"suppliedCount\",\n    counts.answer_count                      AS \"answerCount\",\n    counts.evaluated_count                   AS \"evaluatedCount\",\n    (\n        counts.answer_count > 0\n        AND counts.supplied_count = counts.answer_count\n        AND counts.evaluated_count = counts.answer_count\n    )                                        AS \"complete\",\n    CASE\n        WHEN counts.answer_count > 0\n         AND counts.supplied_count = counts.answer_count\n         AND counts.evaluated_count = counts.answer_count\n            THEN 'RESULT_PERSISTENCE'\n        ELSE 'ANSWER_EVALUATION'\n    END                                      AS \"currentStage\"\nFROM eligible\nCROSS JOIN counts;\n",
         "options": {
-          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), JSON.stringify($json.answerRecords)] }}"
+          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), JSON.stringify($json.answerRecords), JSON.stringify($json.answerScoring)] }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        6560,
+        7008,
         -320
       ],
       "id": "9db1ce3b-8d8d-479a-b0cf-5c136c720394",
@@ -803,7 +803,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6784,
+        7232,
         -320
       ],
       "id": "bd156ad7-12c0-4af8-ac6a-18dd2a2e093d",
@@ -821,7 +821,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        7232,
+        7680,
         -320
       ],
       "id": "bf8e141b-bc52-4788-81ce-5f5235208ebf",
@@ -835,7 +835,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7456,
+        7904,
         -320
       ],
       "id": "f22a89d9-c247-49ac-b557-b7d01c49d37a",
@@ -1017,7 +1017,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"QUESTION_GENERATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FIRST_QUESTION_SET_PERSISTENCE_FAILED\",\n  \"message\": \"The first-round question set could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FIRST_QUESTION_SET_PERSISTENCE_FAILED\",\n  \"message\": \"The first-round question set could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1043,7 +1043,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"FIRST_ROUND\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FIRST_ROUND_ANSWER_PERSISTENCE_FAILED\",\n  \"message\": \"The first-round interview answers could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FIRST_ROUND_ANSWER_PERSISTENCE_FAILED\",\n  \"message\": \"The first-round interview answers could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1095,7 +1095,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP_GENERATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FOLLOW_UP_QUESTION_SET_PERSISTENCE_FAILED\",\n  \"message\": \"The follow-up question set could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FOLLOW_UP_QUESTION_SET_PERSISTENCE_FAILED\",\n  \"message\": \"The follow-up question set could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1121,7 +1121,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FOLLOW_UP_ANSWER_PERSISTENCE_FAILED\",\n  \"message\": \"The follow-up interview answers could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FOLLOW_UP_ANSWER_PERSISTENCE_FAILED\",\n  \"message\": \"The follow-up interview answers could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1173,7 +1173,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"ANSWER_EVALUATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"ANSWER_EVALUATION_PERSISTENCE_FAILED\",\n  \"message\": \"Interview answer evaluations could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"ANSWER_EVALUATION_PERSISTENCE_FAILED\",\n  \"message\": \"Interview answer evaluations could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1199,7 +1199,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"RESULT_PERSISTENCE\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"TECHNICAL_INTERVIEW_COMPLETION_FAILED\",\n  \"message\": \"The final technical interview result could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"TECHNICAL_INTERVIEW_COMPLETION_FAILED\",\n  \"message\": \"The final technical interview result could not be persisted.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1209,6 +1209,374 @@
       ],
       "id": "b0126c3f-332a-4437-ad5b-e50bbc507128",
       "name": "Interview Completion Failure"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "44fe4682-b86c-4a2b-a3a8-7baefafc1201-condition",
+              "leftValue": "={{ String($('Claim Technical Interview Session').first().json.currentStage ?? '') === 'QUESTION_GENERATION' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1632,
+        -320
+      ],
+      "id": "44fe4682-b86c-4a2b-a3a8-7baefafc1201",
+      "name": "Fresh Interview Attempt?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH eligible AS\n(\n    SELECT session.*\n    FROM talentai.technical_interview_session AS session\n    WHERE session.id = $1::UUID\n      AND session.status = 'RUNNING'\n      AND session.claim_owner_workflow_execution_id = NULLIF(BTRIM($2), '')\n),\nfirst_question_set AS\n(\n    SELECT question_set.*\n    FROM talentai.technical_question_set AS question_set\n    JOIN eligible ON eligible.id = question_set.session_id\n    WHERE question_set.round = 'FIRST'\n    ORDER BY question_set.version DESC\n    LIMIT 1\n),\nfollow_up_question_set AS\n(\n    SELECT question_set.*\n    FROM talentai.technical_question_set AS question_set\n    JOIN eligible ON eligible.id = question_set.session_id\n    WHERE question_set.round = 'FOLLOW_UP'\n    ORDER BY question_set.version DESC\n    LIMIT 1\n),\nanswers AS\n(\n    SELECT\n        answer.session_id,\n        answer.round,\n        jsonb_agg(\n            jsonb_build_object(\n                'round', CASE answer.round\n                    WHEN 'FIRST' THEN 'first'\n                    WHEN 'FOLLOW_UP' THEN 'followUp'\n                END,\n                'id', answer.question_id,\n                'dimensionCode', answer.dimension_code,\n                'type', answer.question_type,\n                'questionText', answer.answer_payload ->> 'questionText',\n                'answerLabels', answer.answer_payload -> 'answerLabels',\n                'answerText', answer.answer_payload ->> 'answerText',\n                'mcqScore', answer.deterministic_score,\n                'llmScore', answer.model_score,\n                'llmRationale', answer.rationale,\n                'finalScore', answer.final_score\n            )\n            ORDER BY answer.submitted_at, answer.question_id\n        ) AS answer_records,\n        COUNT(*)::INTEGER AS answer_count,\n        COUNT(*) FILTER (\n            WHERE answer.status = 'EVALUATED'\n        )::INTEGER AS evaluated_count\n    FROM talentai.technical_interview_answer AS answer\n    JOIN eligible ON eligible.id = answer.session_id\n    GROUP BY answer.session_id, answer.round\n)\nSELECT\n    eligible.id                                      AS \"sessionId\",\n    eligible.current_stage                           AS \"currentStage\",\n    eligible.attempt_count                           AS \"attemptCount\",\n    first_question_set.id                            AS \"firstQuestionSetId\",\n    first_question_set.version                       AS \"firstQuestionSetVersion\",\n    first_question_set.question_plan                 AS \"firstQuestionPlan\",\n    first_question_set.question_count                AS \"firstQuestionCount\",\n    COALESCE(first_answers.answer_records, '[]'::JSONB)\n                                                       AS \"firstAnswerRecords\",\n    COALESCE(first_answers.answer_count, 0)           AS \"firstAnswerCount\",\n    follow_up_question_set.id                        AS \"followUpQuestionSetId\",\n    follow_up_question_set.version                   AS \"followUpQuestionSetVersion\",\n    follow_up_question_set.question_plan             AS \"followUpQuestionPlan\",\n    follow_up_question_set.question_count            AS \"followUpQuestionCount\",\n    COALESCE(follow_up_answers.answer_records, '[]'::JSONB)\n                                                       AS \"followUpAnswerRecords\",\n    COALESCE(follow_up_answers.answer_count, 0)       AS \"followUpAnswerCount\",\n    COALESCE(first_answers.evaluated_count, 0)\n      + COALESCE(follow_up_answers.evaluated_count, 0)\n                                                       AS \"evaluatedAnswerCount\",\n    eligible.evaluation_payload                      AS \"evaluationPayload\"\nFROM eligible\nLEFT JOIN first_question_set ON TRUE\nLEFT JOIN follow_up_question_set ON TRUE\nLEFT JOIN answers AS first_answers\n  ON first_answers.session_id = eligible.id\n AND first_answers.round = 'FIRST'\nLEFT JOIN answers AS follow_up_answers\n  ON follow_up_answers.session_id = eligible.id\n AND follow_up_answers.round = 'FOLLOW_UP';\n",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1856,
+        -704
+      ],
+      "id": "655ca7f4-2036-4d04-9e13-472eb5101202",
+      "name": "Load Technical Interview Checkpoint",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const checkpoint = $input.first().json;\nconst interviewContext =\n  $('Validate Phase 3 Handoff').first().json;\n\nconst parseJson = (value, fallback = null) => {\n  if (value === null || value === undefined) return fallback;\n  if (typeof value === 'string') return JSON.parse(value);\n  return value;\n};\n\nconst currentStage = String(checkpoint.currentStage ?? '');\nconst firstQuestionPlan = parseJson(checkpoint.firstQuestionPlan);\nconst followUpQuestionPlan = parseJson(checkpoint.followUpQuestionPlan);\nconst firstAnswerRecords = parseJson(\n  checkpoint.firstAnswerRecords,\n  []\n);\nconst followUpAnswerRecords = parseJson(\n  checkpoint.followUpAnswerRecords,\n  []\n);\nconst evaluationPayload = parseJson(\n  checkpoint.evaluationPayload\n);\n\nconst formFields = (plan) =>\n  plan.questions.map((question, index) => {\n    const field = {\n      fieldLabel: `${index + 1}. ${question.questionText}`,\n      fieldName: `q_${question.id}`,\n      requiredField: true,\n    };\n\n    if (question.type === 'explanatory') {\n      return {\n        ...field,\n        fieldType: 'textarea',\n        placeholder: 'پاسخ خود را همین‌جا بنویسید…',\n      };\n    }\n\n    return {\n      ...field,\n      fieldType:\n        question.type === 'multi_choice' ? 'checkbox' : 'radio',\n      fieldOptions: {\n        values: question.options.map(\n          (option) => ({ option: option.label })\n        ),\n      },\n    };\n  });\n\nconst requireQuestionPlan = (plan, expectedCount, label) => {\n  if (\n    !plan ||\n    typeof plan !== 'object' ||\n    !Array.isArray(plan.questions) ||\n    plan.questions.length !== Number(expectedCount) ||\n    plan.questions.length < 1\n  ) {\n    throw new Error(`INVALID_${label}_QUESTION_CHECKPOINT`);\n  }\n};\n\nconst requireAnswers = (records, expectedCount, label) => {\n  if (\n    !Array.isArray(records) ||\n    records.length !== Number(expectedCount) ||\n    records.length < 1\n  ) {\n    throw new Error(`INVALID_${label}_ANSWER_CHECKPOINT`);\n  }\n};\n\nconst base = {\n  checkpointStage: currentStage,\n  interviewContext,\n  persistence: {\n    sessionId: checkpoint.sessionId,\n    attemptCount: Number(checkpoint.attemptCount),\n    resumed: true,\n  },\n};\n\nif (currentStage === 'FIRST_ROUND') {\n  requireQuestionPlan(\n    firstQuestionPlan,\n    checkpoint.firstQuestionCount,\n    'FIRST'\n  );\n\n  return [{\n    json: {\n      ...base,\n      questionPlan: firstQuestionPlan,\n      formFields: formFields(firstQuestionPlan),\n      interviewFormTitle: 'مصاحبه فنی TalentAI — مرحله اول',\n      interviewFormDescription:\n        `${interviewContext.candidate.fullName} عزیز، لطفاً به پرسش‌های مرحله اول بر پایه تجربه واقعی خود پاسخ دهید.`,\n    },\n  }];\n}\n\nif (currentStage === 'FOLLOW_UP_GENERATION') {\n  requireAnswers(\n    firstAnswerRecords,\n    checkpoint.firstQuestionCount,\n    'FIRST'\n  );\n\n  return [{\n    json: {\n      ...base,\n      answerRecords: firstAnswerRecords,\n    },\n  }];\n}\n\nif (currentStage === 'FOLLOW_UP') {\n  requireQuestionPlan(\n    followUpQuestionPlan,\n    checkpoint.followUpQuestionCount,\n    'FOLLOW_UP'\n  );\n\n  return [{\n    json: {\n      ...base,\n      questionPlan: followUpQuestionPlan,\n      formFields: formFields(followUpQuestionPlan),\n      followUpFormTitle: 'مصاحبه فنی TalentAI — مرحله تکمیلی',\n      followUpFormDescription:\n        `${interviewContext.candidate.fullName} عزیز، لطفاً به پرسش‌های تکمیلی بر پایه تجربه واقعی خود پاسخ دهید.`,\n    },\n  }];\n}\n\nif (currentStage === 'ANSWER_EVALUATION') {\n  requireAnswers(\n    firstAnswerRecords,\n    checkpoint.firstQuestionCount,\n    'FIRST'\n  );\n  requireAnswers(\n    followUpAnswerRecords,\n    checkpoint.followUpQuestionCount,\n    'FOLLOW_UP'\n  );\n\n  return [{\n    json: {\n      ...base,\n      firstRoundAnswerRecords: firstAnswerRecords,\n      answerRecords: followUpAnswerRecords,\n    },\n  }];\n}\n\nif (currentStage === 'RESULT_PERSISTENCE') {\n  const answerRecords = [\n    ...firstAnswerRecords,\n    ...followUpAnswerRecords,\n  ];\n\n  requireAnswers(\n    answerRecords,\n    Number(checkpoint.firstQuestionCount) +\n      Number(checkpoint.followUpQuestionCount),\n    'EVALUATED'\n  );\n\n  if (\n    Number(checkpoint.evaluatedAnswerCount) !== answerRecords.length ||\n    !evaluationPayload ||\n    typeof evaluationPayload.interviewSummary !== 'string' ||\n    !Array.isArray(evaluationPayload.warnings)\n  ) {\n    throw new Error('INVALID_ANSWER_EVALUATION_CHECKPOINT');\n  }\n\n  return [{\n    json: {\n      ...base,\n      answerRecords,\n      answerScoring: evaluationPayload,\n    },\n  }];\n}\n\nthrow new Error(\n  `UNSUPPORTED_INTERVIEW_CHECKPOINT_STAGE: ${currentStage || 'EMPTY'}`\n);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        -704
+      ],
+      "id": "4a2d9af7-0f79-45e2-8911-ec81e39d1203",
+      "name": "Build Technical Interview Checkpoint",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ab64e3bb-35db-4f19-b48f-405ec8ac1204-condition",
+              "leftValue": "={{ String($json.checkpointStage ?? '') === 'FIRST_ROUND' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2304,
+        -704
+      ],
+      "id": "ab64e3bb-35db-4f19-b48f-405ec8ac1204",
+      "name": "Resume First Round?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "00f1ee70-9ebc-4492-847a-2167163d1205-condition",
+              "leftValue": "={{ String($json.checkpointStage ?? '') === 'FOLLOW_UP_GENERATION' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2528,
+        -704
+      ],
+      "id": "00f1ee70-9ebc-4492-847a-2167163d1205",
+      "name": "Resume Follow-up Generation?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "70b8cf31-4301-4090-9720-3d91607a1206-condition",
+              "leftValue": "={{ String($json.checkpointStage ?? '') === 'FOLLOW_UP' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2752,
+        -704
+      ],
+      "id": "70b8cf31-4301-4090-9720-3d91607a1206",
+      "name": "Resume Follow-up?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "21474bd0-a6ed-4770-9262-f5c3345c1207-condition",
+              "leftValue": "={{ String($json.checkpointStage ?? '') === 'ANSWER_EVALUATION' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2976,
+        -704
+      ],
+      "id": "21474bd0-a6ed-4770-9262-f5c3345c1207",
+      "name": "Resume Answer Evaluation?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cbed4e20-5026-4276-888e-5565f9a41208-condition",
+              "leftValue": "={{ String($json.checkpointStage ?? '') === 'RESULT_PERSISTENCE' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3200,
+        -704
+      ],
+      "id": "cbed4e20-5026-4276-888e-5565f9a41208",
+      "name": "Resume Result Persistence?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prepared = $input.first().json;\n\nif (\n  !prepared.questionPlan ||\n  !Array.isArray(prepared.questionPlan.questions) ||\n  !Array.isArray(prepared.formFields) ||\n  prepared.questionPlan.questions.length !== prepared.formFields.length ||\n  prepared.formFields.length < 1\n) {\n  throw new Error('INTERVIEW_FORM_CHECKPOINT_INVALID');\n}\n\nreturn [{ json: prepared }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2976,
+        -320
+      ],
+      "id": "7062b417-03a5-4e97-898f-ce5f41891209",
+      "name": "Prepare First Interview Form",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prepared = $input.first().json;\n\nif (\n  !prepared.questionPlan ||\n  !Array.isArray(prepared.questionPlan.questions) ||\n  !Array.isArray(prepared.formFields) ||\n  prepared.questionPlan.questions.length !== prepared.formFields.length ||\n  prepared.formFields.length < 1\n) {\n  throw new Error('INTERVIEW_FORM_CHECKPOINT_INVALID');\n}\n\nreturn [{ json: prepared }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5216,
+        -320
+      ],
+      "id": "5be1c8e5-6cb1-408c-9f3a-6e82e2771210",
+      "name": "Prepare Follow-up Interview Form",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"INTERVIEW_CHECKPOINT_LOAD_FAILED\",\n  \"message\": \"The technical interview checkpoint could not be loaded.\",\n  \"retryable\": true\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        -928
+      ],
+      "id": "1831c7b7-204a-4e67-83bd-62abb5ea1211",
+      "name": "Checkpoint Load Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"INTERVIEW_CHECKPOINT_INVALID\",\n  \"message\": \"The persisted technical interview checkpoint is incomplete.\",\n  \"retryable\": false\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        -928
+      ],
+      "id": "1f3d6ca2-33e9-4b04-91af-371a343d1212",
+      "name": "Checkpoint Reconstruction Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"ORCHESTRATION\",\n  \"code\": \"INTERVIEW_CHECKPOINT_STAGE_UNSUPPORTED\",\n  \"message\": \"The persisted interview stage cannot be resumed.\",\n  \"retryable\": false\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        -704
+      ],
+      "id": "ee868f22-fdf7-4a02-8c8d-43c2a7ce1213",
+      "name": "Checkpoint Route Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FIRST_ROUND\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FIRST_QUESTION_CHECKPOINT_INVALID\",\n  \"message\": \"The persisted first-round question checkpoint is incomplete.\",\n  \"retryable\": false\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        176
+      ],
+      "id": "5b083dd3-e481-4b4d-9d0f-572ca5a61214",
+      "name": "First Question Checkpoint Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP_GENERATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FIRST_ANSWER_CHECKPOINT_INVALID\",\n  \"message\": \"The persisted first-round answer checkpoint is incomplete.\",\n  \"retryable\": false\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        176
+      ],
+      "id": "e3dcf62e-c93f-4ad2-b52b-75acfd201215",
+      "name": "First Answer Checkpoint Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"FOLLOW_UP\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FOLLOW_UP_QUESTION_CHECKPOINT_INVALID\",\n  \"message\": \"The persisted follow-up question checkpoint is incomplete.\",\n  \"retryable\": false\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4880,
+        176
+      ],
+      "id": "978e81cb-e17d-4108-9b84-a2a34be11216",
+      "name": "Follow-up Question Checkpoint Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"ANSWER_EVALUATION\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"FOLLOW_UP_ANSWER_CHECKPOINT_INVALID\",\n  \"message\": \"The persisted follow-up answer checkpoint is incomplete.\",\n  \"retryable\": false\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5664,
+        176
+      ],
+      "id": "c92ee639-ac13-4e7b-b33c-789d67f71217",
+      "name": "Follow-up Answer Checkpoint Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"RESULT_PERSISTENCE\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"ANSWER_EVALUATION_CHECKPOINT_INVALID\",\n  \"message\": \"The persisted answer-evaluation checkpoint is incomplete.\",\n  \"retryable\": false\n};\nconst claim = $('Claim Technical Interview Session').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: String(claim.sessionId ?? ''),\n      requestId: String(claim.requestId ?? ''),\n      assessmentId: String(claim.assessmentId ?? ''),\n      extractionId: String(claim.extractionId ?? ''),\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage,\n      attemptCount: Number(claim.attemptCount ?? 1),\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6784,
+        176
+      ],
+      "id": "393854c7-60a9-43d4-8270-8396fd321218",
+      "name": "Answer Evaluation Checkpoint Failure"
     }
   ],
   "connections": {
@@ -1245,7 +1613,7 @@
       "main": [
         [
           {
-            "node": "Build Interview Question Prompt",
+            "node": "Fresh Interview Attempt?",
             "type": "main",
             "index": 0
           }
@@ -1744,14 +2112,14 @@
       "main": [
         [
           {
-            "node": "Candidate Interview Form",
+            "node": "Prepare First Interview Form",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "First Question Persistence Failure",
+            "node": "First Question Checkpoint Failure",
             "type": "main",
             "index": 0
           }
@@ -1787,7 +2155,7 @@
         ],
         [
           {
-            "node": "First Answer Persistence Failure",
+            "node": "First Answer Checkpoint Failure",
             "type": "main",
             "index": 0
           }
@@ -1816,14 +2184,14 @@
       "main": [
         [
           {
-            "node": "Follow-up Interview Form",
+            "node": "Prepare Follow-up Interview Form",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Follow-up Question Persistence Failure",
+            "node": "Follow-up Question Checkpoint Failure",
             "type": "main",
             "index": 0
           }
@@ -1859,7 +2227,7 @@
         ],
         [
           {
-            "node": "Follow-up Answer Persistence Failure",
+            "node": "Follow-up Answer Checkpoint Failure",
             "type": "main",
             "index": 0
           }
@@ -1895,7 +2263,7 @@
         ],
         [
           {
-            "node": "Answer Evaluation Persistence Failure",
+            "node": "Answer Evaluation Checkpoint Failure",
             "type": "main",
             "index": 0
           }
@@ -2218,6 +2586,274 @@
         [
           {
             "node": "Build Interview Failure Recording Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fresh Interview Attempt?": {
+      "main": [
+        [
+          {
+            "node": "Build Interview Question Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load Technical Interview Checkpoint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Technical Interview Checkpoint": {
+      "main": [
+        [
+          {
+            "node": "Build Technical Interview Checkpoint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Checkpoint Load Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Technical Interview Checkpoint": {
+      "main": [
+        [
+          {
+            "node": "Resume First Round?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Checkpoint Reconstruction Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume First Round?": {
+      "main": [
+        [
+          {
+            "node": "Prepare First Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resume Follow-up Generation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Follow-up Generation?": {
+      "main": [
+        [
+          {
+            "node": "Build Follow-up Question Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resume Follow-up?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Follow-up?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Follow-up Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resume Answer Evaluation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Answer Evaluation?": {
+      "main": [
+        [
+          {
+            "node": "Build Answer Scoring Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resume Result Persistence?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Result Persistence?": {
+      "main": [
+        [
+          {
+            "node": "Calculate Final Grade",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Checkpoint Route Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare First Interview Form": {
+      "main": [
+        [
+          {
+            "node": "Candidate Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "First Question Checkpoint Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Follow-up Interview Form": {
+      "main": [
+        [
+          {
+            "node": "Follow-up Interview Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Follow-up Question Checkpoint Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checkpoint Load Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checkpoint Reconstruction Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checkpoint Route Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Question Checkpoint Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Answer Checkpoint Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Question Checkpoint Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Answer Checkpoint Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Evaluation Checkpoint Failure": {
+      "main": [
+        [
+          {
+            "node": "Record Technical Interview Failure",
             "type": "main",
             "index": 0
           }

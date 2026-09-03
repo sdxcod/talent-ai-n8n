@@ -320,6 +320,59 @@ Object.assign(rejectedClaim, codeNode({
   sourceName: 'tai04-build-rejected-interview-result',
 }));
 
+upsertNode(ifNode({
+  name: 'Fresh Interview Attempt?',
+  id: '44fe4682-b86c-4a2b-a3a8-7baefafc1201',
+  position: [1632, -320],
+  leftValue:
+    "={{ String($('Claim Technical Interview Session').first().json.currentStage ?? '') === 'QUESTION_GENERATION' }}",
+}));
+
+upsertNode(postgresQueryNode({
+  name: 'Load Technical Interview Checkpoint',
+  id: '655ca7f4-2036-4d04-9e13-472eb5101202',
+  position: [1856, -704],
+  queryName: 'Q020__load_technical_interview_checkpoint',
+  queryReplacement:
+    "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id)] }}",
+}));
+
+upsertNode(codeNode({
+  name: 'Build Technical Interview Checkpoint',
+  id: '4a2d9af7-0f79-45e2-8911-ec81e39d1203',
+  position: [2080, -704],
+  sourceName: 'tai04-build-interview-checkpoint',
+}));
+
+for (const [name, id, position, stage] of [
+  ['Resume First Round?', 'ab64e3bb-35db-4f19-b48f-405ec8ac1204', [2304, -704], 'FIRST_ROUND'],
+  ['Resume Follow-up Generation?', '00f1ee70-9ebc-4492-847a-2167163d1205', [2528, -704], 'FOLLOW_UP_GENERATION'],
+  ['Resume Follow-up?', '70b8cf31-4301-4090-9720-3d91607a1206', [2752, -704], 'FOLLOW_UP'],
+  ['Resume Answer Evaluation?', '21474bd0-a6ed-4770-9262-f5c3345c1207', [2976, -704], 'ANSWER_EVALUATION'],
+  ['Resume Result Persistence?', 'cbed4e20-5026-4276-888e-5565f9a41208', [3200, -704], 'RESULT_PERSISTENCE'],
+]) {
+  upsertNode(ifNode({
+    name,
+    id,
+    position,
+    leftValue: `={{ String($json.checkpointStage ?? '') === '${stage}' }}`,
+  }));
+}
+
+upsertNode(codeNode({
+  name: 'Prepare First Interview Form',
+  id: '7062b417-03a5-4e97-898f-ce5f41891209',
+  position: [2640, -320],
+  sourceName: 'tai04-prepare-interview-form',
+}));
+
+upsertNode(codeNode({
+  name: 'Prepare Follow-up Interview Form',
+  id: '5be1c8e5-6cb1-408c-9f3a-6e82e2771210',
+  position: [4880, -320],
+  sourceName: 'tai04-prepare-interview-form',
+}));
+
 upsertNode(postgresQueryNode({
   name: 'Persist First Question Set',
   id: 'bb866eb9-7e7d-45be-b04b-e2ce483fc056',
@@ -390,7 +443,7 @@ upsertNode(postgresQueryNode({
   position: [6560, -320],
   queryName: 'Q016__apply_technical_answer_evaluations',
   queryReplacement:
-    "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), JSON.stringify($json.answerRecords)] }}",
+    "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), JSON.stringify($json.answerRecords), JSON.stringify($json.answerScoring)] }}",
 }));
 
 upsertNode(codeNode({
@@ -571,7 +624,7 @@ const interviewFailures = [
     id: '2b4253d2-78ec-4e66-93f8-789fb3fb7114',
     position: [2416, 64],
     definition: {
-      stage: 'QUESTION_GENERATION',
+      stage: '',
       category: 'PERSISTENCE',
       code: 'FIRST_QUESTION_SET_PERSISTENCE_FAILED',
       message: 'The first-round question set could not be persisted.',
@@ -595,7 +648,7 @@ const interviewFailures = [
     id: 'f626697f-4c64-424e-a1c6-10d638737116',
     position: [3312, 64],
     definition: {
-      stage: 'FIRST_ROUND',
+      stage: '',
       category: 'PERSISTENCE',
       code: 'FIRST_ROUND_ANSWER_PERSISTENCE_FAILED',
       message: 'The first-round interview answers could not be persisted.',
@@ -643,7 +696,7 @@ const interviewFailures = [
     id: 'a48bdbca-a3f7-46ce-ab29-5b15d3927120',
     position: [4656, 64],
     definition: {
-      stage: 'FOLLOW_UP_GENERATION',
+      stage: '',
       category: 'PERSISTENCE',
       code: 'FOLLOW_UP_QUESTION_SET_PERSISTENCE_FAILED',
       message: 'The follow-up question set could not be persisted.',
@@ -667,7 +720,7 @@ const interviewFailures = [
     id: '9ae6df5b-886e-49c1-b0dd-273fac207122',
     position: [5552, 64],
     definition: {
-      stage: 'FOLLOW_UP',
+      stage: '',
       category: 'PERSISTENCE',
       code: 'FOLLOW_UP_ANSWER_PERSISTENCE_FAILED',
       message: 'The follow-up interview answers could not be persisted.',
@@ -715,7 +768,7 @@ const interviewFailures = [
     id: '776fb70f-ab1c-4f83-8b41-ffea7d067126',
     position: [6672, 64],
     definition: {
-      stage: 'ANSWER_EVALUATION',
+      stage: '',
       category: 'PERSISTENCE',
       code: 'ANSWER_EVALUATION_PERSISTENCE_FAILED',
       message: 'Interview answer evaluations could not be persisted.',
@@ -739,11 +792,107 @@ const interviewFailures = [
     id: 'b0126c3f-332a-4437-ad5b-e50bbc507128',
     position: [7344, 64],
     definition: {
-      stage: 'RESULT_PERSISTENCE',
+      stage: '',
       category: 'PERSISTENCE',
       code: 'TECHNICAL_INTERVIEW_COMPLETION_FAILED',
       message: 'The final technical interview result could not be persisted.',
       retryable: true,
+    },
+  },
+  {
+    name: 'Checkpoint Load Failure',
+    id: '1831c7b7-204a-4e67-83bd-62abb5ea1211',
+    position: [1856, -928],
+    definition: {
+      stage: '',
+      category: 'PERSISTENCE',
+      code: 'INTERVIEW_CHECKPOINT_LOAD_FAILED',
+      message: 'The technical interview checkpoint could not be loaded.',
+      retryable: true,
+    },
+  },
+  {
+    name: 'Checkpoint Reconstruction Failure',
+    id: '1f3d6ca2-33e9-4b04-91af-371a343d1212',
+    position: [2080, -928],
+    definition: {
+      stage: '',
+      category: 'PERSISTENCE',
+      code: 'INTERVIEW_CHECKPOINT_INVALID',
+      message: 'The persisted technical interview checkpoint is incomplete.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'Checkpoint Route Failure',
+    id: 'ee868f22-fdf7-4a02-8c8d-43c2a7ce1213',
+    position: [3424, -704],
+    definition: {
+      stage: '',
+      category: 'ORCHESTRATION',
+      code: 'INTERVIEW_CHECKPOINT_STAGE_UNSUPPORTED',
+      message: 'The persisted interview stage cannot be resumed.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'First Question Checkpoint Failure',
+    id: '5b083dd3-e481-4b4d-9d0f-572ca5a61214',
+    position: [2640, 176],
+    definition: {
+      stage: 'FIRST_ROUND',
+      category: 'PERSISTENCE',
+      code: 'FIRST_QUESTION_CHECKPOINT_INVALID',
+      message: 'The persisted first-round question checkpoint is incomplete.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'First Answer Checkpoint Failure',
+    id: 'e3dcf62e-c93f-4ad2-b52b-75acfd201215',
+    position: [3424, 176],
+    definition: {
+      stage: 'FOLLOW_UP_GENERATION',
+      category: 'PERSISTENCE',
+      code: 'FIRST_ANSWER_CHECKPOINT_INVALID',
+      message: 'The persisted first-round answer checkpoint is incomplete.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'Follow-up Question Checkpoint Failure',
+    id: '978e81cb-e17d-4108-9b84-a2a34be11216',
+    position: [4880, 176],
+    definition: {
+      stage: 'FOLLOW_UP',
+      category: 'PERSISTENCE',
+      code: 'FOLLOW_UP_QUESTION_CHECKPOINT_INVALID',
+      message: 'The persisted follow-up question checkpoint is incomplete.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'Follow-up Answer Checkpoint Failure',
+    id: 'c92ee639-ac13-4e7b-b33c-789d67f71217',
+    position: [5664, 176],
+    definition: {
+      stage: 'ANSWER_EVALUATION',
+      category: 'PERSISTENCE',
+      code: 'FOLLOW_UP_ANSWER_CHECKPOINT_INVALID',
+      message: 'The persisted follow-up answer checkpoint is incomplete.',
+      retryable: false,
+    },
+  },
+  {
+    name: 'Answer Evaluation Checkpoint Failure',
+    id: '393854c7-60a9-43d4-8270-8396fd321218',
+    position: [6784, 176],
+    definition: {
+      stage: 'RESULT_PERSISTENCE',
+      category: 'PERSISTENCE',
+      code: 'ANSWER_EVALUATION_CHECKPOINT_INVALID',
+      message: 'The persisted answer-evaluation checkpoint is incomplete.',
+      retryable: false,
     },
   },
 ];
@@ -763,29 +912,64 @@ promptNode.parameters.jsCode = promptNode.parameters.jsCode
     'and ask explanatory questions that verify the specific evidence quotes without treating them as established truth.'
   );
 
+const normalizeFirstAnswers = requireNode('Normalize Interview Answers');
+normalizeFirstAnswers.parameters.jsCode =
+  normalizeFirstAnswers.parameters.jsCode.replace(
+    "$('Validate Interview Questions').first().json",
+    "$('Prepare First Interview Form').first().json"
+  );
+
+const normalizeFollowUpAnswers = requireNode('Normalize Follow-up Answers');
+normalizeFollowUpAnswers.parameters.jsCode =
+  normalizeFollowUpAnswers.parameters.jsCode.replace(
+    "$('Validate Follow-up Questions').first().json",
+    "$('Prepare Follow-up Interview Form').first().json"
+  );
+
+const answerScoringPrompt = requireNode('Build Answer Scoring Prompt');
+answerScoringPrompt.parameters.jsCode =
+  answerScoringPrompt.parameters.jsCode.replace(
+    "const roundOneRecords =\n  $('Normalize Interview Answers').first().json.answerRecords;",
+    "const roundOneRecords = Array.isArray(\n  roundTwoContext.firstRoundAnswerRecords\n)\n  ? roundTwoContext.firstRoundAnswerRecords\n  : $('Restore First Round Answers').first().json.answerRecords;"
+  );
+
 const positions = new Map([
-  ['Build Interview Question Prompt', [1632, -320]],
-  ['Generate Interview Questions', [1856, -320]],
-  ['GapGPT Interview Question Model', [1856, -88]],
-  ['Interview Question Output Parser', [1856, -552]],
-  ['Validate Interview Questions', [2080, -320]],
-  ['Candidate Interview Form', [2752, -320]],
-  ['Normalize Interview Answers', [2976, -320]],
-  ['Build Follow-up Question Prompt', [3648, -320]],
-  ['Generate Follow-up Questions', [3872, -320]],
-  ['GapGPT Follow-up Question Model', [3872, -88]],
-  ['Follow-up Question Output Parser', [3872, -552]],
-  ['Validate Follow-up Questions', [4320, -320]],
-  ['Follow-up Interview Form', [4992, -320]],
-  ['Normalize Follow-up Answers', [5216, -320]],
-  ['Build Answer Scoring Prompt', [5888, -320]],
-  ['Score Interview Answers', [6112, -320]],
-  ['GapGPT Answer Scoring Model', [6112, -88]],
-  ['Answer Score Output Parser', [6112, -552]],
-  ['Validate Answer Scores', [6336, -320]],
-  ['Calculate Final Grade', [7008, -320]],
-  ['Build Final Grade Summary', [7680, -320]],
-  ['Show Final Grade', [7904, -320]],
+  ['Build Interview Question Prompt', [1856, -320]],
+  ['Generate Interview Questions', [2080, -320]],
+  ['GapGPT Interview Question Model', [2080, -88]],
+  ['Interview Question Output Parser', [2080, -552]],
+  ['Validate Interview Questions', [2304, -320]],
+  ['Persist First Question Set', [2528, -320]],
+  ['Restore First Question Form', [2752, -320]],
+  ['Prepare First Interview Form', [2976, -320]],
+  ['Candidate Interview Form', [3200, -320]],
+  ['Normalize Interview Answers', [3424, -320]],
+  ['Persist First Round Answers', [3648, -320]],
+  ['Restore First Round Answers', [3872, -320]],
+  ['Build Follow-up Question Prompt', [4096, -320]],
+  ['Generate Follow-up Questions', [4320, -320]],
+  ['GapGPT Follow-up Question Model', [4320, -88]],
+  ['Follow-up Question Output Parser', [4320, -552]],
+  ['Validate Follow-up Questions', [4544, -320]],
+  ['Persist Follow-up Question Set', [4768, -320]],
+  ['Restore Follow-up Question Form', [4992, -320]],
+  ['Prepare Follow-up Interview Form', [5216, -320]],
+  ['Follow-up Interview Form', [5440, -320]],
+  ['Normalize Follow-up Answers', [5664, -320]],
+  ['Persist Follow-up Answers', [5888, -320]],
+  ['Restore Follow-up Answers', [6112, -320]],
+  ['Build Answer Scoring Prompt', [6336, -320]],
+  ['Score Interview Answers', [6560, -320]],
+  ['GapGPT Answer Scoring Model', [6560, -88]],
+  ['Answer Score Output Parser', [6560, -552]],
+  ['Validate Answer Scores', [6784, -320]],
+  ['Apply Answer Evaluations', [7008, -320]],
+  ['Restore Validated Answer Scores', [7232, -320]],
+  ['Calculate Final Grade', [7456, -320]],
+  ['Complete Technical Interview', [7680, -320]],
+  ['Build Persisted Interview Result', [7904, -320]],
+  ['Build Final Grade Summary', [8128, -320]],
+  ['Show Final Grade', [8352, -320]],
 ]);
 
 for (const [name, position] of positions.entries()) {
@@ -835,7 +1019,49 @@ workflow.connections['Load Completed Technical Interview'] = {
   main: [[mainConnection('Build Persisted Interview Result')]],
 };
 workflow.connections['Interview Configuration'] = {
-  main: [[mainConnection('Build Interview Question Prompt')]],
+  main: [[mainConnection('Fresh Interview Attempt?')]],
+};
+workflow.connections['Fresh Interview Attempt?'] = {
+  main: [
+    [mainConnection('Build Interview Question Prompt')],
+    [mainConnection('Load Technical Interview Checkpoint')],
+  ],
+};
+workflow.connections['Load Technical Interview Checkpoint'] = {
+  main: [[mainConnection('Build Technical Interview Checkpoint')]],
+};
+workflow.connections['Build Technical Interview Checkpoint'] = {
+  main: [[mainConnection('Resume First Round?')]],
+};
+workflow.connections['Resume First Round?'] = {
+  main: [
+    [mainConnection('Prepare First Interview Form')],
+    [mainConnection('Resume Follow-up Generation?')],
+  ],
+};
+workflow.connections['Resume Follow-up Generation?'] = {
+  main: [
+    [mainConnection('Build Follow-up Question Prompt')],
+    [mainConnection('Resume Follow-up?')],
+  ],
+};
+workflow.connections['Resume Follow-up?'] = {
+  main: [
+    [mainConnection('Prepare Follow-up Interview Form')],
+    [mainConnection('Resume Answer Evaluation?')],
+  ],
+};
+workflow.connections['Resume Answer Evaluation?'] = {
+  main: [
+    [mainConnection('Build Answer Scoring Prompt')],
+    [mainConnection('Resume Result Persistence?')],
+  ],
+};
+workflow.connections['Resume Result Persistence?'] = {
+  main: [
+    [mainConnection('Calculate Final Grade')],
+    [mainConnection('Checkpoint Route Failure')],
+  ],
 };
 workflow.connections['Build Interview Question Prompt'] = {
   main: [[mainConnection('Generate Interview Questions')]],
@@ -850,6 +1076,9 @@ workflow.connections['Persist First Question Set'] = {
   main: [[mainConnection('Restore First Question Form')]],
 };
 workflow.connections['Restore First Question Form'] = {
+  main: [[mainConnection('Prepare First Interview Form')]],
+};
+workflow.connections['Prepare First Interview Form'] = {
   main: [[mainConnection('Candidate Interview Form')]],
 };
 workflow.connections['Candidate Interview Form'] = {
@@ -877,6 +1106,9 @@ workflow.connections['Persist Follow-up Question Set'] = {
   main: [[mainConnection('Restore Follow-up Question Form')]],
 };
 workflow.connections['Restore Follow-up Question Form'] = {
+  main: [[mainConnection('Prepare Follow-up Interview Form')]],
+};
+workflow.connections['Prepare Follow-up Interview Form'] = {
   main: [[mainConnection('Follow-up Interview Form')]],
 };
 workflow.connections['Follow-up Interview Form'] = {
@@ -956,8 +1188,18 @@ connectWithFailure(
 );
 connectWithFailure(
   'Interview Configuration',
-  'Build Interview Question Prompt',
+  'Fresh Interview Attempt?',
   'Interview Configuration Failure'
+);
+connectWithFailure(
+  'Load Technical Interview Checkpoint',
+  'Build Technical Interview Checkpoint',
+  'Checkpoint Load Failure'
+);
+connectWithFailure(
+  'Build Technical Interview Checkpoint',
+  'Resume First Round?',
+  'Checkpoint Reconstruction Failure'
 );
 connectWithFailure(
   'Build Interview Question Prompt',
@@ -981,8 +1223,13 @@ connectWithFailure(
 );
 connectWithFailure(
   'Restore First Question Form',
+  'Prepare First Interview Form',
+  'First Question Checkpoint Failure'
+);
+connectWithFailure(
+  'Prepare First Interview Form',
   'Candidate Interview Form',
-  'First Question Persistence Failure'
+  'First Question Checkpoint Failure'
 );
 connectWithFailure(
   'Normalize Interview Answers',
@@ -997,7 +1244,7 @@ connectWithFailure(
 connectWithFailure(
   'Restore First Round Answers',
   'Build Follow-up Question Prompt',
-  'First Answer Persistence Failure'
+  'First Answer Checkpoint Failure'
 );
 connectWithFailure(
   'Build Follow-up Question Prompt',
@@ -1021,8 +1268,13 @@ connectWithFailure(
 );
 connectWithFailure(
   'Restore Follow-up Question Form',
+  'Prepare Follow-up Interview Form',
+  'Follow-up Question Checkpoint Failure'
+);
+connectWithFailure(
+  'Prepare Follow-up Interview Form',
   'Follow-up Interview Form',
-  'Follow-up Question Persistence Failure'
+  'Follow-up Question Checkpoint Failure'
 );
 connectWithFailure(
   'Normalize Follow-up Answers',
@@ -1037,7 +1289,7 @@ connectWithFailure(
 connectWithFailure(
   'Restore Follow-up Answers',
   'Build Answer Scoring Prompt',
-  'Follow-up Answer Persistence Failure'
+  'Follow-up Answer Checkpoint Failure'
 );
 connectWithFailure(
   'Build Answer Scoring Prompt',
@@ -1062,7 +1314,7 @@ connectWithFailure(
 connectWithFailure(
   'Restore Validated Answer Scores',
   'Calculate Final Grade',
-  'Answer Evaluation Persistence Failure'
+  'Answer Evaluation Checkpoint Failure'
 );
 connectWithFailure(
   'Calculate Final Grade',

@@ -16,13 +16,14 @@
   "persistence": {
     "schemaVersion": "1.0.0",
     "migration": "database/migrations/V009__create_technical_interview_persistence.sql",
+    "checkpointMigration": "database/migrations/V010__add_technical_interview_checkpoint_recovery.sql",
     "tables": [
       "talentai.technical_interview_session",
       "talentai.technical_question_set",
       "talentai.technical_interview_answer",
       "talentai.technical_interview_result"
     ],
-    "queryRange": "Q013-Q019"
+    "queryRange": "Q013-Q020"
   },
   "requiredCredentialTypes": [
     "openAiApi",
