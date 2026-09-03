@@ -1,0 +1,45 @@
+# TalentAI automation scripts
+
+The repository separates automation by execution environment and responsibility:
+
+| Location | Runtime | Purpose |
+|---|---|---|
+| `scripts/*.sh` | Bash on macOS/Linux/WSL | Operator commands for bootstrap, verification, tests and release builds |
+| `scripts/*.mjs` | Node.js | Cross-platform workflow transforms and deterministic source tests |
+| `scripts/lib/` | Node.js | Shared non-executable JavaScript modules |
+| `scripts/windows/*.ps1` | PowerShell on Windows | Native Windows operator helpers |
+| `database/bootstrap/*.sh` | PostgreSQL Linux container | First-volume initialization hooks mounted by Docker Compose |
+
+The files in `database/bootstrap` are not host operating-system launchers. Docker
+executes them inside the PostgreSQL container only when a new database volume is
+created. Day-to-day database synchronization uses `scripts/apply-database.sh`.
+
+## Supported entry points
+
+macOS, Linux or WSL:
+
+```bash
+./scripts/bootstrap-local.sh
+./scripts/apply-database.sh
+./scripts/verify-phase1.sh
+```
+
+Native Windows PowerShell database initialization:
+
+```powershell
+.\scripts\windows\initialize-database.ps1
+```
+
+The PowerShell helper reads `.env` from the repository root, connects to the
+host-published PostgreSQL port, creates the required roles/database when needed,
+and applies the same versioned migrations and seeds. Full local-stack automation
+currently uses the Bash entry points; Windows users should run those through WSL
+or invoke Docker Compose and the PowerShell database helper explicitly.
+
+When adding automation:
+
+1. keep Docker entrypoint hooks under `database/bootstrap`;
+2. keep portable Node.js logic under `scripts` or `scripts/lib`;
+3. keep native Windows counterparts under `scripts/windows`;
+4. never duplicate business rules between shell variants—both variants should
+   execute the same migrations, schemas and workflow sources.

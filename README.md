@@ -85,8 +85,9 @@ n8n-cli --version
 ├── README.md
 ├── docker-compose.yml
 ├── docker-compose.override.yml
-├── init-data.sh
 ├── database
+│   ├── bootstrap
+│   │   └── init-data.sh
 │   ├── migrations
 │   │   ├── V001__create_resume_extraction.sql
 │   │   ├── V002__create_grade_guide.sql
@@ -118,6 +119,7 @@ n8n-cli --version
 ├── schemas
 │   └── grade-evidence-scoring-v1.schema.json
 ├── scripts
+│   ├── README.md
 │   ├── apply-database.sh
 │   ├── bootstrap-local.sh
 │   ├── build-phase1-release-package.sh
@@ -128,14 +130,26 @@ n8n-cli --version
 │   ├── test-assessment-execution-queries.sh
 │   ├── test-phase1-operational-workflows.sh
 │   ├── transform-phase1-step3b.mjs
-│   └── verify-phase1.sh
+│   ├── verify-phase1.sh
+│   └── windows
+│       └── initialize-database.ps1
 └── workflows
-    └── phase-1
-        ├── TAI-01-resume-intake-extraction-v2.json
-        ├── TAI-02-grade-guide-resolver-v1.json
-        ├── TAI-03-evidence-scoring-grade-engine-v1.json
+    ├── phase-1
+    │   ├── TAI-01-resume-intake-extraction-v2.json
+    │   ├── TAI-02-grade-guide-resolver-v1.json
+    │   ├── TAI-03-evidence-scoring-grade-engine-v1.json
+    │   └── manifest.json
+    └── phase-4-5
+        ├── TAI-04-candidate-interview-final-grade-v1.json
         └── manifest.json
 ```
+
+قاعدهٔ ساختار اسکریپت‌ها در [`scripts/README.md`](scripts/README.md) ثبت شده است.
+فایل‌های `scripts/*.sh` ابزارهای عملیاتی macOS/Linux/WSL، فایل‌های
+`scripts/*.mjs` ابزارهای مستقل از سیستم‌عامل و `scripts/windows/*.ps1`
+ابزارهای PowerShell هستند. `database/bootstrap/init-data.sh` یک دستور قابل
+اجرای روزمره روی Host نیست؛ Docker آن را فقط هنگام ساخت اولین Volume
+PostgreSQL درون کانتینر اجرا می‌کند.
 
 ## پورت‌ها، Databaseها و Roleها
 
@@ -164,7 +178,7 @@ PostgreSQL فقط روی `127.0.0.1` منتشر شده و از شبکه عموم
 git clone <repository-url>
 cd tosan-n8n-talent-ai
 
-chmod +x init-data.sh scripts/*.sh
+chmod +x database/bootstrap/*.sh scripts/*.sh
 ./scripts/bootstrap-local.sh
 ```
 
@@ -216,7 +230,7 @@ cd tosan-n8n-talent-ai
 فقط در یک نصب کاملاً جدید اجرا کنید:
 
 ```bash
-chmod +x init-data.sh scripts/*.sh
+chmod +x database/bootstrap/*.sh scripts/*.sh
 ./scripts/create-local-env.sh
 ```
 
@@ -320,7 +334,7 @@ docker compose exec -T postgres sh -c '
 
 ### ۵. عملکرد اولین راه‌اندازی PostgreSQL
 
-`init-data.sh` فقط هنگام ایجاد اولیه Volume دیتابیس اجرا می‌شود و این کارها را انجام می‌دهد:
+`database/bootstrap/init-data.sh` فقط داخل کانتینر و هنگام ایجاد اولیه Volume دیتابیس اجرا می‌شود و این کارها را انجام می‌دهد:
 
 1. ایجاد Role محدود `n8n_app`؛
 2. ایجاد Database مستقل `talentai`؛

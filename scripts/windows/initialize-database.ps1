@@ -3,6 +3,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+
+if (-not [System.IO.Path]::IsPathRooted($EnvFile)) {
+  $EnvFile = Join-Path $repositoryRoot $EnvFile
+}
 
 if ($EnvFile -and (Test-Path -LiteralPath $EnvFile)) {
   Get-Content -LiteralPath $EnvFile | ForEach-Object {
@@ -53,6 +58,9 @@ if (-not (Get-Command psql -ErrorAction SilentlyContinue)) {
 $connectionArgs = @()
 if (-not [string]::IsNullOrEmpty($env:PGHOST)) {
   $connectionArgs += @('--host', $env:PGHOST)
+}
+else {
+  $connectionArgs += @('--host', '127.0.0.1')
 }
 if (-not [string]::IsNullOrEmpty($env:PGPORT)) {
   $connectionArgs += @('--port', $env:PGPORT)
@@ -131,7 +139,7 @@ try {
   $schemaGrantSql | & psql @connectionArgs -v ON_ERROR_STOP=1 --username $postgresUser --dbname $postgresDb "--set=n8n_user=$n8nUser"
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  $migrationFiles = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'database\migrations') -Filter '*.sql' -File | Sort-Object Name)
+  $migrationFiles = @(Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'database\migrations') -Filter '*.sql' -File | Sort-Object Name)
 
   if ($migrationFiles.Count -eq 0) {
     Write-Error 'No TalentAI database migrations were found.'
@@ -144,7 +152,7 @@ try {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   }
 
-  $seedFiles = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'database\seeds') -Filter '*.sql' -File | Sort-Object Name)
+  $seedFiles = @(Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'database\seeds') -Filter '*.sql' -File | Sort-Object Name)
 
   foreach ($seedFile in $seedFiles) {
     Write-Host "Applying TalentAI seed: $($seedFile.Name)"

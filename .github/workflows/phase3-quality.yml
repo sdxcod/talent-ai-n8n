@@ -41,11 +41,11 @@ jobs:
           rg --version
 
       - name: Validate shell syntax
-        run: bash -n init-data.sh scripts/*.sh
+        run: bash -n database/bootstrap/*.sh scripts/*.sh
 
       - name: Create isolated configuration
         run: |
-          chmod +x init-data.sh scripts/*.sh
+          chmod +x database/bootstrap/*.sh scripts/*.sh
           ./scripts/create-local-env.sh
 
       - name: Bootstrap and verify release baseline
@@ -55,4 +55,3 @@ jobs:
         run: |
           git diff --check
           git diff --exit-code
-

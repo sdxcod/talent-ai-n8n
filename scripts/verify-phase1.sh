@@ -15,6 +15,7 @@ required_workflow_files=(
 )
 
 required_operational_files=(
+  "$TALENTAI_REPOSITORY_ROOT/database/bootstrap/init-data.sh"
   "$TALENTAI_REPOSITORY_ROOT/database/migrations/V005__create_assessment_execution.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q004__claim_assessment_execution.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q005__advance_assessment_execution.sql"
@@ -38,6 +39,8 @@ required_operational_files=(
   "$TALENTAI_SCRIPT_DIR/test-phase3-handoff.mjs"
   "$TALENTAI_SCRIPT_DIR/lib/phase3-handoff.mjs"
   "$TALENTAI_SCRIPT_DIR/test-phase45-workflow.mjs"
+  "$TALENTAI_SCRIPT_DIR/README.md"
+  "$TALENTAI_SCRIPT_DIR/windows/initialize-database.ps1"
   "$TALENTAI_REPOSITORY_ROOT/demo/phase3/calibration-cases.json"
   "$TALENTAI_REPOSITORY_ROOT/docs/quality/phase3-calibration-v1.md"
   "$TALENTAI_REPOSITORY_ROOT/workflows/phase-4-5/manifest.json"
