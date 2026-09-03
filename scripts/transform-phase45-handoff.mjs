@@ -958,6 +958,17 @@ answerScoringPrompt.parameters.jsCode =
     "const roundOneRecords = Array.isArray(\n  roundTwoContext.firstRoundAnswerRecords\n)\n  ? roundTwoContext.firstRoundAnswerRecords\n  : $('Restore First Round Answers').first().json.answerRecords;"
   );
 
+const calculateFinalGrade = requireNode('Calculate Final Grade');
+if (!calculateFinalGrade.parameters.jsCode.includes(
+  'gradeGuide.gradeCatalogComplete'
+)) {
+  calculateFinalGrade.parameters.jsCode =
+    calculateFinalGrade.parameters.jsCode.replace(
+      "  : {\n      code: 'NO_MATCH',\n      label: 'کمتر از حداقل همه گریدها',\n      minimumOverallScore: null,\n      basis: 'INTERVIEW_ANSWERS',\n    };",
+      "  : gradeGuide.gradeCatalogComplete\n    ? {\n        code: 'NO_MATCH',\n        label: 'کمتر از حداقل همه گریدها',\n        minimumOverallScore: null,\n        basis: 'INTERVIEW_ANSWERS',\n      }\n    : {\n        code: 'TARGET_NOT_MET',\n        label: `گرید هدف ${gradeGuide.targetGrade.code} برآورده نشد`,\n        minimumOverallScore: null,\n        basis: 'INTERVIEW_ANSWERS',\n      };"
+    );
+}
+
 // Keep form webhook IDs canonical and deterministic so repeated source
 // transformations remain idempotent.
 requireNode('Candidate Interview Form').webhookId =

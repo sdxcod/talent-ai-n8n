@@ -1,5 +1,6 @@
 const input = $input.first().json;
 const handoff = input.phase3Handoff ?? input;
+const suppliedGradeCatalog = input.gradeCatalog ?? null;
 const errors = [];
 
 const isObject = (value) =>
@@ -391,20 +392,150 @@ if (
   errors.push('REVIEW_REQUIRED requires at least one review reason');
 }
 
-if (errors.length > 0) {
-  throw new Error(
-    `INVALID_PHASE3_HANDOFF: ${errors.join('; ')}`
-  );
-}
-
 const minimumDimensionLevels = Object.fromEntries(
-  root.dimensionAssessments
+  (Array.isArray(root.dimensionAssessments)
+    ? root.dimensionAssessments
+    : [])
     .filter((dimension) => dimension.minimumRequired !== null)
     .map((dimension) => [
       dimension.code,
       dimension.minimumRequired,
     ])
 );
+
+let catalogGrades = null;
+
+if (suppliedGradeCatalog !== null) {
+  const catalog = requireObject(
+    suppliedGradeCatalog,
+    'gradeCatalog'
+  );
+
+  requireExactKeys(catalog, 'gradeCatalog', [
+    'id',
+    'version',
+    'grades',
+  ]);
+
+  if (catalog.id !== gradeGuide.id) {
+    errors.push('gradeCatalog.id does not match handoff.gradeGuide.id');
+  }
+
+  if (catalog.version !== gradeGuide.version) {
+    errors.push(
+      'gradeCatalog.version does not match handoff.gradeGuide.version'
+    );
+  }
+
+  if (!Array.isArray(catalog.grades) || catalog.grades.length !== 3) {
+    errors.push('gradeCatalog.grades must contain exactly 3 grades');
+  } else {
+    const supportedGradeCodes = ['JUNIOR', 'MID', 'SENIOR'];
+    const receivedGradeCodes = new Set();
+
+    catalogGrades = catalog.grades.map((rawGrade, index) => {
+      const path = `gradeCatalog.grades[${index}]`;
+      const catalogGrade = requireObject(rawGrade, path);
+
+      requireExactKeys(catalogGrade, path, [
+        'code',
+        'label',
+        'minimumOverallScore',
+        'minimumDimensionLevels',
+      ]);
+
+      if (!supportedGradeCodes.includes(catalogGrade.code)) {
+        errors.push(`${path}.code is unsupported`);
+      } else if (receivedGradeCodes.has(catalogGrade.code)) {
+        errors.push(`${path}.code is duplicated`);
+      } else {
+        receivedGradeCodes.add(catalogGrade.code);
+      }
+
+      requireText(catalogGrade.label, `${path}.label`);
+      requireNumber(
+        catalogGrade.minimumOverallScore,
+        `${path}.minimumOverallScore`,
+        0,
+        100
+      );
+
+      const levels = requireObject(
+        catalogGrade.minimumDimensionLevels,
+        `${path}.minimumDimensionLevels`
+      );
+
+      for (const [code, level] of Object.entries(levels)) {
+        if (!requiredDimensionCodes.has(code)) {
+          errors.push(`${path}.minimumDimensionLevels.${code} is unsupported`);
+        }
+
+        if (!Number.isInteger(level) || level < 0 || level > 4) {
+          errors.push(
+            `${path}.minimumDimensionLevels.${code} must be an integer from 0 to 4`
+          );
+        }
+      }
+
+      return {
+        code: catalogGrade.code,
+        label: catalogGrade.label,
+        minimumOverallScore: catalogGrade.minimumOverallScore,
+        minimumDimensionLevels: levels,
+      };
+    });
+
+    if (receivedGradeCodes.size !== supportedGradeCodes.length) {
+      errors.push('gradeCatalog.grades has an incomplete grade set');
+    }
+
+    const orderedGrades = supportedGradeCodes.map(
+      (code) => catalogGrades.find((item) => item.code === code)
+    );
+
+    if (
+      orderedGrades.every(Boolean) &&
+      !(
+        orderedGrades[0].minimumOverallScore <
+          orderedGrades[1].minimumOverallScore &&
+        orderedGrades[1].minimumOverallScore <
+          orderedGrades[2].minimumOverallScore
+      )
+    ) {
+      errors.push('gradeCatalog minimum scores must increase by grade');
+    }
+
+    const catalogTarget = catalogGrades.find(
+      (item) => item.code === assessmentContext.targetGradeCode
+    );
+
+    if (catalogTarget) {
+      if (catalogTarget.minimumOverallScore !== score.minimumRequired) {
+        errors.push(
+          'gradeCatalog target threshold does not match Phase 3 assessment'
+        );
+      }
+
+      const expectedEntries = Object.entries(minimumDimensionLevels)
+        .sort(([left], [right]) => left.localeCompare(right));
+      const receivedEntries = Object.entries(
+        catalogTarget.minimumDimensionLevels
+      ).sort(([left], [right]) => left.localeCompare(right));
+
+      if (JSON.stringify(receivedEntries) !== JSON.stringify(expectedEntries)) {
+        errors.push(
+          'gradeCatalog target dimension levels do not match Phase 3 assessment'
+        );
+      }
+    }
+  }
+}
+
+if (errors.length > 0) {
+  throw new Error(
+    `INVALID_PHASE3_HANDOFF: ${errors.join('; ')}`
+  );
+}
 
 const targetGrade = {
   code: assessmentContext.targetGradeCode,
@@ -436,7 +567,8 @@ return [
         id: gradeGuide.id,
         version: gradeGuide.version,
         targetGrade,
-        grades: [targetGrade],
+        gradeCatalogComplete: catalogGrades !== null,
+        grades: catalogGrades ?? [targetGrade],
         dimensions: root.dimensionAssessments.map((dimension) => ({
           code: dimension.code,
           title: dimension.title,

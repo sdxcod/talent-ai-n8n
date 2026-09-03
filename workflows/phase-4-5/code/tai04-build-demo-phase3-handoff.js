@@ -28,6 +28,11 @@ const candidate =
 return [
   {
     json: {
+      gradeCatalog: {
+        id: resolved.gradeGuideId,
+        version: resolved.gradeGuideVersion,
+        grades: resolved.gradeDefinitions,
+      },
       phase3Handoff: {
         contract: 'talentai.phase3.assessment-handoff',
         contractVersion: '1.0.0',

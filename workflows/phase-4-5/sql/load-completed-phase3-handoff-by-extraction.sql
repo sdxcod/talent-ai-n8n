@@ -10,6 +10,8 @@ SELECT
             THEN 'COMPLETED_EXECUTION_NOT_FOUND'
         WHEN assessment.id IS NULL
             THEN 'COMPLETED_ASSESSMENT_NOT_FOUND'
+        WHEN grade_guide.id IS NULL
+            THEN 'GRADE_GUIDE_NOT_FOUND'
         ELSE 'RESOLVED'
     END AS "resolutionStatus",
     CASE
@@ -19,6 +21,8 @@ SELECT
             THEN 'A completed assessment execution was not found.'
         WHEN assessment.id IS NULL
             THEN 'A completed grade assessment was not found.'
+        WHEN grade_guide.id IS NULL
+            THEN 'The versioned grade guide used by the assessment was not found.'
         ELSE 'Completed Phase 3 assessment resolved for the demo adapter.'
     END AS "resolutionMessage",
     requested.extraction_id                 AS "requestedExtractionId",
@@ -50,7 +54,8 @@ SELECT
     assessment.created_at                   AS "assessmentCreatedAt",
     extraction.position_code                AS "positionCode",
     extraction.job_description              AS "jobDescription",
-    extraction.profile -> 'candidate'        AS candidate
+    extraction.profile -> 'candidate'        AS candidate,
+    grade_guide.guide -> 'grades'            AS "gradeDefinitions"
 FROM requested
 LEFT JOIN talentai.resume_extraction AS extraction
        ON extraction.id = requested.extraction_id
@@ -63,4 +68,7 @@ LEFT JOIN talentai.grade_assessment AS assessment
        ON assessment.id = execution.assessment_id
       AND assessment.request_id = execution.request_id
       AND assessment.extraction_id = requested.extraction_id
-      AND assessment.status = 'COMPLETED';
+      AND assessment.status = 'COMPLETED'
+LEFT JOIN talentai.grade_guide AS grade_guide
+       ON grade_guide.id = assessment.grade_guide_id
+      AND grade_guide.guide_version = assessment.grade_guide_version;

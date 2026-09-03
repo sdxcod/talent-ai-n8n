@@ -785,6 +785,7 @@ assert.deepEqual(validated.correlation, {
 });
 assert.deepEqual(validated.phase3Handoff, exampleHandoff);
 assert.equal(validated.gradeGuide.grades.length, 1);
+assert.equal(validated.gradeGuide.gradeCatalogComplete, false);
 assert.equal(
   validated.gradeGuide.grades[0].code,
   exampleHandoff.assessmentContext.targetGradeCode,
@@ -809,6 +810,42 @@ for (const mutation of [
     /INVALID_PHASE3_HANDOFF/,
   );
 }
+
+const gradeDefinitions = [
+  {
+    code: 'JUNIOR',
+    label: 'Junior',
+    minimumOverallScore: 30,
+    minimumDimensionLevels: {
+      JAVA_CORE: 1,
+      SPRING_ECOSYSTEM: 1,
+    },
+  },
+  {
+    code: 'MID',
+    label: 'Mid-level',
+    minimumOverallScore: 50,
+    minimumDimensionLevels: {
+      JAVA_CORE: 2,
+      SPRING_ECOSYSTEM: 2,
+      DATABASE: 2,
+      TESTING: 1,
+    },
+  },
+  {
+    code: 'SENIOR',
+    label: 'Senior',
+    minimumOverallScore: 70,
+    minimumDimensionLevels: Object.fromEntries(
+      exampleHandoff.dimensionAssessments
+        .filter((dimension) => dimension.minimumRequired !== null)
+        .map((dimension) => [
+          dimension.code,
+          dimension.minimumRequired,
+        ]),
+    ),
+  },
+];
 
 const demoSource = {
   resolutionStatus: 'RESOLVED',
@@ -839,19 +876,72 @@ const demoSource = {
   engineVersion: exampleHandoff.metadata.engineVersion,
   assessmentStatus: exampleHandoff.metadata.assessmentStatus,
   assessmentCreatedAt: exampleHandoff.metadata.createdAt,
+  gradeDefinitions,
 };
 
-const demoHandoff = executeCodeNode(
+const demoEnvelope = executeCodeNode(
   'Build Demo Phase 3 Handoff',
   demoSource,
-)[0].json.phase3Handoff;
+)[0].json;
 
-assert.deepEqual(demoHandoff, exampleHandoff);
-assert.doesNotThrow(() =>
-  executeCodeNode(
+assert.deepEqual(demoEnvelope.phase3Handoff, exampleHandoff);
+assert.deepEqual(demoEnvelope.gradeCatalog.grades, gradeDefinitions);
+
+const validatedDemo = executeCodeNode(
+  'Validate Phase 3 Handoff',
+  demoEnvelope,
+)[0].json;
+
+assert.equal(validatedDemo.gradeGuide.gradeCatalogComplete, true);
+assert.deepEqual(
+  validatedDemo.gradeGuide.grades.map((grade) => grade.code),
+  ['JUNIOR', 'MID', 'SENIOR'],
+);
+
+const calculateFinalGradeSource = nodeByName.get(
+  'Calculate Final Grade'
+).parameters.jsCode;
+const calculateFinalGrade = new Function(
+  '$input',
+  '$execution',
+  calculateFinalGradeSource,
+);
+const midLevelAnswerRecords = validatedDemo.gradeGuide.dimensions.map(
+  (dimension, index) => ({
+    round: 'first',
+    id: `GRADE-${index + 1}`,
+    dimensionCode: dimension.code,
+    finalScore: 2.5,
+  })
+);
+const midLevelResult = calculateFinalGrade(
+  {
+    first: () => ({
+      json: {
+        interviewContext: validatedDemo,
+        answerRecords: midLevelAnswerRecords,
+        answerScoring: {
+          interviewSummary: 'Synthetic grade assignment summary.',
+          warnings: [],
+        },
+      },
+    }),
+  },
+  { id: 'phase45-grade-test' },
+)[0].json;
+
+assert.equal(midLevelResult.score.overall, 62.5);
+assert.equal(midLevelResult.gradeChecks.length, 3);
+assert.equal(midLevelResult.assignedGrade.code, 'MID');
+
+const invalidGradeCatalog = structuredClone(demoEnvelope);
+invalidGradeCatalog.gradeCatalog.grades[1].minimumOverallScore = 75;
+assert.throws(
+  () => executeCodeNode(
     'Validate Phase 3 Handoff',
-    { phase3Handoff: demoHandoff },
-  )
+    invalidGradeCatalog,
+  ),
+  /INVALID_PHASE3_HANDOFF/,
 );
 
 const temporaryDirectory = fs.mkdtempSync(
