@@ -41,11 +41,38 @@ jobs:
           rg --version
 
       - name: Validate shell syntax
-        run: bash -n init-data.sh scripts/*.sh
+        run: bash -n database/bootstrap/*.sh scripts/*.sh
+
+      - name: Validate PowerShell syntax
+        shell: pwsh
+        run: |
+          $hasErrors = $false
+
+          Get-ChildItem scripts/windows -Filter '*.ps1' -File | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$parseErrors
+            ) | Out-Null
+
+            if ($parseErrors.Count -gt 0) {
+              $hasErrors = $true
+              $parseErrors | ForEach-Object {
+                Write-Error $_.Message
+              }
+            }
+          }
+
+          if ($hasErrors) {
+            exit 1
+          }
 
       - name: Create isolated configuration
         run: |
-          chmod +x init-data.sh scripts/*.sh
+          chmod +x database/bootstrap/*.sh scripts/*.sh
           ./scripts/create-local-env.sh
 
       - name: Bootstrap and verify release baseline
@@ -55,4 +82,3 @@ jobs:
         run: |
           git diff --check
           git diff --exit-code
-

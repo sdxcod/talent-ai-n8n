@@ -1,0 +1,185 @@
+{
+  "contract": "talentai.phase3.assessment-handoff",
+  "contractVersion": "1.0.0",
+  "requestId": "00000000-0000-4000-8000-000000000001",
+  "assessmentId": "00000000-0000-4000-8000-000000000002",
+  "extractionId": "00000000-0000-4000-8000-000000000003",
+  "candidate": {
+    "fullName": "Synthetic Candidate"
+  },
+  "assessmentContext": {
+    "positionCode": "JAVA_BACKEND",
+    "targetGradeCode": "SENIOR",
+    "jobDescription": "Synthetic senior Java backend role used only for contract and workflow validation."
+  },
+  "gradeGuide": {
+    "id": "00000000-0000-4000-8000-000000000004",
+    "version": "1.0.0"
+  },
+  "score": {
+    "overall": 75,
+    "minimumRequired": 70,
+    "thresholdMet": true,
+    "mandatoryDimensionsMet": true
+  },
+  "decision": "MEETS_TARGET",
+  "dimensionAssessments": [
+    {
+      "code": "JAVA_CORE",
+      "title": "Core Java and JVM",
+      "weight": 25,
+      "mandatory": true,
+      "modelScore": 3,
+      "effectiveScore": 3,
+      "confidence": "HIGH",
+      "confidenceAccepted": true,
+      "weightedScore": 18.75,
+      "minimumRequired": 3,
+      "minimumMet": true,
+      "evidence": [
+        {
+          "quote": "Built synthetic services with modern Java.",
+          "source": "WORK_EXPERIENCE"
+        }
+      ],
+      "rationale": "Synthetic Java evidence is present."
+    },
+    {
+      "code": "SPRING_ECOSYSTEM",
+      "title": "Spring Ecosystem",
+      "weight": 20,
+      "mandatory": true,
+      "modelScore": 3,
+      "effectiveScore": 3,
+      "confidence": "HIGH",
+      "confidenceAccepted": true,
+      "weightedScore": 15,
+      "minimumRequired": 3,
+      "minimumMet": true,
+      "evidence": [
+        {
+          "quote": "Used Spring Boot in a synthetic project.",
+          "source": "WORK_EXPERIENCE"
+        }
+      ],
+      "rationale": "Synthetic Spring evidence is present."
+    },
+    {
+      "code": "DATABASE",
+      "title": "Database Engineering",
+      "weight": 15,
+      "mandatory": true,
+      "modelScore": 3,
+      "effectiveScore": 3,
+      "confidence": "HIGH",
+      "confidenceAccepted": true,
+      "weightedScore": 11.25,
+      "minimumRequired": 3,
+      "minimumMet": true,
+      "evidence": [
+        {
+          "quote": "Designed a synthetic PostgreSQL schema.",
+          "source": "WORK_EXPERIENCE"
+        }
+      ],
+      "rationale": "Synthetic database evidence is present."
+    },
+    {
+      "code": "DISTRIBUTED_SYSTEMS",
+      "title": "Distributed Systems",
+      "weight": 15,
+      "mandatory": false,
+      "modelScore": 3,
+      "effectiveScore": 3,
+      "confidence": "HIGH",
+      "confidenceAccepted": true,
+      "weightedScore": 11.25,
+      "minimumRequired": 2,
+      "minimumMet": true,
+      "evidence": [
+        {
+          "quote": "Discussed messaging trade-offs in a synthetic service.",
+          "source": "WORK_EXPERIENCE"
+        }
+      ],
+      "rationale": "Synthetic distributed-systems evidence is present."
+    },
+    {
+      "code": "TESTING",
+      "title": "Testing",
+      "weight": 10,
+      "mandatory": true,
+      "modelScore": 3,
+      "effectiveScore": 3,
+      "confidence": "HIGH",
+      "confidenceAccepted": true,
+      "weightedScore": 7.5,
+      "minimumRequired": 3,
+      "minimumMet": true,
+      "evidence": [
+        {
+          "quote": "Added synthetic integration tests.",
+          "source": "WORK_EXPERIENCE"
+        }
+      ],
+      "rationale": "Synthetic testing evidence is present."
+    },
+    {
+      "code": "SOFTWARE_ARCHITECTURE",
+      "title": "Software Architecture",
+      "weight": 10,
+      "mandatory": false,
+      "modelScore": 3,
+      "effectiveScore": 3,
+      "confidence": "HIGH",
+      "confidenceAccepted": true,
+      "weightedScore": 7.5,
+      "minimumRequired": 2,
+      "minimumMet": true,
+      "evidence": [
+        {
+          "quote": "Documented synthetic architectural decisions.",
+          "source": "WORK_EXPERIENCE"
+        }
+      ],
+      "rationale": "Synthetic architecture evidence is present."
+    },
+    {
+      "code": "OBSERVABILITY_DEVOPS",
+      "title": "Observability and DevOps",
+      "weight": 5,
+      "mandatory": false,
+      "modelScore": 3,
+      "effectiveScore": 3,
+      "confidence": "HIGH",
+      "confidenceAccepted": true,
+      "weightedScore": 3.75,
+      "minimumRequired": 2,
+      "minimumMet": true,
+      "evidence": [
+        {
+          "quote": "Added synthetic metrics and deployment checks.",
+          "source": "WORK_EXPERIENCE"
+        }
+      ],
+      "rationale": "Synthetic observability evidence is present."
+    }
+  ],
+  "reviewReasons": [],
+  "modelWarnings": [],
+  "assessmentSummary": "Synthetic assessment used only to validate the frozen handoff contract.",
+  "execution": {
+    "attemptCount": 1,
+    "status": "COMPLETED",
+    "replayed": false,
+    "startedAt": "2026-09-01T00:00:00.000Z",
+    "completedAt": "2026-09-01T00:01:00.000Z"
+  },
+  "metadata": {
+    "scoringModel": "synthetic-test-model",
+    "promptVersion": "1.0",
+    "engineVersion": "1.0",
+    "assessmentStatus": "COMPLETED",
+    "createdAt": "2026-09-01T00:01:00.000Z"
+  }
+}

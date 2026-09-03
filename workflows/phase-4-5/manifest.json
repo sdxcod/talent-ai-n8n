@@ -1,0 +1,32 @@
+{
+  "scope": "PHASE_4_5_MVP",
+  "schemaVersion": "1.0.0",
+  "sourceN8nVersion": "2.36.8",
+  "upstreamContract": {
+    "name": "talentai.phase3.assessment-handoff",
+    "version": "1.0.0"
+  },
+  "workflows": [
+    {
+      "id": "6topbXRO9Zga3l1h",
+      "name": "TAI-04 Candidate Interview & Final Grade v1",
+      "file": "TAI-04-candidate-interview-final-grade-v1.json"
+    }
+  ],
+  "persistence": {
+    "schemaVersion": "1.0.0",
+    "migration": "database/migrations/V009__create_technical_interview_persistence.sql",
+    "checkpointMigration": "database/migrations/V010__add_technical_interview_checkpoint_recovery.sql",
+    "tables": [
+      "talentai.technical_interview_session",
+      "talentai.technical_question_set",
+      "talentai.technical_interview_answer",
+      "talentai.technical_interview_result"
+    ],
+    "queryRange": "Q013-Q021"
+  },
+  "requiredCredentialTypes": [
+    "openAiApi",
+    "postgres"
+  ]
+}

@@ -15,6 +15,7 @@ required_workflow_files=(
 )
 
 required_operational_files=(
+  "$TALENTAI_REPOSITORY_ROOT/database/bootstrap/init-data.sh"
   "$TALENTAI_REPOSITORY_ROOT/database/migrations/V005__create_assessment_execution.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q004__claim_assessment_execution.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/queries/Q005__advance_assessment_execution.sql"
@@ -37,8 +38,31 @@ required_operational_files=(
   "$TALENTAI_SCRIPT_DIR/test-phase3-calibration.mjs"
   "$TALENTAI_SCRIPT_DIR/test-phase3-handoff.mjs"
   "$TALENTAI_SCRIPT_DIR/lib/phase3-handoff.mjs"
+  "$TALENTAI_SCRIPT_DIR/test-phase45-workflow.mjs"
+  "$TALENTAI_SCRIPT_DIR/README.md"
+  "$TALENTAI_SCRIPT_DIR/windows/initialize-database.ps1"
   "$TALENTAI_REPOSITORY_ROOT/demo/phase3/calibration-cases.json"
   "$TALENTAI_REPOSITORY_ROOT/docs/quality/phase3-calibration-v1.md"
+  "$TALENTAI_REPOSITORY_ROOT/workflows/phase-4-5/manifest.json"
+  "$TALENTAI_REPOSITORY_ROOT/workflows/phase-4-5/TAI-04-candidate-interview-final-grade-v1.json"
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V009__create_technical_interview_persistence.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V010__add_technical_interview_checkpoint_recovery.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q013__claim_technical_interview_session.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q014__persist_technical_question_set.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q015__persist_technical_interview_answers.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q016__apply_technical_answer_evaluations.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q017__complete_technical_interview.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q018__load_completed_technical_interview.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q019__fail_technical_interview_session.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q020__load_technical_interview_checkpoint.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q021__verify_phase45_end_to_end_correlation.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/tests/T003__technical_interview_persistence_contract.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/tests/T004__technical_interview_queries.sql"
+  "$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"
+  "$TALENTAI_SCRIPT_DIR/build-phase45-mvp-package.sh"
+  "$TALENTAI_SCRIPT_DIR/verify-phase45-correlation.sh"
+  "$TALENTAI_REPOSITORY_ROOT/docs/runbooks/phase45-end-to-end.md"
+  "$TALENTAI_REPOSITORY_ROOT/docs/releases/phase45-mvp-v3.0.0.md"
 )
 
 for required_workflow_file in "${required_workflow_files[@]}"; do
@@ -60,6 +84,7 @@ jq empty "$TALENTAI_REPOSITORY_ROOT/demo/phase3/calibration-cases.json"
 
 node "$TALENTAI_SCRIPT_DIR/test-phase3-calibration.mjs"
 node "$TALENTAI_SCRIPT_DIR/test-phase3-handoff.mjs"
+node "$TALENTAI_SCRIPT_DIR/test-phase45-workflow.mjs"
 
 jq -e '
   (.workflows | length == 3)
@@ -323,6 +348,7 @@ SQL
 
 "$TALENTAI_SCRIPT_DIR/test-assessment-execution-contract.sh"
 "$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
+"$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"
 "$TALENTAI_SCRIPT_DIR/test-phase1-operational-workflows.sh"
 
-echo 'TalentAI Phase 1 repository and runtime verification passed.'
+echo 'TalentAI repository and runtime verification passed.'
