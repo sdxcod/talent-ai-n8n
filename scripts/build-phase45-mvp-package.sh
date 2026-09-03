@@ -10,6 +10,7 @@ readonly TALENTAI_OUTPUT_PACKAGE="$TALENTAI_PRIVATE_DIR/TalentAI-phase45-mvp-v$T
 readonly TALENTAI_PHASE45_MANIFEST="$TALENTAI_ROOT/workflows/phase-4-5/manifest.json"
 readonly TALENTAI_TAI04_SOURCE="$TALENTAI_ROOT/workflows/phase-4-5/TAI-04-candidate-interview-final-grade-v1.json"
 readonly TALENTAI_TAI04_TARGET='workflows/tai-04-candidate-interview-final-grade-v1'
+readonly TALENTAI_TAI04_VERSION_ID='571fe3e1-6706-40c5-a23e-0eac51bb283b'
 
 [[ "$TALENTAI_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || {
   echo 'Version must use SemVer, optionally with a prerelease suffix.' >&2
@@ -144,6 +145,8 @@ jq \
   --argjson openai_binding "$TALENTAI_OPENAI_BINDING" \
   '
     .active = false
+    | .versionId = $version_id
+    | .parentFolderId = null
     | .nodes |= map(
         if .type == "n8n-nodes-base.postgres" then
           .credentials = {
@@ -157,7 +160,9 @@ jq \
           del(.credentials)
         end
       )
-  ' "$TALENTAI_TAI04_SOURCE" > "$TALENTAI_TAI04_PACKAGE"
+  ' \
+  --arg version_id "$TALENTAI_TAI04_VERSION_ID" \
+  "$TALENTAI_TAI04_SOURCE" > "$TALENTAI_TAI04_PACKAGE"
 
 jq \
   --arg id "$TALENTAI_TAI04_ID" \
@@ -213,6 +218,11 @@ jq -e \
 }
 
 jq -e '
+  (.versionId | type == "string" and length > 0)
+  and (has("parentFolderId") and .parentFolderId == null)
+  and (.isPublished | type == "boolean")
+  and (.isArchived | type == "boolean")
+  and
   all(
     .nodes[]
     | select(.type == "n8n-nodes-base.postgres");
