@@ -73,6 +73,12 @@ const requireAnswers = (records, expectedCount, label) => {
   }
 };
 
+const requireQuestionSetId = (value, label) => {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`INVALID_${label}_QUESTION_SET_CHECKPOINT`);
+  }
+};
+
 const base = {
   checkpointStage: currentStage,
   interviewContext,
@@ -84,6 +90,7 @@ const base = {
 };
 
 if (currentStage === 'FIRST_ROUND') {
+  requireQuestionSetId(checkpoint.firstQuestionSetId, 'FIRST');
   requireQuestionPlan(
     firstQuestionPlan,
     checkpoint.firstQuestionCount,
@@ -93,6 +100,10 @@ if (currentStage === 'FIRST_ROUND') {
   return [{
     json: {
       ...base,
+      persistence: {
+        ...base.persistence,
+        questionSetId: checkpoint.firstQuestionSetId,
+      },
       questionPlan: firstQuestionPlan,
       formFields: formFields(firstQuestionPlan),
       interviewFormTitle: 'مصاحبه فنی TalentAI — مرحله اول',
@@ -118,6 +129,12 @@ if (currentStage === 'FOLLOW_UP_GENERATION') {
 }
 
 if (currentStage === 'FOLLOW_UP') {
+  requireQuestionSetId(checkpoint.followUpQuestionSetId, 'FOLLOW_UP');
+  requireAnswers(
+    firstAnswerRecords,
+    checkpoint.firstQuestionCount,
+    'FIRST'
+  );
   requireQuestionPlan(
     followUpQuestionPlan,
     checkpoint.followUpQuestionCount,
@@ -127,6 +144,11 @@ if (currentStage === 'FOLLOW_UP') {
   return [{
     json: {
       ...base,
+      persistence: {
+        ...base.persistence,
+        questionSetId: checkpoint.followUpQuestionSetId,
+      },
+      firstRoundAnswerRecords: firstAnswerRecords,
       questionPlan: followUpQuestionPlan,
       formFields: formFields(followUpQuestionPlan),
       followUpFormTitle: 'مصاحبه فنی TalentAI — مرحله تکمیلی',

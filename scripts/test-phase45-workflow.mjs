@@ -584,6 +584,31 @@ assert.match(
   nodeByName.get('Build Answer Scoring Prompt').parameters.jsCode,
   /firstRoundAnswerRecords/,
 );
+for (const nodeName of [
+  'Persist First Round Answers',
+  'Persist Follow-up Answers',
+]) {
+  const replacement =
+    nodeByName.get(nodeName).parameters.options.queryReplacement;
+  assert.match(replacement, /\$json\.persistence\.questionSetId/);
+  assert.doesNotMatch(replacement, /\$\('Persist .* Question Set'\)/);
+}
+assert.match(
+  nodeByName.get('Normalize Interview Answers').parameters.jsCode,
+  /persistence: planContext\.persistence/,
+);
+assert.match(
+  nodeByName.get('Normalize Follow-up Answers').parameters.jsCode,
+  /firstRoundAnswerRecords: planContext\.firstRoundAnswerRecords/,
+);
+assert.match(
+  nodeByName.get('Validate Follow-up Questions').parameters.jsCode,
+  /firstRoundAnswerRecords: promptContext\.answerRecords/,
+);
+assert.doesNotMatch(
+  nodeByName.get('Restore Follow-up Answers').parameters.jsCode,
+  /Restore First Round Answers/,
+);
 
 const sqlPath = path.join(
   workflowDirectory,
@@ -669,6 +694,7 @@ const firstRoundCheckpoint = executeCheckpointNode({
   sessionId: '60000000-0000-4000-8000-000000000001',
   currentStage: 'FIRST_ROUND',
   attemptCount: 2,
+  firstQuestionSetId: '60000000-0000-4000-8000-000000000002',
   firstQuestionPlan: {
     schemaVersion: '1.0',
     round: 'first',
@@ -688,6 +714,43 @@ const firstRoundCheckpoint = executeCheckpointNode({
 assert.equal(firstRoundCheckpoint.checkpointStage, 'FIRST_ROUND');
 assert.equal(firstRoundCheckpoint.formFields.length, 1);
 assert.equal(firstRoundCheckpoint.persistence.resumed, true);
+assert.equal(
+  firstRoundCheckpoint.persistence.questionSetId,
+  '60000000-0000-4000-8000-000000000002',
+);
+
+const followUpCheckpoint = executeCheckpointNode({
+  sessionId: '60000000-0000-4000-8000-000000000001',
+  currentStage: 'FOLLOW_UP',
+  attemptCount: 2,
+  firstQuestionCount: 1,
+  firstAnswerRecords: [checkpointAnswer],
+  firstAnswerCount: 1,
+  followUpQuestionSetId: '60000000-0000-4000-8000-000000000003',
+  followUpQuestionPlan: {
+    schemaVersion: '1.0',
+    round: 'followUp',
+    questions: [{
+      ...checkpointQuestion,
+      id: 'F1',
+      type: 'explanatory',
+      options: [],
+    }],
+  },
+  followUpQuestionCount: 1,
+  followUpAnswerRecords: [],
+  followUpAnswerCount: 0,
+  evaluatedAnswerCount: 0,
+  evaluationPayload: null,
+});
+
+assert.equal(followUpCheckpoint.checkpointStage, 'FOLLOW_UP');
+assert.equal(followUpCheckpoint.formFields.length, 1);
+assert.equal(followUpCheckpoint.firstRoundAnswerRecords.length, 1);
+assert.equal(
+  followUpCheckpoint.persistence.questionSetId,
+  '60000000-0000-4000-8000-000000000003',
+);
 
 const resultCheckpoint = executeCheckpointNode({
   sessionId: '60000000-0000-4000-8000-000000000001',

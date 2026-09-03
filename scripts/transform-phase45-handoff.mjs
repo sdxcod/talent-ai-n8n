@@ -395,7 +395,7 @@ upsertNode(postgresQueryNode({
   position: [3200, -320],
   queryName: 'Q015__persist_technical_interview_answers',
   queryReplacement:
-    "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), $('Persist First Question Set').first().json.questionSetId, JSON.stringify($json.answerRecords)] }}",
+    "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), $json.persistence.questionSetId, JSON.stringify($json.answerRecords)] }}",
 }));
 
 upsertNode(codeNode({
@@ -427,7 +427,7 @@ upsertNode(postgresQueryNode({
   position: [5440, -320],
   queryName: 'Q015__persist_technical_interview_answers',
   queryReplacement:
-    "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), $('Persist Follow-up Question Set').first().json.questionSetId, JSON.stringify($json.answerRecords)] }}",
+    "={{ [$('Claim Technical Interview Session').first().json.sessionId, String($execution.id), $json.persistence.questionSetId, JSON.stringify($json.answerRecords)] }}",
 }));
 
 upsertNode(codeNode({
@@ -918,12 +918,37 @@ normalizeFirstAnswers.parameters.jsCode =
     "$('Validate Interview Questions').first().json",
     "$('Prepare First Interview Form').first().json"
   );
+if (!normalizeFirstAnswers.parameters.jsCode.includes(
+  'persistence: planContext.persistence'
+)) {
+  normalizeFirstAnswers.parameters.jsCode =
+    normalizeFirstAnswers.parameters.jsCode.replace(
+    '      interviewContext,\n      answerRecords,',
+    '      interviewContext,\n      answerRecords,\n      persistence: planContext.persistence,'
+    );
+}
 
 const normalizeFollowUpAnswers = requireNode('Normalize Follow-up Answers');
 normalizeFollowUpAnswers.parameters.jsCode =
   normalizeFollowUpAnswers.parameters.jsCode.replace(
     "$('Validate Follow-up Questions').first().json",
     "$('Prepare Follow-up Interview Form').first().json"
+  );
+if (!normalizeFollowUpAnswers.parameters.jsCode.includes(
+  'firstRoundAnswerRecords: planContext.firstRoundAnswerRecords'
+)) {
+  normalizeFollowUpAnswers.parameters.jsCode =
+    normalizeFollowUpAnswers.parameters.jsCode.replace(
+    '      interviewContext,\n      answerRecords,',
+    '      interviewContext,\n      answerRecords,\n      firstRoundAnswerRecords: planContext.firstRoundAnswerRecords,\n      persistence: planContext.persistence,'
+    );
+}
+
+const validateFollowUpQuestions = requireNode('Validate Follow-up Questions');
+validateFollowUpQuestions.parameters.jsCode =
+  validateFollowUpQuestions.parameters.jsCode.replace(
+    '      interviewContext,\n\n      questionPlan:',
+    '      interviewContext,\n\n      firstRoundAnswerRecords: promptContext.answerRecords,\n\n      questionPlan:',
   );
 
 const answerScoringPrompt = requireNode('Build Answer Scoring Prompt');

@@ -12,14 +12,20 @@ if (
 
 const normalized =
   $('Normalize Follow-up Answers').first().json;
-const firstRound =
-  $('Restore First Round Answers').first().json;
+
+if (
+  !Array.isArray(normalized.firstRoundAnswerRecords) ||
+  normalized.firstRoundAnswerRecords.length < 1
+) {
+  throw new Error(
+    'FIRST_ROUND_ANSWER_CHECKPOINT_NOT_AVAILABLE'
+  );
+}
 
 return [
   {
     json: {
       ...normalized,
-      firstRoundAnswerRecords: firstRound.answerRecords,
       persistence: {
         sessionId: persisted.sessionId,
         questionSetId: persisted.questionSetId,
