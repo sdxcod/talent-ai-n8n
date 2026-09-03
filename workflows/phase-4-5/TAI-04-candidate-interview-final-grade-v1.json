@@ -4,7 +4,7 @@
     {
       "parameters": {
         "formTitle": "TalentAI Candidate Interview",
-        "formDescription": "Start a graded technical interview for a candidate whose resume was already extracted and graded by Phase 1.",
+        "formDescription": "Demo adapter: start an interview from a completed TalentAI Phase 3 extraction.",
         "formFields": {
           "values": [
             {
@@ -30,32 +30,32 @@
     },
     {
       "parameters": {
-        "jsCode": "const rawExtractionId = $input.first().json.extractionId;\nconst extractionId =\n  typeof rawExtractionId === 'string'\n    ? rawExtractionId.trim()\n    : '';\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nif (!uuidPattern.test(extractionId)) {\n  throw new Error(\n    'INVALID_EXTRACTION_ID: extractionId must be a valid UUID.'\n  );\n}\n\nreturn [\n  {\n    json: {\n      extractionId,\n    },\n  },\n];"
+        "jsCode": "const input = $input.first().json;\nconst extractionId =\n  typeof input.extractionId === 'string'\n    ? input.extractionId.trim()\n    : '';\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nif (!uuidPattern.test(extractionId)) {\n  throw new Error(\n    'INVALID_EXTRACTION_ID: extractionId must be a valid UUID.'\n  );\n}\n\nreturn [{ json: { extractionId } }];"
       },
       "id": "649a36ac-4b43-4a86-9f88-8ecc54f33444",
-      "name": "Validate Interview Request",
+      "name": "Validate Demo Interview Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         -128,
-        -160
+        -256
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH requested AS\n(\n    SELECT $1::UUID AS extraction_id\n)\nSELECT\n    CASE\n        WHEN re.id IS NULL\n            THEN 'EXTRACTION_NOT_FOUND'\n        WHEN re.status <> 'EXTRACTED'\n            THEN 'EXTRACTION_NOT_READY'\n        WHEN re.profile_schema_version <> '1.0'\n            THEN 'PROFILE_SCHEMA_UNSUPPORTED'\n        WHEN jsonb_typeof(re.profile) <> 'object'\n            THEN 'PROFILE_INVALID'\n        WHEN NULLIF(BTRIM(re.target_grade_code), '') IS NULL\n             OR re.target_grade_code = 'UNSPECIFIED'\n            THEN 'TARGET_GRADE_UNSPECIFIED'\n        WHEN gg.id IS NULL\n            THEN 'ACTIVE_GRADE_GUIDE_NOT_FOUND'\n        WHEN selected_grade.grade_definition IS NULL\n            THEN 'TARGET_GRADE_NOT_FOUND'\n        WHEN latest_assessment.id IS NULL\n            THEN 'RESUME_GRADE_NOT_FOUND'\n        ELSE 'RESOLVED'\n    END AS \"resolutionStatus\",\n\n    CASE\n        WHEN re.id IS NULL\n            THEN 'Resume extraction was not found.'\n        WHEN re.status <> 'EXTRACTED'\n            THEN 'Resume extraction is not ready for the interview.'\n        WHEN re.profile_schema_version <> '1.0'\n            THEN 'Resume profile schema version is not supported.'\n        WHEN jsonb_typeof(re.profile) <> 'object'\n            THEN 'Resume profile must be a JSON object.'\n        WHEN NULLIF(BTRIM(re.target_grade_code), '') IS NULL\n             OR re.target_grade_code = 'UNSPECIFIED'\n            THEN 'Target grade code is not specified.'\n        WHEN gg.id IS NULL\n            THEN 'No active grade guide exists for the requested position.'\n        WHEN selected_grade.grade_definition IS NULL\n            THEN 'Target grade does not exist in the active grade guide.'\n        WHEN latest_assessment.id IS NULL\n            THEN 'No completed resume grade assessment exists for this extraction.'\n        ELSE 'Candidate interview context resolved successfully.'\n    END AS \"resolutionMessage\",\n\n    requested.extraction_id                 AS \"requestedExtractionId\",\n    re.id                                   AS \"extractionId\",\n    re.position_code                        AS \"positionCode\",\n    re.target_grade_code                    AS \"targetGradeCode\",\n    re.source_file_name                     AS \"sourceFileName\",\n    re.job_description                      AS \"jobDescription\",\n    re.profile                              AS profile,\n    gg.id                                   AS \"gradeGuideId\",\n    gg.guide_version                        AS \"gradeGuideVersion\",\n    gg.guide_schema_version                 AS \"gradeGuideSchemaVersion\",\n    selected_grade.grade_definition         AS \"gradeDefinition\",\n    gg.guide -> 'dimensions'                AS dimensions,\n    gg.guide -> 'scoringScale'              AS \"scoringScale\",\n    gg.guide -> 'grades'                    AS grades,\n    latest_assessment.id                    AS \"resumeAssessmentId\",\n    latest_assessment.overall_score         AS \"resumeOverallScore\",\n    latest_assessment.minimum_overall_score AS \"resumeMinimumOverallScore\",\n    latest_assessment.threshold_met         AS \"resumeThresholdMet\",\n    latest_assessment.mandatory_dimensions_met AS \"resumeMandatoryDimensionsMet\",\n    latest_assessment.decision              AS \"resumeDecision\",\n    latest_assessment.dimension_assessments AS \"resumeDimensionAssessments\",\n    latest_assessment.assessment_summary    AS \"resumeAssessmentSummary\",\n    latest_assessment.created_at            AS \"resumeAssessedAt\"\nFROM requested\nLEFT JOIN talentai.resume_extraction AS re\n       ON re.id = requested.extraction_id\nLEFT JOIN talentai.grade_guide AS gg\n       ON gg.position_code = re.position_code\n      AND gg.status = 'ACTIVE'\nLEFT JOIN LATERAL\n(\n    SELECT grade AS grade_definition\n    FROM jsonb_array_elements(\n        COALESCE(gg.guide -> 'grades', '[]'::JSONB)\n    ) AS grade\n    WHERE grade ->> 'code' = re.target_grade_code\n    LIMIT 1\n) AS selected_grade ON TRUE\nLEFT JOIN LATERAL\n(\n    SELECT ga.*\n    FROM talentai.grade_assessment AS ga\n    WHERE ga.extraction_id = requested.extraction_id\n      AND ga.status = 'COMPLETED'\n    ORDER BY ga.created_at DESC\n    LIMIT 1\n) AS latest_assessment ON TRUE;",
+        "query": "WITH requested AS\n(\n    SELECT $1::UUID AS extraction_id\n)\nSELECT\n    CASE\n        WHEN extraction.id IS NULL\n            THEN 'EXTRACTION_NOT_FOUND'\n        WHEN execution.request_id IS NULL\n            THEN 'COMPLETED_EXECUTION_NOT_FOUND'\n        WHEN assessment.id IS NULL\n            THEN 'COMPLETED_ASSESSMENT_NOT_FOUND'\n        ELSE 'RESOLVED'\n    END AS \"resolutionStatus\",\n    CASE\n        WHEN extraction.id IS NULL\n            THEN 'Resume extraction was not found.'\n        WHEN execution.request_id IS NULL\n            THEN 'A completed assessment execution was not found.'\n        WHEN assessment.id IS NULL\n            THEN 'A completed grade assessment was not found.'\n        ELSE 'Completed Phase 3 assessment resolved for the demo adapter.'\n    END AS \"resolutionMessage\",\n    requested.extraction_id                 AS \"requestedExtractionId\",\n    execution.request_id                    AS \"requestId\",\n    execution.attempt_count                 AS \"attemptCount\",\n    execution.status                        AS \"executionStatus\",\n    execution.started_at                    AS \"startedAt\",\n    execution.completed_at                  AS \"completedAt\",\n    assessment.id                           AS \"assessmentId\",\n    assessment.extraction_id                AS \"extractionId\",\n    assessment.grade_guide_id               AS \"gradeGuideId\",\n    assessment.grade_guide_version          AS \"gradeGuideVersion\",\n    assessment.target_grade_code            AS \"targetGradeCode\",\n    assessment.scoring_model                AS \"scoringModel\",\n    assessment.prompt_version               AS \"promptVersion\",\n    assessment.engine_version               AS \"engineVersion\",\n    assessment.dimension_assessments        AS \"dimensionAssessments\",\n    assessment.overall_score::DOUBLE PRECISION\n                                                AS \"overallScore\",\n    assessment.minimum_overall_score::DOUBLE PRECISION\n                                                AS \"minimumOverallScore\",\n    assessment.threshold_met                AS \"thresholdMet\",\n    assessment.mandatory_dimensions_met     AS \"mandatoryDimensionsMet\",\n    assessment.decision,\n    assessment.review_reasons               AS \"reviewReasons\",\n    assessment.model_warnings               AS \"modelWarnings\",\n    assessment.assessment_summary           AS \"assessmentSummary\",\n    assessment.status                       AS \"assessmentStatus\",\n    assessment.created_at                   AS \"assessmentCreatedAt\",\n    extraction.position_code                AS \"positionCode\",\n    extraction.job_description              AS \"jobDescription\",\n    extraction.profile -> 'candidate'        AS candidate\nFROM requested\nLEFT JOIN talentai.resume_extraction AS extraction\n       ON extraction.id = requested.extraction_id\nLEFT JOIN talentai.assessment_execution AS execution\n       ON execution.extraction_id = requested.extraction_id\n      AND execution.status = 'COMPLETED'\n      AND execution.current_stage = 'COMPLETED'\n      AND execution.completed_at IS NOT NULL\nLEFT JOIN talentai.grade_assessment AS assessment\n       ON assessment.id = execution.assessment_id\n      AND assessment.request_id = execution.request_id\n      AND assessment.extraction_id = requested.extraction_id\n      AND assessment.status = 'COMPLETED';\n",
         "options": {
           "queryReplacement": "={{ [$json.extractionId] }}"
         }
       },
       "id": "94ba22bf-f1af-45b6-ba19-c72f619a3810",
-      "name": "Resolve Candidate and Resume Grade",
+      "name": "Load Completed Phase 3 Assessment",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
         96,
-        -160
+        -256
       ]
     },
     {
@@ -89,7 +89,7 @@
       "typeVersion": 2.3,
       "position": [
         320,
-        -160
+        -256
       ]
     },
     {
@@ -102,20 +102,20 @@
       "typeVersion": 1,
       "position": [
         544,
-        -64
+        -128
       ]
     },
     {
       "parameters": {
-        "jsCode": "const resolved = $input.first().json;\n\nif (resolved.resolutionStatus !== 'RESOLVED') {\n  throw new Error(\n    `UNEXPECTED_RESOLUTION_STATUS: ${resolved.resolutionStatus}`\n  );\n}\n\nconst profile =\n  resolved.profile &&\n  typeof resolved.profile === 'object' &&\n  !Array.isArray(resolved.profile)\n    ? resolved.profile\n    : {};\n\nconst resumeDimensionAssessments = Array.isArray(\n  resolved.resumeDimensionAssessments\n)\n  ? resolved.resumeDimensionAssessments\n  : [];\n\nconst grades = Array.isArray(resolved.grades)\n  ? resolved.grades\n  : [];\n\nconst resumeDimensions = resumeDimensionAssessments.map(\n  (assessment) => ({\n    code: assessment.code,\n    title: assessment.title,\n    weight: Number(assessment.weight),\n    effectiveScore: Number(assessment.effectiveScore),\n    confidence: assessment.confidence,\n  })\n);\n\nreturn [\n  {\n    json: {\n      extraction: {\n        id: resolved.extractionId,\n        positionCode: resolved.positionCode,\n        targetGradeCode: resolved.targetGradeCode,\n        sourceFileName: resolved.sourceFileName,\n        jobDescription: resolved.jobDescription,\n      },\n\n      candidate: {\n        fullName:\n          String(profile.candidate?.fullName ?? '').trim() ||\n          'Unknown candidate',\n      },\n\n      candidateProfile: profile,\n\n      gradeGuide: {\n        id: resolved.gradeGuideId,\n        version: resolved.gradeGuideVersion,\n        schemaVersion: resolved.gradeGuideSchemaVersion,\n        targetGrade: resolved.gradeDefinition,\n        grades,\n        dimensions: resolved.dimensions,\n        scoringScale: resolved.scoringScale,\n      },\n\n      resumeGrade: {\n        assessmentId: resolved.resumeAssessmentId,\n        decision: resolved.resumeDecision,\n        overallScore: Number(resolved.resumeOverallScore),\n        minimumOverallScore: Number(resolved.resumeMinimumOverallScore),\n        thresholdMet: resolved.resumeThresholdMet === true,\n        mandatoryDimensionsMet:\n          resolved.resumeMandatoryDimensionsMet === true,\n        assessedAt: resolved.resumeAssessedAt,\n        summary: resolved.resumeAssessmentSummary,\n        dimensions: resumeDimensions,\n      },\n    },\n  },\n];"
+        "jsCode": "const input = $input.first().json;\nconst handoff = input.phase3Handoff ?? input;\nconst errors = [];\n\nconst isObject = (value) =>\n  value !== null &&\n  typeof value === 'object' &&\n  !Array.isArray(value);\n\nconst requireObject = (value, path) => {\n  if (!isObject(value)) {\n    errors.push(`${path} must be an object`);\n    return {};\n  }\n\n  return value;\n};\n\nconst requireExactKeys = (value, path, requiredKeys) => {\n  if (!isObject(value)) return;\n\n  const allowed = new Set(requiredKeys);\n\n  for (const key of requiredKeys) {\n    if (!Object.hasOwn(value, key)) {\n      errors.push(`${path}.${key} is required`);\n    }\n  }\n\n  for (const key of Object.keys(value)) {\n    if (!allowed.has(key)) {\n      errors.push(`${path}.${key} is not allowed`);\n    }\n  }\n};\n\nconst requireText = (value, path, minimumLength = 1) => {\n  if (\n    typeof value !== 'string' ||\n    value.trim().length < minimumLength\n  ) {\n    errors.push(`${path} must contain at least ${minimumLength} characters`);\n    return '';\n  }\n\n  return value.trim();\n};\n\nconst requireBoolean = (value, path) => {\n  if (typeof value !== 'boolean') {\n    errors.push(`${path} must be boolean`);\n  }\n};\n\nconst requireNumber = (value, path, minimum, maximum) => {\n  if (\n    typeof value !== 'number' ||\n    !Number.isFinite(value) ||\n    value < minimum ||\n    value > maximum\n  ) {\n    errors.push(`${path} must be a number from ${minimum} to ${maximum}`);\n  }\n};\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nconst requireUuid = (value, path) => {\n  if (!uuidPattern.test(String(value ?? ''))) {\n    errors.push(`${path} must be UUID`);\n  }\n};\n\nconst requireDateTime = (value, path) => {\n  if (\n    typeof value !== 'string' ||\n    value.trim() === '' ||\n    Number.isNaN(Date.parse(value))\n  ) {\n    errors.push(`${path} must be a valid date-time string`);\n  }\n};\n\nconst root = requireObject(handoff, 'handoff');\n\nconst topLevelKeys = [\n  'contract',\n  'contractVersion',\n  'requestId',\n  'assessmentId',\n  'extractionId',\n  'candidate',\n  'assessmentContext',\n  'gradeGuide',\n  'score',\n  'decision',\n  'dimensionAssessments',\n  'reviewReasons',\n  'modelWarnings',\n  'assessmentSummary',\n  'execution',\n  'metadata',\n];\n\nrequireExactKeys(root, 'handoff', topLevelKeys);\n\nif (root.contract !== 'talentai.phase3.assessment-handoff') {\n  errors.push('unsupported contract');\n}\n\nif (root.contractVersion !== '1.0.0') {\n  errors.push('unsupported contractVersion');\n}\n\nrequireUuid(root.requestId, 'requestId');\nrequireUuid(root.assessmentId, 'assessmentId');\nrequireUuid(root.extractionId, 'extractionId');\n\nconst candidate = requireObject(root.candidate, 'candidate');\nrequireExactKeys(candidate, 'candidate', ['fullName']);\nrequireText(candidate.fullName, 'candidate.fullName');\n\nconst assessmentContext = requireObject(\n  root.assessmentContext,\n  'assessmentContext'\n);\nrequireExactKeys(assessmentContext, 'assessmentContext', [\n  'positionCode',\n  'targetGradeCode',\n  'jobDescription',\n]);\n\nif (assessmentContext.positionCode !== 'JAVA_BACKEND') {\n  errors.push('unsupported assessmentContext.positionCode');\n}\n\nif (\n  !['JUNIOR', 'MID', 'SENIOR'].includes(\n    assessmentContext.targetGradeCode\n  )\n) {\n  errors.push('unsupported assessmentContext.targetGradeCode');\n}\n\nrequireText(\n  assessmentContext.jobDescription,\n  'assessmentContext.jobDescription',\n  30\n);\n\nconst gradeGuide = requireObject(root.gradeGuide, 'gradeGuide');\nrequireExactKeys(gradeGuide, 'gradeGuide', ['id', 'version']);\nrequireUuid(gradeGuide.id, 'gradeGuide.id');\nrequireText(gradeGuide.version, 'gradeGuide.version');\n\nconst score = requireObject(root.score, 'score');\nrequireExactKeys(score, 'score', [\n  'overall',\n  'minimumRequired',\n  'thresholdMet',\n  'mandatoryDimensionsMet',\n]);\nrequireNumber(score.overall, 'score.overall', 0, 100);\nrequireNumber(score.minimumRequired, 'score.minimumRequired', 0, 100);\nrequireBoolean(score.thresholdMet, 'score.thresholdMet');\nrequireBoolean(\n  score.mandatoryDimensionsMet,\n  'score.mandatoryDimensionsMet'\n);\n\nconst decisions = new Set([\n  'MEETS_TARGET',\n  'BELOW_TARGET',\n  'REVIEW_REQUIRED',\n]);\n\nif (!decisions.has(root.decision)) {\n  errors.push('unsupported decision');\n}\n\nfor (const [value, path] of [\n  [root.reviewReasons, 'reviewReasons'],\n  [root.modelWarnings, 'modelWarnings'],\n]) {\n  if (!Array.isArray(value)) {\n    errors.push(`${path} must be an array`);\n    continue;\n  }\n\n  for (const [index, item] of value.entries()) {\n    requireText(item, `${path}[${index}]`);\n  }\n}\n\nrequireText(root.assessmentSummary, 'assessmentSummary');\n\nconst requiredDimensionCodes = new Set([\n  'JAVA_CORE',\n  'SPRING_ECOSYSTEM',\n  'DATABASE',\n  'DISTRIBUTED_SYSTEMS',\n  'TESTING',\n  'SOFTWARE_ARCHITECTURE',\n  'OBSERVABILITY_DEVOPS',\n]);\nconst confidenceValues = new Set(['HIGH', 'MEDIUM', 'LOW']);\nconst evidenceSources = new Set([\n  'PROFILE_SKILL',\n  'WORK_EXPERIENCE',\n  'EDUCATION',\n  'WARNING',\n  'OTHER',\n]);\nconst dimensionKeys = [\n  'code',\n  'title',\n  'weight',\n  'mandatory',\n  'modelScore',\n  'effectiveScore',\n  'confidence',\n  'confidenceAccepted',\n  'weightedScore',\n  'minimumRequired',\n  'minimumMet',\n  'evidence',\n  'rationale',\n];\nconst receivedDimensionCodes = new Set();\n\nif (\n  !Array.isArray(root.dimensionAssessments) ||\n  root.dimensionAssessments.length !== requiredDimensionCodes.size\n) {\n  errors.push('dimensionAssessments must contain exactly 7 entries');\n} else {\n  for (const [index, rawDimension] of root.dimensionAssessments.entries()) {\n    const path = `dimensionAssessments[${index}]`;\n    const dimension = requireObject(rawDimension, path);\n\n    requireExactKeys(dimension, path, dimensionKeys);\n\n    if (!requiredDimensionCodes.has(dimension.code)) {\n      errors.push(`${path}.code is unsupported`);\n    } else if (receivedDimensionCodes.has(dimension.code)) {\n      errors.push(`${path}.code is duplicated`);\n    } else {\n      receivedDimensionCodes.add(dimension.code);\n    }\n\n    requireText(dimension.title, `${path}.title`);\n\n    if (\n      !Number.isInteger(dimension.weight) ||\n      dimension.weight < 0 ||\n      dimension.weight > 100\n    ) {\n      errors.push(`${path}.weight must be an integer from 0 to 100`);\n    }\n\n    requireBoolean(dimension.mandatory, `${path}.mandatory`);\n\n    for (const field of ['modelScore', 'effectiveScore']) {\n      if (\n        !Number.isInteger(dimension[field]) ||\n        dimension[field] < 0 ||\n        dimension[field] > 4\n      ) {\n        errors.push(`${path}.${field} must be an integer from 0 to 4`);\n      }\n    }\n\n    if (!confidenceValues.has(dimension.confidence)) {\n      errors.push(`${path}.confidence is unsupported`);\n    }\n\n    requireBoolean(\n      dimension.confidenceAccepted,\n      `${path}.confidenceAccepted`\n    );\n    requireNumber(\n      dimension.weightedScore,\n      `${path}.weightedScore`,\n      0,\n      100\n    );\n\n    if (\n      dimension.minimumRequired !== null &&\n      (\n        !Number.isInteger(dimension.minimumRequired) ||\n        dimension.minimumRequired < 0 ||\n        dimension.minimumRequired > 4\n      )\n    ) {\n      errors.push(\n        `${path}.minimumRequired must be null or an integer from 0 to 4`\n      );\n    }\n\n    requireBoolean(dimension.minimumMet, `${path}.minimumMet`);\n\n    if (!Array.isArray(dimension.evidence)) {\n      errors.push(`${path}.evidence must be an array`);\n    } else {\n      if (dimension.evidence.length > 5) {\n        errors.push(`${path}.evidence must contain at most 5 entries`);\n      }\n\n      if (dimension.modelScore > 0 && dimension.evidence.length === 0) {\n        errors.push(`${path} positive score lacks evidence`);\n      }\n\n      for (const [evidenceIndex, rawEvidence] of\n        dimension.evidence.entries()) {\n        const evidencePath = `${path}.evidence[${evidenceIndex}]`;\n        const evidence = requireObject(rawEvidence, evidencePath);\n\n        requireExactKeys(evidence, evidencePath, ['quote', 'source']);\n        requireText(evidence.quote, `${evidencePath}.quote`);\n\n        if (!evidenceSources.has(evidence.source)) {\n          errors.push(`${evidencePath}.source is unsupported`);\n        }\n      }\n    }\n\n    requireText(dimension.rationale, `${path}.rationale`);\n  }\n}\n\nif (receivedDimensionCodes.size !== requiredDimensionCodes.size) {\n  errors.push('dimensionAssessments has an incomplete dimension set');\n}\n\nconst execution = requireObject(root.execution, 'execution');\nrequireExactKeys(execution, 'execution', [\n  'attemptCount',\n  'status',\n  'replayed',\n  'startedAt',\n  'completedAt',\n]);\n\nif (!Number.isInteger(execution.attemptCount) || execution.attemptCount < 1) {\n  errors.push('execution.attemptCount must be a positive integer');\n}\n\nif (execution.status !== 'COMPLETED') {\n  errors.push('execution.status must be COMPLETED');\n}\n\nrequireBoolean(execution.replayed, 'execution.replayed');\nrequireDateTime(execution.startedAt, 'execution.startedAt');\nrequireDateTime(execution.completedAt, 'execution.completedAt');\n\nconst metadata = requireObject(root.metadata, 'metadata');\nrequireExactKeys(metadata, 'metadata', [\n  'scoringModel',\n  'promptVersion',\n  'engineVersion',\n  'assessmentStatus',\n  'createdAt',\n]);\nrequireText(metadata.scoringModel, 'metadata.scoringModel');\nrequireText(metadata.promptVersion, 'metadata.promptVersion');\nrequireText(metadata.engineVersion, 'metadata.engineVersion');\n\nif (metadata.assessmentStatus !== 'COMPLETED') {\n  errors.push('metadata.assessmentStatus must be COMPLETED');\n}\n\nrequireDateTime(metadata.createdAt, 'metadata.createdAt');\n\nif (\n  root.decision === 'MEETS_TARGET' &&\n  (\n    score.thresholdMet !== true ||\n    score.mandatoryDimensionsMet !== true ||\n    root.reviewReasons?.length !== 0\n  )\n) {\n  errors.push('MEETS_TARGET invariants are not satisfied');\n}\n\nif (\n  root.decision === 'REVIEW_REQUIRED' &&\n  root.reviewReasons?.length === 0\n) {\n  errors.push('REVIEW_REQUIRED requires at least one review reason');\n}\n\nif (errors.length > 0) {\n  throw new Error(\n    `INVALID_PHASE3_HANDOFF: ${errors.join('; ')}`\n  );\n}\n\nconst minimumDimensionLevels = Object.fromEntries(\n  root.dimensionAssessments\n    .filter((dimension) => dimension.minimumRequired !== null)\n    .map((dimension) => [\n      dimension.code,\n      dimension.minimumRequired,\n    ])\n);\n\nconst targetGrade = {\n  code: assessmentContext.targetGradeCode,\n  label: assessmentContext.targetGradeCode,\n  minimumOverallScore: score.minimumRequired,\n  minimumDimensionLevels,\n};\n\nreturn [\n  {\n    json: {\n      phase3Handoff: root,\n      correlation: {\n        contractVersion: root.contractVersion,\n        requestId: root.requestId,\n        assessmentId: root.assessmentId,\n        extractionId: root.extractionId,\n      },\n      extraction: {\n        id: root.extractionId,\n        positionCode: assessmentContext.positionCode,\n        targetGradeCode: assessmentContext.targetGradeCode,\n        jobDescription: assessmentContext.jobDescription,\n      },\n      candidate: {\n        fullName: candidate.fullName.trim(),\n      },\n      gradeGuide: {\n        id: gradeGuide.id,\n        version: gradeGuide.version,\n        targetGrade,\n        grades: [targetGrade],\n        dimensions: root.dimensionAssessments.map((dimension) => ({\n          code: dimension.code,\n          title: dimension.title,\n          weight: dimension.weight,\n          mandatory: dimension.mandatory,\n          minimumRequired: dimension.minimumRequired,\n        })),\n        scoringScale: [\n          { score: 0, meaning: 'NO_USABLE_EVIDENCE' },\n          { score: 1, meaning: 'LIMITED_OR_VAGUE' },\n          { score: 2, meaning: 'PRACTICAL_AND_CONCRETE' },\n          { score: 3, meaning: 'ADVANCED_WITH_TRADE_OFFS' },\n          { score: 4, meaning: 'LEADERSHIP_OR_CROSS_CUTTING_OWNERSHIP' },\n        ],\n      },\n      resumeGrade: {\n        assessmentId: root.assessmentId,\n        decision: root.decision,\n        overallScore: score.overall,\n        minimumOverallScore: score.minimumRequired,\n        thresholdMet: score.thresholdMet,\n        mandatoryDimensionsMet: score.mandatoryDimensionsMet,\n        assessedAt: metadata.createdAt,\n        summary: root.assessmentSummary,\n        reviewReasons: root.reviewReasons,\n        modelWarnings: root.modelWarnings,\n        dimensions: root.dimensionAssessments,\n      },\n    },\n  },\n];"
       },
       "id": "f69ee70e-4720-4518-9cb0-a37e15022525",
-      "name": "Build Interview Context",
+      "name": "Validate Phase 3 Handoff",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        544,
-        -256
+        768,
+        -320
       ]
     },
     {
@@ -127,20 +127,20 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        768,
-        -256
+        992,
+        -320
       ]
     },
     {
       "parameters": {
-        "jsCode": "const config = $input.first().json;\n\nconst interviewContext =\n  $('Build Interview Context').first().json;\n\nconst roundConfig = config.rounds.first;\n\nconst instructions = [\n  'You are the interview-designer component of TalentAI.',\n  '',\n  'Your only responsibility is to design the first-round candidate interview questionnaire.',\n  'You must not decide the final grade.',\n  'You must not score or evaluate the candidate.',\n  'You must not calculate any final score.',\n  '',\n  'Rules:',\n  '1. Produce exactly ' + roundConfig.totalQuestions + ' questions.',\n  '2. Produce exactly ' + roundConfig.singleChoice + ' single_choice, ' + roundConfig.multiChoice + ' multi_choice and ' + roundConfig.explanatory + ' explanatory questions.',\n  '3. Every question belongs to exactly one dimension from gradeGuide.dimensions, using its exact code.',\n  '4. Every dimension must receive between 2 and 4 questions, and every dimension must be covered.',\n  '5. A single_choice question is a radio question with exactly one best answer and 3 or 4 options.',\n  '6. A multi_choice question has 4 to 6 options and several of them can be correct; the candidate may select multiple options.',\n  '7. Every option must carry an integer score from 0 to 4 that follows gradeGuide.scoringScale.',\n  '8. For multi_choice questions, score each option on its own quality: 4 for a strong and correct component, 0 for a wrong or harmful component.',\n  '9. Include plausible distractor options that sound confident but demonstrate shallow or incorrect understanding.',\n  '10. Questions must be tailored to this candidate: probe the skills and claims in candidateProfile,',\n  '   focus on dimensions where resumeGrade shows low scores, low confidence, or a large distance to the target grade,',\n  '   and ask explanatory questions about concrete projects from workExperiences.',\n  '11. Explanatory questions must ask for specific first-hand experience, decisions, trade-offs, or troubleshooting stories.',\n  '12. Questions must be answerable without confidential or proprietary employer data.',\n  '13. Write every question and every option in Persian (Farsi), addressed directly to the candidate.',\n  '14. Do not include scores, scoring scale, or dimension codes inside the visible question or option text.',\n  '15. Generate unique question ids matching the pattern Q01 to Q' + String(roundConfig.totalQuestions).padStart(2, '0') + '.',\n  '16. Return only the object required by the connected Structured Output Parser.',\n  '',\n  'Interview context:',\n  JSON.stringify(interviewContext),\n];\n\nreturn [\n  {\n    json: {\n      interviewContext,\n      config,\n      prompt: instructions.join(\n        '\\n'\n      ),\n    },\n  },\n];"
+        "jsCode": "const config = $input.first().json;\n\nconst interviewContext =\n  $('Validate Phase 3 Handoff').first().json;\n\nconst roundConfig = config.rounds.first;\n\nconst instructions = [\n  'You are the interview-designer component of TalentAI.',\n  '',\n  'Your only responsibility is to design the first-round candidate interview questionnaire.',\n  'You must not decide the final grade.',\n  'You must not score or evaluate the candidate.',\n  'You must not calculate any final score.',\n  '',\n  'Rules:',\n  '1. Produce exactly ' + roundConfig.totalQuestions + ' questions.',\n  '2. Produce exactly ' + roundConfig.singleChoice + ' single_choice, ' + roundConfig.multiChoice + ' multi_choice and ' + roundConfig.explanatory + ' explanatory questions.',\n  '3. Every question belongs to exactly one dimension from gradeGuide.dimensions, using its exact code.',\n  '4. Every dimension must receive between 2 and 4 questions, and every dimension must be covered.',\n  '5. A single_choice question is a radio question with exactly one best answer and 3 or 4 options.',\n  '6. A multi_choice question has 4 to 6 options and several of them can be correct; the candidate may select multiple options.',\n  '7. Every option must carry an integer score from 0 to 4 that follows gradeGuide.scoringScale.',\n  '8. For multi_choice questions, score each option on its own quality: 4 for a strong and correct component, 0 for a wrong or harmful component.',\n  '9. Include plausible distractor options that sound confident but demonstrate shallow or incorrect understanding.',\n  '10. Questions must be tailored to this candidate: probe the resume claims represented by evidence and rationale in resumeGrade.dimensions,',\n  '   focus on dimensions where resumeGrade shows low scores, low confidence, or a large distance to the target grade,',\n  '   and ask explanatory questions that verify the specific evidence quotes without treating them as established truth.',\n  '11. Explanatory questions must ask for specific first-hand experience, decisions, trade-offs, or troubleshooting stories.',\n  '12. Questions must be answerable without confidential or proprietary employer data.',\n  '13. Write every question and every option in Persian (Farsi), addressed directly to the candidate.',\n  '14. Do not include scores, scoring scale, or dimension codes inside the visible question or option text.',\n  '15. Generate unique question ids matching the pattern Q01 to Q' + String(roundConfig.totalQuestions).padStart(2, '0') + '.',\n  '16. Return only the object required by the connected Structured Output Parser.',\n  '',\n  'Interview context:',\n  JSON.stringify(interviewContext),\n];\n\nreturn [\n  {\n    json: {\n      interviewContext,\n      config,\n      prompt: instructions.join(\n        '\\n'\n      ),\n    },\n  },\n];"
       },
       "id": "5f87840d-ed75-4263-8d91-285a30e6680a",
       "name": "Build Interview Question Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        992,
+        1216,
         -256
       ]
     },
@@ -156,7 +156,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1216,
+        1440,
         -256
       ]
     },
@@ -178,7 +178,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1224,
+        1448,
         -24
       ]
     },
@@ -192,7 +192,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1352,
+        1576,
         -24
       ]
     },
@@ -205,7 +205,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1568,
+        1792,
         -256
       ]
     },
@@ -224,7 +224,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        1792,
+        2016,
         -256
       ],
       "webhookId": "5a6b7c8d-9e0f-4a1b-2c3d-4e5f6a7b8c9d"
@@ -238,7 +238,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2016,
+        2240,
         -256
       ]
     },
@@ -251,7 +251,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2240,
+        2464,
         -256
       ]
     },
@@ -267,7 +267,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        2464,
+        2688,
         -256
       ]
     },
@@ -289,7 +289,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        2472,
+        2696,
         -24
       ]
     },
@@ -303,7 +303,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        2600,
+        2824,
         -24
       ]
     },
@@ -316,7 +316,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2816,
+        3040,
         -256
       ]
     },
@@ -335,7 +335,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        3040,
+        3264,
         -256
       ],
       "webhookId": "e15c6d7e-8f9a-4bac-bdbe-2f3a4b5c6d7e"
@@ -349,7 +349,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3264,
+        3488,
         -256
       ]
     },
@@ -362,7 +362,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3488,
+        3712,
         -256
       ]
     },
@@ -378,7 +378,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        3712,
+        3936,
         -256
       ]
     },
@@ -400,7 +400,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        3720,
+        3944,
         -24
       ]
     },
@@ -414,7 +414,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        3848,
+        4072,
         -24
       ]
     },
@@ -427,7 +427,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4064,
+        4288,
         -256
       ]
     },
@@ -440,7 +440,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4288,
+        4512,
         -256
       ]
     },
@@ -453,7 +453,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4512,
+        4736,
         -256
       ]
     },
@@ -469,7 +469,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        4736,
+        4960,
         -256
       ],
       "webhookId": "6e7f8a9b-0c1d-4e2f-3a4b-5c6d7e8f9a0c"
@@ -479,19 +479,34 @@
         "workflowInputs": {
           "values": [
             {
-              "name": "extractionId"
+              "name": "phase3Handoff",
+              "type": "object"
             }
           ]
-        }
+        },
+        "inputSource": "workflowInputs"
       },
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        -352,
-        -64
+        544,
+        -512
       ],
       "id": "9e700501-12fe-4f59-9914-a976a76d3174",
       "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resolved = $input.first().json;\n\nif (resolved.resolutionStatus !== 'RESOLVED') {\n  throw new Error(\n    `UNEXPECTED_RESOLUTION_STATUS: ${resolved.resolutionStatus}`\n  );\n}\n\nconst asIsoDate = (value, fieldName) => {\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    throw new Error(\n      `INVALID_PHASE3_HANDOFF_SOURCE: ${fieldName} must be a valid date-time.`\n    );\n  }\n\n  return date.toISOString();\n};\n\nconst candidate =\n  resolved.candidate &&\n  typeof resolved.candidate === 'object' &&\n  !Array.isArray(resolved.candidate)\n    ? resolved.candidate\n    : {};\n\nreturn [\n  {\n    json: {\n      phase3Handoff: {\n        contract: 'talentai.phase3.assessment-handoff',\n        contractVersion: '1.0.0',\n        requestId: resolved.requestId,\n        assessmentId: resolved.assessmentId,\n        extractionId: resolved.extractionId,\n        candidate: {\n          fullName: String(candidate.fullName ?? '').trim(),\n        },\n        assessmentContext: {\n          positionCode: resolved.positionCode,\n          targetGradeCode: resolved.targetGradeCode,\n          jobDescription: resolved.jobDescription,\n        },\n        gradeGuide: {\n          id: resolved.gradeGuideId,\n          version: resolved.gradeGuideVersion,\n        },\n        score: {\n          overall: Number(resolved.overallScore),\n          minimumRequired: Number(resolved.minimumOverallScore),\n          thresholdMet: resolved.thresholdMet === true,\n          mandatoryDimensionsMet:\n            resolved.mandatoryDimensionsMet === true,\n        },\n        decision: resolved.decision,\n        dimensionAssessments: resolved.dimensionAssessments,\n        reviewReasons: resolved.reviewReasons,\n        modelWarnings: resolved.modelWarnings,\n        assessmentSummary: resolved.assessmentSummary,\n        execution: {\n          attemptCount: Number(resolved.attemptCount),\n          status: resolved.executionStatus,\n          replayed: false,\n          startedAt: asIsoDate(resolved.startedAt, 'startedAt'),\n          completedAt: asIsoDate(resolved.completedAt, 'completedAt'),\n        },\n        metadata: {\n          scoringModel: resolved.scoringModel,\n          promptVersion: resolved.promptVersion,\n          engineVersion: resolved.engineVersion,\n          assessmentStatus: resolved.assessmentStatus,\n          createdAt: asIsoDate(\n            resolved.assessmentCreatedAt,\n            'assessmentCreatedAt'\n          ),\n        },\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -320
+      ],
+      "id": "ad4e2705-1e38-4a71-9456-b9a5f9d4e201",
+      "name": "Build Demo Phase 3 Handoff"
     }
   ],
   "connections": {
@@ -499,29 +514,7 @@
       "main": [
         [
           {
-            "node": "Validate Interview Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Validate Interview Request": {
-      "main": [
-        [
-          {
-            "node": "Resolve Candidate and Resume Grade",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Resolve Candidate and Resume Grade": {
-      "main": [
-        [
-          {
-            "node": "Interview Context Resolved?",
+            "node": "Validate Demo Interview Request",
             "type": "main",
             "index": 0
           }
@@ -532,7 +525,7 @@
       "main": [
         [
           {
-            "node": "Build Interview Context",
+            "node": "Build Demo Phase 3 Handoff",
             "type": "main",
             "index": 0
           }
@@ -540,17 +533,6 @@
         [
           {
             "node": "Fail Interview Setup",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Interview Context": {
-      "main": [
-        [
-          {
-            "node": "Interview Configuration",
             "type": "main",
             "index": 0
           }
@@ -803,7 +785,51 @@
       "main": [
         [
           {
-            "node": "Validate Interview Request",
+            "node": "Validate Phase 3 Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Demo Interview Request": {
+      "main": [
+        [
+          {
+            "node": "Load Completed Phase 3 Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Completed Phase 3 Assessment": {
+      "main": [
+        [
+          {
+            "node": "Interview Context Resolved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Phase 3 Handoff": {
+      "main": [
+        [
+          {
+            "node": "Interview Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Demo Phase 3 Handoff": {
+      "main": [
+        [
+          {
+            "node": "Validate Phase 3 Handoff",
             "type": "main",
             "index": 0
           }
