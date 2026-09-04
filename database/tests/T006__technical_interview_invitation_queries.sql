@@ -70,6 +70,7 @@ BEGIN
         request_id,
         input_fingerprint,
         initial_workflow_execution_id,
+        claim_owner_workflow_execution_id,
         last_workflow_execution_id,
         position_code,
         target_grade_code,
@@ -80,6 +81,7 @@ BEGIN
     (
         v_request_id,
         repeat('b', 64),
+        'invitation-query-assessment',
         'invitation-query-assessment',
         'invitation-query-assessment',
         'JAVA_BACKEND',
