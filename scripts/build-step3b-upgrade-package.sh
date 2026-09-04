@@ -85,6 +85,7 @@ normalize_workflow() {
   jq -S '
     del(
       .active,
+      .isPublished,
       .versionId,
       .parentFolderId,
       .pinData,
