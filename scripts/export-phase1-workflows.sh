@@ -9,7 +9,7 @@ readonly TALENTAI_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly TALENTAI_REPOSITORY_ROOT="$(cd "$TALENTAI_SCRIPT_DIR/.." && pwd)"
 readonly TALENTAI_RELEASE_VERSION="${1:-1.0.0}"
 readonly TALENTAI_PRIVATE_EXPORT_DIR="$TALENTAI_REPOSITORY_ROOT/exports/private"
-readonly TALENTAI_DESTINATION_DIR="$TALENTAI_REPOSITORY_ROOT/workflows/phase-1"
+readonly TALENTAI_DESTINATION_DIR="$TALENTAI_REPOSITORY_ROOT/workflows/resume-assessment"
 readonly TALENTAI_SOURCE_MANIFEST="$TALENTAI_DESTINATION_DIR/manifest.json"
 readonly TALENTAI_FLAT_PACKAGE="$TALENTAI_PRIVATE_EXPORT_DIR/TalentAI-phase-1-v${TALENTAI_RELEASE_VERSION}.flat.raw.n8np"
 
@@ -33,6 +33,7 @@ jq -e \
   --arg tai03 "$TALENTAI_EXPECTED_TAI03" \
   '
     (.phase == "1")
+    and (.domain == "RESUME_ASSESSMENT")
     and ((.workflows // []) | length == 3)
     and (
       ([.workflows[].name] | sort)
@@ -160,10 +161,11 @@ jq \
   --arg tai03 "$TALENTAI_EXPECTED_TAI03" \
   '{
     phase: "1",
+    domain: "RESUME_ASSESSMENT",
     releaseVersion: $release_version,
     packageFormatVersion,
     sourceN8nVersion,
-    folder: "TalentAI - Phase 1",
+    folder: "TalentAI - Resume Assessment",
     workflows: (
       [
         .workflows[]

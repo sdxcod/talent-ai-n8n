@@ -17,13 +17,13 @@ assert.match(formCss, /input\[name="invitationToken"\]/);
 assert.match(formCss, /direction:\s*ltr/);
 
 const tai01 = json(
-  'workflows/phase-1/TAI-01-resume-intake-extraction-v2.json'
+  'workflows/resume-assessment/TAI-01-resume-intake-extraction-v2.json'
 );
 const tai04 = json(
-  'workflows/phase-4-5/TAI-04-candidate-interview-final-grade-v1.json'
+  'workflows/technical-interview/TAI-04-candidate-interview-final-grade-v1.json'
 );
 const tai05 = json(
-  'workflows/phase-4-5/TAI-05-secure-interview-invitation-v1.json'
+  'workflows/technical-interview/TAI-05-secure-interview-invitation-v1.json'
 );
 
 const node = (workflow, name) => {
@@ -78,7 +78,7 @@ assert.equal(invitationOperator.parameters.requireExecuteAccess, true);
 assert.equal(invitationOperator.parameters.options.includeUserInOutput, false);
 
 const resultSource = read(
-  'workflows/phase-1/code/tai01-build-assessment-result.js'
+  'workflows/resume-assessment/code/tai01-build-assessment-result.js'
 );
 const executeResultBuilder = new Function('$input', resultSource);
 const assessment = {

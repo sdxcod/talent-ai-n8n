@@ -27,14 +27,42 @@ macOS, Linux or WSL:
 ```bash
 ./scripts/bootstrap-local.sh
 ./scripts/apply-database.sh
-./scripts/verify-phase1.sh
+./scripts/verify-talentai.sh
 ```
+
+Workflow sources are grouped by business domain rather than implementation
+phase:
+
+| Location | Scope |
+|---|---|
+| `workflows/resume-assessment/` | TAI-01 through TAI-03 |
+| `workflows/technical-interview/` | TAI-04 and TAI-05 |
+| `workflows/shared/` | Shared form assets |
+
+The canonical release and live-correlation entry points are:
+
+```bash
+./scripts/build-talentai-mvp-package.sh <semver>
+./scripts/verify-talentai-correlation.sh <phase3-extraction-uuid>
+```
+
+The former Phase-based entry points remain as thin deprecated wrappers for
+compatibility with v3.1.0 runbooks and existing operator automation:
+
+```text
+verify-phase1.sh
+build-phase45-mvp-package.sh
+verify-phase45-correlation.sh
+test-phase1-operational-workflows.sh
+```
+
+New documentation and automation must use the canonical domain-oriented names.
 
 After one complete synthetic Phase 1 through Phase 5 run, verify that its
 persisted records form one consistent chain:
 
 ```bash
-./scripts/verify-phase45-correlation.sh <phase3-extraction-uuid>
+./scripts/verify-talentai-correlation.sh <phase3-extraction-uuid>
 ```
 
 This live-data release gate is intentionally not part of CI: a clean CI
@@ -53,7 +81,7 @@ Question sets and answers are reloaded through the checkpoint query instead of
 being regenerated, and answer-evaluation metadata is retained for final-result
 recovery.
 
-`scripts/build-phase45-mvp-package.sh` creates a private five-workflow release
+`scripts/build-talentai-mvp-package.sh` creates a private five-workflow release
 candidate from the verified Phase 3 package and the committed TAI-04 and TAI-05
 sources. It derives credential references from the source package, rejects
 source drift and scans the assembled archive for likely secrets. Release

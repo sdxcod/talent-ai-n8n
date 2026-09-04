@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 readonly TALENTAI_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly TALENTAI_REPOSITORY_ROOT="$(cd "$TALENTAI_SCRIPT_DIR/.." && pwd)"
-readonly TALENTAI_WORKFLOW_DIR="$TALENTAI_REPOSITORY_ROOT/workflows/phase-1"
+readonly TALENTAI_WORKFLOW_DIR="$TALENTAI_REPOSITORY_ROOT/workflows/resume-assessment"
 readonly TALENTAI_MANIFEST="$TALENTAI_WORKFLOW_DIR/manifest.json"
 readonly TALENTAI_PRIVATE_DIR="$TALENTAI_REPOSITORY_ROOT/exports/private"
 readonly TALENTAI_BASE_PACKAGE="$TALENTAI_PRIVATE_DIR/TalentAI-phase-1-step3.1B.base.raw.n8np"

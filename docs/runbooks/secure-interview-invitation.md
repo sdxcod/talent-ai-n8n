@@ -16,9 +16,9 @@ Form URLs to work.
 ## Build and import a release candidate
 
 ```bash
-./scripts/verify-phase1.sh
+./scripts/verify-talentai.sh
 
-./scripts/build-phase45-mvp-package.sh 3.1.0-rc.1
+./scripts/build-talentai-mvp-package.sh 3.1.1-rc.1
 ```
 
 Import the resulting five-workflow package with the existing PostgreSQL and
@@ -26,7 +26,7 @@ OpenAI-compatible credentials:
 
 ```bash
 n8n-cli package import \
-  --file=exports/private/TalentAI-phase45-mvp-v3.1.0-rc.1.n8np \
+  --file=exports/private/TalentAI-mvp-v3.1.1-rc.1.n8np \
   --project-id='<talentai-project-id>' \
   --workflow-conflict-policy=new-version \
   --workflow-id-policy=source \

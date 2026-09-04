@@ -9,7 +9,11 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '..');
-const workflowDirectory = path.join(repositoryRoot, 'workflows', 'phase-4-5');
+const workflowDirectory = path.join(
+  repositoryRoot,
+  'workflows',
+  'technical-interview',
+);
 const manifestPath = path.join(workflowDirectory, 'manifest.json');
 const examplePath = path.join(
   repositoryRoot,
@@ -23,6 +27,7 @@ const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
 const manifest = readJson(manifestPath);
 
 assert.equal(manifest.scope, 'PHASE_4_5_MVP');
+assert.equal(manifest.domain, 'TECHNICAL_INTERVIEW');
 assert.equal(manifest.schemaVersion, '1.0.0');
 assert.deepEqual(manifest.upstreamContract, {
   name: 'talentai.phase3.assessment-handoff',
@@ -628,7 +633,7 @@ const databaseQuery = (name) =>
   fs.readFileSync(path.join(databaseQueryDirectory, `${name}.sql`), 'utf8');
 
 const endToEndCorrelationQuery = databaseQuery(
-  'Q021__verify_phase45_end_to_end_correlation',
+  'Q021__verify_end_to_end_correlation',
 );
 
 for (const requiredFragment of [

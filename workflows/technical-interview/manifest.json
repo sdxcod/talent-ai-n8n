@@ -1,5 +1,6 @@
 {
   "scope": "PHASE_4_5_MVP",
+  "domain": "TECHNICAL_INTERVIEW",
   "schemaVersion": "1.0.0",
   "sourceN8nVersion": "2.36.8",
   "upstreamContract": {
