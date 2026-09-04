@@ -183,8 +183,8 @@
         464
       ],
       "parameters": {
-        "formTitle": "TalentAI Candidate Assessment",
-        "formDescription": "Submit the target position and candidate resume for assessment.",
+        "formTitle": "ارزیابی داخلی رزومه TalentAI",
+        "formDescription": "این فرم فقط برای HR و کاربران مجاز است. نتیجه ارزیابی و امکان صدور دعوت امن پس از تکمیل پردازش نمایش داده می‌شود.",
         "formFields": {
           "values": [
             {
@@ -251,7 +251,16 @@
           ]
         },
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "path": "talentai-hr-resume-assessment",
+          "buttonLabel": "ارزیابی رزومه",
+          "ignoreBots": true,
+          "includeUserInOutput": false,
+          "showHeaders": false,
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        },
+        "authentication": "n8nUserAuth",
+        "requireExecuteAccess": true
       },
       "webhookId": "7ff5de51-ef10-4ce0-b1b3-c7b5ea00fad2"
     },
@@ -445,7 +454,7 @@
         224
       ],
       "parameters": {
-        "jsCode": "const assessment = $input.first().json;\n\nconst score = Number(assessment.score?.overall ?? 0);\nconst minimumRequired = Number(\n  assessment.score?.minimumRequired ?? 0\n);\nconst mandatoryPassed =\n  assessment.score?.mandatoryDimensionsMet === true;\nconst decision = assessment.decision ?? 'UNKNOWN';\nconst fullName =\n  assessment.candidate?.fullName ?? 'Unknown candidate';\nconst positionCode =\n  assessment.assessmentContext?.positionCode ?? '';\nconst targetGradeCode =\n  assessment.assessmentContext?.targetGradeCode ?? '';\nconst requestId =\n  assessment.execution?.requestId ?? assessment.requestId ?? '';\nconst attemptCount = Number(\n  assessment.execution?.attemptCount ?? 1\n);\nconst replayed =\n  assessment.execution?.replayed === true ||\n  assessment.metadata?.replayed === true;\n\nconst output = [\n  'TalentAI assessment completed.',\n  '',\n  `Request ID: ${requestId}`,\n  `Attempt: ${attemptCount}`,\n  `Replayed: ${replayed ? 'YES' : 'NO'}`,\n  `Candidate: ${fullName}`,\n  `Position: ${positionCode}`,\n  `Target Grade: ${targetGradeCode}`,\n  `Overall Score: ${score} / 100`,\n  `Required Score: ${minimumRequired} / 100`,\n  `Mandatory Requirements: ${\n    mandatoryPassed ? 'PASSED' : 'NOT PASSED'\n  }`,\n  `Decision: ${decision}`,\n  '',\n  `Assessment ID: ${assessment.assessmentId}`,\n  `Extraction ID: ${assessment.extractionId}`,\n  `Grade Guide: ${assessment.gradeGuide?.version}`,\n  `Model: ${assessment.metadata?.scoringModel}`,\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      output,\n      requestId,\n      attemptCount,\n      replayed,\n      assessmentId: assessment.assessmentId,\n      extractionId: assessment.extractionId,\n      candidateName: fullName,\n      positionCode,\n      targetGradeCode,\n      overallScore: score,\n      minimumRequiredScore: minimumRequired,\n      thresholdMet: assessment.score?.thresholdMet,\n      mandatoryDimensionsMet: mandatoryPassed,\n      decision,\n      gradeGuideVersion: assessment.gradeGuide?.version,\n      scoringModel: assessment.metadata?.scoringModel,\n      createdAt: assessment.metadata?.createdAt,\n    },\n  },\n];"
+        "jsCode": "const assessment = $input.first().json;\n\nconst score = Number(assessment.score?.overall ?? 0);\nconst minimumRequired = Number(\n  assessment.score?.minimumRequired ?? 0\n);\nconst mandatoryPassed =\n  assessment.score?.mandatoryDimensionsMet === true;\nconst decision = assessment.decision ?? 'UNKNOWN';\nconst fullName =\n  assessment.candidate?.fullName ?? 'Unknown candidate';\nconst positionCode =\n  assessment.assessmentContext?.positionCode ?? '';\nconst targetGradeCode =\n  assessment.assessmentContext?.targetGradeCode ?? '';\nconst requestId =\n  assessment.execution?.requestId ?? assessment.requestId ?? '';\nconst attemptCount = Number(\n  assessment.execution?.attemptCount ?? 1\n);\nconst replayed =\n  assessment.execution?.replayed === true ||\n  assessment.metadata?.replayed === true;\n\nconst assessmentId = String(assessment.assessmentId ?? '').trim();\nconst extractionId = String(assessment.extractionId ?? '').trim();\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst invitationEligible =\n  decision === 'MEETS_TARGET' && uuidPattern.test(extractionId);\nconst invitationPath = invitationEligible\n  ? `/form/talentai-secure-interview-invitation?action=ISSUE&extractionId=${encodeURIComponent(extractionId)}&ttlMinutes=2880`\n  : null;\n\nconst escapeHtml = (value) =>\n  String(value ?? '')\n    .replaceAll('&', '&amp;')\n    .replaceAll('<', '&lt;')\n    .replaceAll('>', '&gt;')\n    .replaceAll('\"', '&quot;')\n    .replaceAll(\"'\", '&#39;');\n\nconst detail = (label, value, ltr = false) =>\n  `<p><strong>${escapeHtml(label)}:</strong> ` +\n  `<span${ltr ? ' dir=\"ltr\"' : ''}>${escapeHtml(value)}</span></p>`;\n\nconst output = [\n  '<p><strong>TalentAI assessment completed.</strong></p>',\n  detail('Request ID', requestId, true),\n  detail('Attempt', attemptCount, true),\n  detail('Replayed', replayed ? 'YES' : 'NO', true),\n  detail('Candidate', fullName),\n  detail('Position', positionCode, true),\n  detail('Target Grade', targetGradeCode, true),\n  detail('Overall Score', `${score} / 100`, true),\n  detail('Required Score', `${minimumRequired} / 100`, true),\n  detail(\n    'Mandatory Requirements',\n    mandatoryPassed ? 'PASSED' : 'NOT PASSED',\n    true\n  ),\n  detail('Decision', decision, true),\n  detail('Assessment ID', assessmentId, true),\n  detail('Extraction ID', extractionId, true),\n  detail('Grade Guide', assessment.gradeGuide?.version, true),\n  detail('Model', assessment.metadata?.scoringModel, true),\n  invitationEligible\n    ? `<p><a href=\"${escapeHtml(invitationPath)}\" target=\"_blank\" rel=\"noopener noreferrer\">صدور دعوت امن مصاحبه</a></p>`\n    : '',\n  decision === 'REVIEW_REQUIRED'\n    ? '<p>این ارزیابی پیش از صدور دعوت به بررسی HR نیاز دارد.</p>'\n    : '',\n].join('');\n\nreturn [\n  {\n    json: {\n      output,\n      requestId,\n      attemptCount,\n      replayed,\n      assessmentId,\n      extractionId,\n      candidateName: fullName,\n      positionCode,\n      targetGradeCode,\n      overallScore: score,\n      minimumRequiredScore: minimumRequired,\n      thresholdMet: assessment.score?.thresholdMet,\n      mandatoryDimensionsMet: mandatoryPassed,\n      decision,\n      invitationEligible,\n      invitationPath,\n      gradeGuideVersion: assessment.gradeGuide?.version,\n      scoringModel: assessment.metadata?.scoringModel,\n      createdAt: assessment.metadata?.createdAt,\n    },\n  },\n];"
       },
       "onError": "continueErrorOutput"
     },
@@ -878,7 +887,9 @@
         "operation": "completion",
         "completionTitle": "نتیجه ارزیابی رزومه TalentAI",
         "completionMessage": "={{ $json.output }}",
-        "options": {}
+        "options": {
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
       },
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
@@ -895,7 +906,9 @@
         "operation": "completion",
         "completionTitle": "ارزیابی رزومه TalentAI تکمیل نشد",
         "completionMessage": "={{ $json.output }}",
-        "options": {}
+        "options": {
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
       },
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,

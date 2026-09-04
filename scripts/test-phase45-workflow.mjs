@@ -28,25 +28,39 @@ assert.deepEqual(manifest.upstreamContract, {
   name: 'talentai.phase3.assessment-handoff',
   version: '1.0.0',
 });
-assert.equal(manifest.workflows.length, 1);
+assert.equal(manifest.workflows.length, 2);
 assert.deepEqual(manifest.persistence, {
   schemaVersion: '1.0.0',
   migration: 'database/migrations/V009__create_technical_interview_persistence.sql',
   checkpointMigration: 'database/migrations/V010__add_technical_interview_checkpoint_recovery.sql',
+  invitationMigration: 'database/migrations/V011__create_secure_interview_invitation.sql',
   tables: [
     'talentai.technical_interview_session',
     'talentai.technical_question_set',
     'talentai.technical_interview_answer',
     'talentai.technical_interview_result',
+    'talentai.technical_interview_invitation',
   ],
-  queryRange: 'Q013-Q021',
+  queryRange: 'Q013-Q025',
+});
+assert.deepEqual(manifest.invitation, {
+  contract: 'talentai.secure-interview-invitation',
+  version: '1.0.0',
+  defaultTtlMinutes: 2880,
+  minimumTtlMinutes: 15,
+  maximumTtlMinutes: 10080,
+  candidateFormPath: 'talentai-candidate-interview',
+  operatorFormPath: 'talentai-secure-interview-invitation',
 });
 assert.deepEqual(
   [...manifest.requiredCredentialTypes].sort(),
   ['openAiApi', 'postgres'],
 );
 
-const descriptor = manifest.workflows[0];
+const descriptor = manifest.workflows.find(
+  ({ id }) => id === '6topbXRO9Zga3l1h'
+);
+assert.ok(descriptor, 'TAI-04 descriptor is missing.');
 const workflowPath = path.join(workflowDirectory, descriptor.file);
 const workflow = readJson(workflowPath);
 const exampleHandoff = readJson(examplePath);
@@ -100,9 +114,12 @@ for (const node of workflow.nodes) {
 for (const requiredNode of [
   'On interview request',
   'When Executed by Another Workflow',
-  'Validate Demo Interview Request',
+  'Validate Invitation Token',
+  'Claim Secure Interview Invitation',
+  'Invitation Claim Can Continue?',
+  'Build Invitation Access Failure',
   'Load Completed Phase 3 Assessment',
-  'Build Demo Phase 3 Handoff',
+  'Build Secured Phase 3 Handoff',
   'Validate Phase 3 Handoff',
   'Claim Technical Interview Session',
   'Interview Claim Can Continue?',
@@ -142,9 +159,10 @@ for (const requiredNode of [
   'Build Failed Technical Interview Result',
   'Build Interview Failure Recording Fallback',
   'Build Unrecorded Technical Interview Result',
-  'Demo Request Failure',
+  'Invitation Token Validation Failure',
+  'Invitation Claim Persistence Failure',
   'Phase 3 Lookup Failure',
-  'Demo Handoff Assembly Failure',
+  'Secure Handoff Assembly Failure',
   'Phase 3 Contract Failure',
   'Interview Claim Failure',
   'Interview Configuration Failure',
@@ -175,6 +193,7 @@ for (const requiredNode of [
   'Follow-up Answer Checkpoint Failure',
   'Answer Evaluation Checkpoint Failure',
   'Show Final Grade',
+  'Show Interview Failure',
 ]) {
   assert.ok(nodeByName.has(requiredNode), `Required node is missing: ${requiredNode}`);
 }
@@ -202,10 +221,26 @@ assert.deepEqual(
 );
 assert.deepEqual(
   connectionTargets('On interview request'),
-  ['Validate Demo Interview Request'],
+  ['Validate Invitation Token'],
 );
 assert.deepEqual(
-  connectionTargets('Build Demo Phase 3 Handoff'),
+  connectionTargets('Validate Invitation Token'),
+  ['Claim Secure Interview Invitation'],
+);
+assert.deepEqual(
+  connectionTargets('Claim Secure Interview Invitation'),
+  ['Invitation Claim Can Continue?'],
+);
+assert.deepEqual(
+  connectionTargets('Invitation Claim Can Continue?', 0),
+  ['Load Completed Phase 3 Assessment'],
+);
+assert.deepEqual(
+  connectionTargets('Invitation Claim Can Continue?', 1),
+  ['Build Invitation Access Failure'],
+);
+assert.deepEqual(
+  connectionTargets('Build Secured Phase 3 Handoff'),
   ['Validate Phase 3 Handoff'],
 );
 assert.deepEqual(
@@ -386,8 +421,9 @@ const sourceCode = (name) =>
   fs.readFileSync(path.join(codeDirectory, `${name}.js`), 'utf8').trimEnd();
 
 for (const [nodeName, sourceName] of [
-  ['Validate Demo Interview Request', 'tai04-validate-demo-interview-request'],
-  ['Build Demo Phase 3 Handoff', 'tai04-build-demo-phase3-handoff'],
+  ['Validate Invitation Token', 'tai04-validate-invitation-token'],
+  ['Build Invitation Access Failure', 'tai04-build-invitation-access-failure'],
+  ['Build Secured Phase 3 Handoff', 'build-phase3-handoff-from-query'],
   ['Validate Phase 3 Handoff', 'tai04-validate-phase3-handoff'],
   ['Build Technical Interview Checkpoint', 'tai04-build-interview-checkpoint'],
   ['Restore First Question Form', 'tai04-restore-first-question-form'],
@@ -412,9 +448,10 @@ for (const [nodeName, sourceName] of [
 
 const unclaimedFailureNodes = [
   'Phase 3 Resolution Failure',
-  'Demo Request Failure',
+  'Invitation Token Validation Failure',
+  'Invitation Claim Persistence Failure',
   'Phase 3 Lookup Failure',
-  'Demo Handoff Assembly Failure',
+  'Secure Handoff Assembly Failure',
   'Phase 3 Contract Failure',
   'Interview Claim Failure',
 ];
@@ -476,9 +513,10 @@ for (const nodeName of recordedFailureNodes) {
 }
 
 const errorRoutes = new Map([
-  ['Validate Demo Interview Request', 'Demo Request Failure'],
+  ['Validate Invitation Token', 'Invitation Token Validation Failure'],
+  ['Claim Secure Interview Invitation', 'Invitation Claim Persistence Failure'],
   ['Load Completed Phase 3 Assessment', 'Phase 3 Lookup Failure'],
-  ['Build Demo Phase 3 Handoff', 'Demo Handoff Assembly Failure'],
+  ['Build Secured Phase 3 Handoff', 'Secure Handoff Assembly Failure'],
   ['Validate Phase 3 Handoff', 'Phase 3 Contract Failure'],
   ['Claim Technical Interview Session', 'Interview Claim Failure'],
   ['Interview Configuration', 'Interview Configuration Failure'],
@@ -544,6 +582,47 @@ assert.equal(
   'continueErrorOutput',
 );
 
+for (const nodeName of [
+  'Build Invitation Access Failure',
+  'Build Unrecorded Technical Interview Result',
+  'Build Rejected Technical Interview Result',
+  'Build Failed Technical Interview Result',
+  'Build Interview Failure Recording Fallback',
+]) {
+  assert.deepEqual(
+    connectionTargets(nodeName),
+    ['Show Interview Failure'],
+    `${nodeName} must terminate at the sanitized failure page.`,
+  );
+}
+
+const candidateForm = nodeByName.get('On interview request');
+assert.deepEqual(candidateForm.parameters.formFields, {
+  values: [
+    {
+      fieldName: 'invitationToken',
+      fieldType: 'hiddenField',
+      fieldValue: '',
+    },
+  ],
+});
+assert.equal(
+  candidateForm.parameters.options.path,
+  'talentai-candidate-interview',
+);
+assert.equal(candidateForm.parameters.options.ignoreBots, true);
+assert.equal(candidateForm.parameters.options.showHeaders, false);
+assert.equal(workflow.settings.saveDataErrorExecution, 'none');
+assert.equal(workflow.settings.saveDataSuccessExecution, 'none');
+assert.equal(workflow.settings.saveManualExecutions, false);
+assert.equal(workflow.settings.saveExecutionProgress, false);
+assert.equal(workflow.settings.redactionPolicy, 'all');
+assert.doesNotMatch(
+  nodeByName.get('Show Interview Failure').parameters.completionMessage,
+  /requestId|assessmentId|extractionId|invitationToken/i,
+  'Candidate failure output must not expose correlation or token data.',
+);
+
 const databaseQueryDirectory = path.join(repositoryRoot, 'database', 'queries');
 const databaseQuery = (name) =>
   fs.readFileSync(path.join(databaseQueryDirectory, `${name}.sql`), 'utf8');
@@ -571,6 +650,7 @@ for (const requiredFragment of [
 }
 
 for (const [nodeName, queryName] of [
+  ['Claim Secure Interview Invitation', 'Q023__claim_technical_interview_invitation'],
   ['Claim Technical Interview Session', 'Q013__claim_technical_interview_session'],
   ['Load Completed Technical Interview', 'Q018__load_completed_technical_interview'],
   ['Load Technical Interview Checkpoint', 'Q020__load_technical_interview_checkpoint'],
@@ -635,7 +715,7 @@ assert.doesNotMatch(
 const sqlPath = path.join(
   workflowDirectory,
   'sql',
-  'load-completed-phase3-handoff-by-extraction.sql',
+  'load-completed-phase3-handoff-by-correlation.sql',
 );
 assert.equal(
   nodeByName.get('Load Completed Phase 3 Assessment').parameters.query,
@@ -902,7 +982,7 @@ const demoSource = {
 };
 
 const demoEnvelope = executeCodeNode(
-  'Build Demo Phase 3 Handoff',
+  'Build Secured Phase 3 Handoff',
   demoSource,
 )[0].json;
 

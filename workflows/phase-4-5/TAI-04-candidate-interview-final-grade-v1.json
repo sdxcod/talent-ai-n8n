@@ -3,41 +3,46 @@
   "nodes": [
     {
       "parameters": {
-        "formTitle": "TalentAI Candidate Interview",
-        "formDescription": "Demo adapter: start an interview from a completed TalentAI Phase 3 extraction.",
+        "formTitle": "مصاحبه فنی TalentAI",
+        "formDescription": "برای بررسی دعوت و شروع مصاحبه، دکمه زیر را انتخاب کنید. این لینک شخصی و یک‌بارمصرف است.",
         "formFields": {
           "values": [
             {
-              "fieldLabel": "Extraction ID",
-              "fieldName": "extractionId",
-              "placeholder": "Resume extraction UUID from the completed assessment",
-              "requiredField": true
+              "fieldName": "invitationToken",
+              "fieldType": "hiddenField",
+              "fieldValue": ""
             }
           ]
         },
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "path": "talentai-candidate-interview",
+          "buttonLabel": "شروع مصاحبه",
+          "ignoreBots": true,
+          "showHeaders": false,
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
       },
       "id": "1b2159ab-255c-4108-9b9c-8726a6d65964",
       "name": "On interview request",
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.6,
       "position": [
-        -384,
+        -832,
         -256
       ],
       "webhookId": "1ef72bf0-6abf-47dd-a526-e8f4f487096e"
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst extractionId =\n  typeof input.extractionId === 'string'\n    ? input.extractionId.trim()\n    : '';\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nif (!uuidPattern.test(extractionId)) {\n  throw new Error(\n    'INVALID_EXTRACTION_ID: extractionId must be a valid UUID.'\n  );\n}\n\nreturn [{ json: { extractionId } }];"
+        "jsCode": "const input = $input.first().json;\nconst invitationToken =\n  typeof input.invitationToken === 'string'\n    ? input.invitationToken.trim().toLowerCase()\n    : '';\n\nif (!/^[0-9a-f]{64}$/.test(invitationToken)) {\n  throw new Error(\n    'INVALID_INVITATION_TOKEN: invitation token has an invalid format.'\n  );\n}\n\nreturn [{ json: { invitationToken } }];"
       },
       "id": "649a36ac-4b43-4a86-9f88-8ecc54f33444",
-      "name": "Validate Demo Interview Request",
+      "name": "Validate Invitation Token",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -160,
+        -608,
         -256
       ],
       "onError": "continueErrorOutput"
@@ -45,9 +50,9 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH requested AS\n(\n    SELECT $1::UUID AS extraction_id\n)\nSELECT\n    CASE\n        WHEN extraction.id IS NULL\n            THEN 'EXTRACTION_NOT_FOUND'\n        WHEN execution.request_id IS NULL\n            THEN 'COMPLETED_EXECUTION_NOT_FOUND'\n        WHEN assessment.id IS NULL\n            THEN 'COMPLETED_ASSESSMENT_NOT_FOUND'\n        WHEN grade_guide.id IS NULL\n            THEN 'GRADE_GUIDE_NOT_FOUND'\n        ELSE 'RESOLVED'\n    END AS \"resolutionStatus\",\n    CASE\n        WHEN extraction.id IS NULL\n            THEN 'Resume extraction was not found.'\n        WHEN execution.request_id IS NULL\n            THEN 'A completed assessment execution was not found.'\n        WHEN assessment.id IS NULL\n            THEN 'A completed grade assessment was not found.'\n        WHEN grade_guide.id IS NULL\n            THEN 'The versioned grade guide used by the assessment was not found.'\n        ELSE 'Completed Phase 3 assessment resolved for the demo adapter.'\n    END AS \"resolutionMessage\",\n    requested.extraction_id                 AS \"requestedExtractionId\",\n    execution.request_id                    AS \"requestId\",\n    execution.attempt_count                 AS \"attemptCount\",\n    execution.status                        AS \"executionStatus\",\n    execution.started_at                    AS \"startedAt\",\n    execution.completed_at                  AS \"completedAt\",\n    assessment.id                           AS \"assessmentId\",\n    assessment.extraction_id                AS \"extractionId\",\n    assessment.grade_guide_id               AS \"gradeGuideId\",\n    assessment.grade_guide_version          AS \"gradeGuideVersion\",\n    assessment.target_grade_code            AS \"targetGradeCode\",\n    assessment.scoring_model                AS \"scoringModel\",\n    assessment.prompt_version               AS \"promptVersion\",\n    assessment.engine_version               AS \"engineVersion\",\n    assessment.dimension_assessments        AS \"dimensionAssessments\",\n    assessment.overall_score::DOUBLE PRECISION\n                                                AS \"overallScore\",\n    assessment.minimum_overall_score::DOUBLE PRECISION\n                                                AS \"minimumOverallScore\",\n    assessment.threshold_met                AS \"thresholdMet\",\n    assessment.mandatory_dimensions_met     AS \"mandatoryDimensionsMet\",\n    assessment.decision,\n    assessment.review_reasons               AS \"reviewReasons\",\n    assessment.model_warnings               AS \"modelWarnings\",\n    assessment.assessment_summary           AS \"assessmentSummary\",\n    assessment.status                       AS \"assessmentStatus\",\n    assessment.created_at                   AS \"assessmentCreatedAt\",\n    extraction.position_code                AS \"positionCode\",\n    extraction.job_description              AS \"jobDescription\",\n    extraction.profile -> 'candidate'        AS candidate,\n    grade_guide.guide -> 'grades'            AS \"gradeDefinitions\"\nFROM requested\nLEFT JOIN talentai.resume_extraction AS extraction\n       ON extraction.id = requested.extraction_id\nLEFT JOIN talentai.assessment_execution AS execution\n       ON execution.extraction_id = requested.extraction_id\n      AND execution.status = 'COMPLETED'\n      AND execution.current_stage = 'COMPLETED'\n      AND execution.completed_at IS NOT NULL\nLEFT JOIN talentai.grade_assessment AS assessment\n       ON assessment.id = execution.assessment_id\n      AND assessment.request_id = execution.request_id\n      AND assessment.extraction_id = requested.extraction_id\n      AND assessment.status = 'COMPLETED'\nLEFT JOIN talentai.grade_guide AS grade_guide\n       ON grade_guide.id = assessment.grade_guide_id\n      AND grade_guide.guide_version = assessment.grade_guide_version;\n",
+        "query": "WITH requested AS\n(\n    SELECT\n        $1::UUID AS request_id,\n        $2::UUID AS assessment_id,\n        $3::UUID AS extraction_id\n)\nSELECT\n    CASE\n        WHEN execution.request_id IS NULL\n            THEN 'COMPLETED_EXECUTION_NOT_FOUND'\n        WHEN assessment.id IS NULL\n            THEN 'COMPLETED_ASSESSMENT_NOT_FOUND'\n        WHEN extraction.id IS NULL\n            THEN 'EXTRACTION_NOT_FOUND'\n        WHEN grade_guide.id IS NULL\n            THEN 'GRADE_GUIDE_NOT_FOUND'\n        ELSE 'RESOLVED'\n    END AS \"resolutionStatus\",\n    CASE\n        WHEN execution.request_id IS NULL\n            THEN 'A completed assessment execution was not found.'\n        WHEN assessment.id IS NULL\n            THEN 'A completed grade assessment was not found.'\n        WHEN extraction.id IS NULL\n            THEN 'Resume extraction was not found.'\n        WHEN grade_guide.id IS NULL\n            THEN 'The versioned grade guide used by the assessment was not found.'\n        ELSE 'Completed Phase 3 assessment resolved from a claimed invitation.'\n    END AS \"resolutionMessage\",\n    execution.request_id                    AS \"requestId\",\n    execution.attempt_count                 AS \"attemptCount\",\n    execution.status                        AS \"executionStatus\",\n    execution.started_at                    AS \"startedAt\",\n    execution.completed_at                  AS \"completedAt\",\n    assessment.id                           AS \"assessmentId\",\n    assessment.extraction_id                AS \"extractionId\",\n    assessment.grade_guide_id               AS \"gradeGuideId\",\n    assessment.grade_guide_version          AS \"gradeGuideVersion\",\n    assessment.target_grade_code            AS \"targetGradeCode\",\n    assessment.scoring_model                AS \"scoringModel\",\n    assessment.prompt_version               AS \"promptVersion\",\n    assessment.engine_version               AS \"engineVersion\",\n    assessment.dimension_assessments        AS \"dimensionAssessments\",\n    assessment.overall_score::DOUBLE PRECISION\n                                                AS \"overallScore\",\n    assessment.minimum_overall_score::DOUBLE PRECISION\n                                                AS \"minimumOverallScore\",\n    assessment.threshold_met                AS \"thresholdMet\",\n    assessment.mandatory_dimensions_met     AS \"mandatoryDimensionsMet\",\n    assessment.decision,\n    assessment.review_reasons               AS \"reviewReasons\",\n    assessment.model_warnings               AS \"modelWarnings\",\n    assessment.assessment_summary           AS \"assessmentSummary\",\n    assessment.status                       AS \"assessmentStatus\",\n    assessment.created_at                   AS \"assessmentCreatedAt\",\n    extraction.position_code                AS \"positionCode\",\n    extraction.job_description              AS \"jobDescription\",\n    extraction.profile -> 'candidate'        AS candidate,\n    grade_guide.guide -> 'grades'            AS \"gradeDefinitions\"\nFROM requested\nLEFT JOIN talentai.assessment_execution AS execution\n       ON execution.request_id = requested.request_id\n      AND execution.assessment_id = requested.assessment_id\n      AND execution.extraction_id = requested.extraction_id\n      AND execution.status = 'COMPLETED'\n      AND execution.current_stage = 'COMPLETED'\n      AND execution.completed_at IS NOT NULL\nLEFT JOIN talentai.grade_assessment AS assessment\n       ON assessment.id = requested.assessment_id\n      AND assessment.request_id = requested.request_id\n      AND assessment.extraction_id = requested.extraction_id\n      AND assessment.status = 'COMPLETED'\nLEFT JOIN talentai.resume_extraction AS extraction\n       ON extraction.id = requested.extraction_id\nLEFT JOIN talentai.grade_guide AS grade_guide\n       ON grade_guide.id = assessment.grade_guide_id\n      AND grade_guide.guide_version = assessment.grade_guide_version;\n",
         "options": {
-          "queryReplacement": "={{ [$json.extractionId] }}"
+          "queryReplacement": "={{ [$json.requestId, $json.assessmentId, $json.extractionId] }}"
         }
       },
       "id": "94ba22bf-f1af-45b6-ba19-c72f619a3810",
@@ -96,7 +101,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"COMPLETED_PHASE3_ASSESSMENT_NOT_FOUND\",\n  \"message\": \"A completed Phase 3 assessment could not be resolved for the supplied extraction.\",\n  \"retryable\": false\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"COMPLETED_PHASE3_ASSESSMENT_NOT_FOUND\",\n  \"message\": \"A completed Phase 3 assessment could not be resolved for the claimed invitation.\",\n  \"retryable\": false\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "id": "066df719-54ca-4215-9a81-a6d69e130205",
       "name": "Phase 3 Resolution Failure",
@@ -226,7 +231,8 @@
         "options": {
           "formTitle": "={{ $json.interviewFormTitle }}",
           "formDescription": "={{ $json.interviewFormDescription }}",
-          "buttonLabel": "ارسال پاسخ‌های مرحله اول"
+          "buttonLabel": "ارسال پاسخ‌های مرحله اول",
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
         }
       },
       "id": "6bde423d-31b5-45e2-b932-a2cd79699b65",
@@ -344,7 +350,8 @@
         "options": {
           "formTitle": "={{ $json.followUpFormTitle }}",
           "formDescription": "={{ $json.followUpFormDescription }}",
-          "buttonLabel": "ارسال پاسخ‌های تکمیلی"
+          "buttonLabel": "ارسال پاسخ‌های تکمیلی",
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
         }
       },
       "id": "7aff7b21-c2b2-4e1d-84f7-49cf622aecfb",
@@ -487,7 +494,9 @@
         "operation": "completion",
         "completionTitle": "نتیجه ارزیابی TalentAI",
         "completionMessage": "={{ $json.finalGradeMessage }}",
-        "options": {}
+        "options": {
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
       },
       "id": "f6de889c-18fc-4fcb-ac22-0e9f2b8a6c37",
       "name": "Show Final Grade",
@@ -531,7 +540,7 @@
         -320
       ],
       "id": "ad4e2705-1e38-4a71-9456-b9a5f9d4e201",
-      "name": "Build Demo Phase 3 Handoff",
+      "name": "Build Secured Phase 3 Handoff",
       "onError": "continueErrorOutput"
     },
     {
@@ -900,7 +909,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"TECHNICAL_INTERVIEW_REQUEST_VALIDATION_FAILED\",\n  \"message\": \"The demo interview request did not satisfy the required contract.\",\n  \"retryable\": false\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"VALIDATION\",\n  \"code\": \"INVITATION_TOKEN_VALIDATION_FAILED\",\n  \"message\": \"The interview invitation token did not satisfy the required format.\",\n  \"retryable\": false\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -909,7 +918,7 @@
         64
       ],
       "id": "63e0d476-4644-4a94-aa0b-3b6a9abdf105",
-      "name": "Demo Request Failure"
+      "name": "Invitation Token Validation Failure"
     },
     {
       "parameters": {
@@ -926,7 +935,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"ORCHESTRATION\",\n  \"code\": \"PHASE3_HANDOFF_ASSEMBLY_FAILED\",\n  \"message\": \"The demo Phase 3 handoff could not be assembled.\",\n  \"retryable\": true\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"ORCHESTRATION\",\n  \"code\": \"PHASE3_HANDOFF_ASSEMBLY_FAILED\",\n  \"message\": \"The secured Phase 3 handoff could not be assembled.\",\n  \"retryable\": true\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -935,7 +944,7 @@
         64
       ],
       "id": "1f7d7540-6973-4812-8d17-86f18ebf9107",
-      "name": "Demo Handoff Assembly Failure"
+      "name": "Secure Handoff Assembly Failure"
     },
     {
       "parameters": {
@@ -1577,6 +1586,103 @@
       ],
       "id": "393854c7-60a9-43d4-8270-8396fd321218",
       "name": "Answer Evaluation Checkpoint Failure"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        LOWER(NULLIF(BTRIM($1), ''))             AS invitation_token,\n        NULLIF(BTRIM($2), '')                    AS workflow_execution_id\n),\nvalidated AS\n(\n    SELECT\n        supplied.*,\n        encode(digest(supplied.invitation_token, 'sha256'), 'hex')\n                                                    AS token_hash\n    FROM supplied\n    WHERE supplied.invitation_token ~ '^[0-9a-f]{64}$'\n      AND supplied.workflow_execution_id IS NOT NULL\n),\nmatched AS\n(\n    SELECT invitation.*\n    FROM talentai.technical_interview_invitation AS invitation\n    JOIN validated\n      ON invitation.token_hash = validated.token_hash\n),\nclaimed AS\n(\n    UPDATE talentai.technical_interview_invitation AS invitation\n    SET\n        status = 'CLAIMED',\n        claimed_by_workflow_execution_id = validated.workflow_execution_id,\n        claimed_at = now(),\n        updated_at = now()\n    FROM validated\n    WHERE invitation.token_hash = validated.token_hash\n      AND invitation.status = 'ISSUED'\n      AND invitation.expires_at > now()\n    RETURNING invitation.*\n),\nexpired AS\n(\n    UPDATE talentai.technical_interview_invitation AS invitation\n    SET\n        status = 'EXPIRED',\n        updated_at = now()\n    FROM validated\n    WHERE invitation.token_hash = validated.token_hash\n      AND invitation.status = 'ISSUED'\n      AND invitation.expires_at <= now()\n      AND NOT EXISTS (SELECT 1 FROM claimed)\n    RETURNING invitation.*\n),\nresolved AS\n(\n    SELECT claimed.*, TRUE AS claimed_now FROM claimed\n    UNION ALL\n    SELECT expired.*, FALSE AS claimed_now FROM expired\n    UNION ALL\n    SELECT matched.*, FALSE AS claimed_now\n    FROM matched\n    WHERE NOT EXISTS (SELECT 1 FROM claimed)\n      AND NOT EXISTS (SELECT 1 FROM expired)\n)\nSELECT\n    CASE\n        WHEN NOT EXISTS (SELECT 1 FROM validated)\n            THEN 'INVALID_TOKEN_FORMAT'\n        WHEN resolved.id IS NULL\n            THEN 'INVITATION_NOT_FOUND'\n        WHEN resolved.claimed_now\n            THEN 'CLAIMED_NEW'\n        WHEN resolved.status = 'CLAIMED'\n         AND resolved.claimed_by_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN 'CLAIMED_CURRENT'\n        WHEN resolved.status = 'CLAIMED'\n            THEN 'INVITATION_ALREADY_CLAIMED'\n        WHEN resolved.status = 'REVOKED'\n            THEN 'INVITATION_REVOKED'\n        WHEN resolved.status = 'EXPIRED'\n         OR resolved.expires_at <= now()\n            THEN 'INVITATION_EXPIRED'\n        ELSE 'INVITATION_NOT_CLAIMABLE'\n    END                                              AS \"claimStatus\",\n    COALESCE((\n        resolved.claimed_now\n        OR\n        (\n            resolved.status = 'CLAIMED'\n            AND resolved.claimed_by_workflow_execution_id\n                = supplied.workflow_execution_id\n        )\n    ), FALSE)                                        AS \"canContinue\",\n    CASE\n        WHEN resolved.claimed_now\n          OR resolved.claimed_by_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN resolved.id\n        ELSE NULL\n    END                                              AS \"invitationId\",\n    CASE\n        WHEN resolved.claimed_now\n          OR resolved.claimed_by_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN resolved.contract_version\n        ELSE NULL\n    END                                              AS \"contractVersion\",\n    CASE\n        WHEN resolved.claimed_now\n          OR resolved.claimed_by_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN resolved.request_id\n        ELSE NULL\n    END                                              AS \"requestId\",\n    CASE\n        WHEN resolved.claimed_now\n          OR resolved.claimed_by_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN resolved.assessment_id\n        ELSE NULL\n    END                                              AS \"assessmentId\",\n    CASE\n        WHEN resolved.claimed_now\n          OR resolved.claimed_by_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN resolved.extraction_id\n        ELSE NULL\n    END                                              AS \"extractionId\",\n    resolved.status,\n    CASE\n        WHEN resolved.claimed_now\n          OR resolved.claimed_by_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN resolved.expires_at\n        ELSE NULL\n    END                                              AS \"expiresAt\",\n    CASE\n        WHEN resolved.claimed_now\n          OR resolved.claimed_by_workflow_execution_id\n             = supplied.workflow_execution_id\n            THEN resolved.claimed_at\n        ELSE NULL\n    END                                              AS \"claimedAt\"\nFROM supplied\nLEFT JOIN resolved ON TRUE;\n",
+        "options": {
+          "queryReplacement": "={{ [$json.invitationToken, String($execution.id)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -384,
+        -256
+      ],
+      "id": "728db322-9dc7-44f8-b4d2-a845e84e3101",
+      "name": "Claim Secure Interview Invitation",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e7b9f4d3-a062-492d-9278-14df7f693102-condition",
+              "leftValue": "={{ $json.canContinue === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        -256
+      ],
+      "id": "e7b9f4d3-a062-492d-9278-14df7f693102",
+      "name": "Invitation Claim Can Continue?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const claim = $input.first().json;\nconst claimStatus = String(\n  claim.claimStatus ?? 'INVITATION_NOT_CLAIMABLE'\n);\n\nconst supportedStatuses = new Set([\n  'INVALID_TOKEN_FORMAT',\n  'INVITATION_NOT_FOUND',\n  'INVITATION_ALREADY_CLAIMED',\n  'INVITATION_REVOKED',\n  'INVITATION_EXPIRED',\n  'INVITATION_NOT_CLAIMABLE',\n]);\n\nreturn [\n  {\n    json: {\n      success: false,\n      workflowExecutionId: String($execution.id),\n      executionStatus: 'REJECTED',\n      failureCategory: 'VALIDATION',\n      failureCode: supportedStatuses.has(claimStatus)\n        ? claimStatus\n        : 'INVITATION_NOT_CLAIMABLE',\n      failureMessage:\n        'The interview invitation is unavailable; private details omitted.',\n      retryable: false,\n      failureRecorded: false,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -64
+      ],
+      "id": "17b72f99-7afc-4872-9a38-14c1a2663103",
+      "name": "Build Invitation Access Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const failureDefinition = {\n  \"stage\": \"\",\n  \"category\": \"PERSISTENCE\",\n  \"code\": \"INVITATION_CLAIM_FAILED\",\n  \"message\": \"The interview invitation could not be claimed.\",\n  \"retryable\": true\n};\nreturn [\n  {\n    json: {\n      sessionId: '',\n      requestId: '',\n      assessmentId: '',\n      extractionId: '',\n      workflowExecutionId: String($execution.id),\n      currentStage: failureDefinition.stage ?? '',\n      attemptCount: 0,\n      failureCategory: failureDefinition.category,\n      failureCode: failureDefinition.code,\n      failureMessage: failureDefinition.message,\n      retryable: failureDefinition.retryable,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        64
+      ],
+      "id": "e11cf53c-61d0-422c-8587-f5af16583104",
+      "name": "Invitation Claim Persistence Failure"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "مصاحبه فنی TalentAI آغاز نشد",
+        "completionMessage": "لینک دعوت معتبر نیست، منقضی یا قبلاً استفاده شده است؛ یا اجرای مصاحبه تکمیل نشد. لطفاً با واحد منابع انسانی تماس بگیرید.",
+        "options": {
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        8352,
+        64
+      ],
+      "id": "a113a59a-e676-4580-a5db-0b1eac233105",
+      "name": "Show Interview Failure",
+      "webhookId": "70f8a9bc-1d2e-4f30-9b5c-6d7e8f9a0b1c"
     }
   ],
   "connections": {
@@ -1584,7 +1690,7 @@
       "main": [
         [
           {
-            "node": "Validate Demo Interview Request",
+            "node": "Validate Invitation Token",
             "type": "main",
             "index": 0
           }
@@ -1595,7 +1701,7 @@
       "main": [
         [
           {
-            "node": "Build Demo Phase 3 Handoff",
+            "node": "Build Secured Phase 3 Handoff",
             "type": "main",
             "index": 0
           }
@@ -1953,24 +2059,6 @@
         ]
       ]
     },
-    "Validate Demo Interview Request": {
-      "main": [
-        [
-          {
-            "node": "Load Completed Phase 3 Assessment",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Demo Request Failure",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Load Completed Phase 3 Assessment": {
       "main": [
         [
@@ -2001,24 +2089,6 @@
         [
           {
             "node": "Phase 3 Contract Failure",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Demo Phase 3 Handoff": {
-      "main": [
-        [
-          {
-            "node": "Validate Phase 3 Handoff",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Demo Handoff Assembly Failure",
             "type": "main",
             "index": 0
           }
@@ -2299,29 +2369,7 @@
         ]
       ]
     },
-    "Demo Request Failure": {
-      "main": [
-        [
-          {
-            "node": "Build Unrecorded Technical Interview Result",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Phase 3 Lookup Failure": {
-      "main": [
-        [
-          {
-            "node": "Build Unrecorded Technical Interview Result",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Demo Handoff Assembly Failure": {
       "main": [
         [
           {
@@ -2859,12 +2907,177 @@
           }
         ]
       ]
+    },
+    "Validate Invitation Token": {
+      "main": [
+        [
+          {
+            "node": "Claim Secure Interview Invitation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invitation Token Validation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Secured Phase 3 Handoff": {
+      "main": [
+        [
+          {
+            "node": "Validate Phase 3 Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Secure Handoff Assembly Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invitation Token Validation Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secure Handoff Assembly Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Secure Interview Invitation": {
+      "main": [
+        [
+          {
+            "node": "Invitation Claim Can Continue?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invitation Claim Persistence Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invitation Claim Can Continue?": {
+      "main": [
+        [
+          {
+            "node": "Load Completed Phase 3 Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Invitation Access Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Invitation Access Failure": {
+      "main": [
+        [
+          {
+            "node": "Show Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invitation Claim Persistence Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Unrecorded Technical Interview Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Unrecorded Technical Interview Result": {
+      "main": [
+        [
+          {
+            "node": "Show Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Rejected Technical Interview Result": {
+      "main": [
+        [
+          {
+            "node": "Show Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Failed Technical Interview Result": {
+      "main": [
+        [
+          {
+            "node": "Show Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Interview Failure Recording Fallback": {
+      "main": [
+        [
+          {
+            "node": "Show Interview Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "redactionPolicy": "all"
   },
   "id": "6topbXRO9Zga3l1h",
   "isArchived": false,

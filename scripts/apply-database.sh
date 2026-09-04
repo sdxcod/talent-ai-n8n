@@ -37,7 +37,8 @@ SELECT
   to_regclass('talentai.technical_interview_session') AS interview_session,
   to_regclass('talentai.technical_question_set') AS question_set,
   to_regclass('talentai.technical_interview_answer') AS interview_answer,
-  to_regclass('talentai.technical_interview_result') AS interview_result;
+  to_regclass('talentai.technical_interview_result') AS interview_result,
+  to_regclass('talentai.technical_interview_invitation') AS interview_invitation;
 SQL
 
 echo 'TalentAI database migrations and reference seeds were applied.'
