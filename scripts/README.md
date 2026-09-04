@@ -65,6 +65,10 @@ authenticated invitation-management workflow. The associated
 token delivery, TAI-04 claim routing, form privacy settings, source
 synchronization and sanitized candidate-facing failures.
 
+`scripts/test-form-access-and-rtl.mjs` verifies authenticated HR form access,
+the conditional `MEETS_TARGET` invitation action and shared RTL styling across
+TAI-01, TAI-04 and TAI-05.
+
 Optional native Windows PowerShell database initialization:
 
 ```powershell

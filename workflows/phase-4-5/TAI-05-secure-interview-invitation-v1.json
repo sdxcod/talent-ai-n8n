@@ -74,7 +74,9 @@
           "path": "talentai-secure-interview-invitation",
           "buttonLabel": "اجرای عملیات امن",
           "ignoreBots": true,
-          "showHeaders": false
+          "showHeaders": false,
+          "includeUserInOutput": false,
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
         }
       },
       "type": "n8n-nodes-base.formTrigger",
@@ -365,7 +367,9 @@
         "operation": "completion",
         "completionTitle": "عملیات دعوت امن TalentAI تکمیل شد",
         "completionMessage": "={{ $json.output }}",
-        "options": {}
+        "options": {
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
       },
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
@@ -382,7 +386,9 @@
         "operation": "completion",
         "completionTitle": "عملیات دعوت امن TalentAI تکمیل نشد",
         "completionMessage": "={{ $json.output }}",
-        "options": {}
+        "options": {
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
       },
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,

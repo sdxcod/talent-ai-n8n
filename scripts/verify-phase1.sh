@@ -40,6 +40,7 @@ required_operational_files=(
   "$TALENTAI_SCRIPT_DIR/lib/phase3-handoff.mjs"
   "$TALENTAI_SCRIPT_DIR/test-phase45-workflow.mjs"
   "$TALENTAI_SCRIPT_DIR/test-secure-invitation-workflows.mjs"
+  "$TALENTAI_SCRIPT_DIR/test-form-access-and-rtl.mjs"
   "$TALENTAI_SCRIPT_DIR/build-tai05-secure-invitation.mjs"
   "$TALENTAI_SCRIPT_DIR/README.md"
   "$TALENTAI_SCRIPT_DIR/windows/initialize-database.ps1"
@@ -73,6 +74,8 @@ required_operational_files=(
   "$TALENTAI_SCRIPT_DIR/test-technical-interview-invitations.sh"
   "$TALENTAI_REPOSITORY_ROOT/docs/contracts/technical-interview-invitation-v1.md"
   "$TALENTAI_REPOSITORY_ROOT/docs/runbooks/secure-interview-invitation.md"
+  "$TALENTAI_REPOSITORY_ROOT/docs/runbooks/form-access-and-rtl.md"
+  "$TALENTAI_REPOSITORY_ROOT/workflows/shared/talentai-form-rtl.css"
   "$TALENTAI_SCRIPT_DIR/build-phase45-mvp-package.sh"
   "$TALENTAI_SCRIPT_DIR/verify-phase45-correlation.sh"
   "$TALENTAI_REPOSITORY_ROOT/docs/runbooks/phase45-end-to-end.md"
@@ -100,6 +103,7 @@ node "$TALENTAI_SCRIPT_DIR/test-phase3-calibration.mjs"
 node "$TALENTAI_SCRIPT_DIR/test-phase3-handoff.mjs"
 node "$TALENTAI_SCRIPT_DIR/test-phase45-workflow.mjs"
 node "$TALENTAI_SCRIPT_DIR/test-secure-invitation-workflows.mjs"
+node "$TALENTAI_SCRIPT_DIR/test-form-access-and-rtl.mjs"
 
 jq -e '
   (.workflows | length == 3)

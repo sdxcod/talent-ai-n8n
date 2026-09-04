@@ -1,0 +1,44 @@
+html,
+body,
+#n8n-form {
+  direction: rtl;
+  text-align: right;
+}
+
+#n8n-form .form-header,
+#n8n-form .form-title,
+#n8n-form .form-description,
+#n8n-form label,
+#n8n-form p,
+#n8n-form li,
+#n8n-form textarea,
+#n8n-form select,
+#n8n-form input {
+  direction: rtl;
+  text-align: right;
+}
+
+#n8n-form ul,
+#n8n-form ol {
+  padding-right: 1.5rem;
+  padding-left: 0;
+}
+
+#n8n-form button {
+  direction: rtl;
+  text-align: center;
+}
+
+#n8n-form input[name="requestId"],
+#n8n-form input[name="extractionId"],
+#n8n-form input[name="assessmentId"],
+#n8n-form input[name="invitationId"],
+#n8n-form input[name="invitationToken"],
+#n8n-form input[type="email"],
+#n8n-form input[type="url"],
+#n8n-form code,
+#n8n-form pre {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+}

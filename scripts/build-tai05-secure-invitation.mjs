@@ -23,6 +23,10 @@ const sql = (name) =>
 const query = (name) =>
   read(`database/queries/${name}.sql`);
 
+const formCss = read(
+  'workflows/shared/talentai-form-rtl.css'
+).trim();
+
 const main = (node) => ({ node, type: 'main', index: 0 });
 
 const ifNode = (name, id, position, expression) => ({
@@ -147,6 +151,8 @@ const nodes = [
         buttonLabel: 'اجرای عملیات امن',
         ignoreBots: true,
         showHeaders: false,
+        includeUserInOutput: false,
+        customCss: formCss,
       },
     },
     type: 'n8n-nodes-base.formTrigger',
@@ -246,7 +252,7 @@ const nodes = [
       operation: 'completion',
       completionTitle: 'عملیات دعوت امن TalentAI تکمیل شد',
       completionMessage: '={{ $json.output }}',
-      options: {},
+        options: { customCss: formCss },
     },
     type: 'n8n-nodes-base.form',
     typeVersion: 2.5,
@@ -260,7 +266,7 @@ const nodes = [
       operation: 'completion',
       completionTitle: 'عملیات دعوت امن TalentAI تکمیل نشد',
       completionMessage: '={{ $json.output }}',
-      options: {},
+        options: { customCss: formCss },
     },
     type: 'n8n-nodes-base.form',
     typeVersion: 2.5,

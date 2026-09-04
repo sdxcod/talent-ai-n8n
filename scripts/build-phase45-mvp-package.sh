@@ -55,6 +55,7 @@ node scripts/test-phase3-calibration.mjs
 node scripts/test-phase3-handoff.mjs
 node scripts/test-phase45-workflow.mjs
 node scripts/test-secure-invitation-workflows.mjs
+node scripts/test-form-access-and-rtl.mjs
 ./scripts/build-step3b-upgrade-package.sh
 
 test -s "$TALENTAI_PHASE3_PACKAGE" || {

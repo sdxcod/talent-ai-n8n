@@ -28,6 +28,10 @@ jq -e '
     .nodes[];
     .name == "On form submission"
     and any(.parameters.formFields.values[]; .fieldName == "requestId")
+    and .parameters.authentication == "n8nUserAuth"
+    and .parameters.requireExecuteAccess == true
+    and .parameters.options.path == "talentai-hr-resume-assessment"
+    and .parameters.options.includeUserInOutput == false
   )
   and any(.nodes[]; .name == "Claim Assessment Execution")
   and any(.nodes[]; .name == "Claim Can Continue?")
@@ -48,6 +52,7 @@ jq -e '
     and .type == "n8n-nodes-base.form"
     and .parameters.operation == "completion"
     and .parameters.completionMessage == "={{ $json.output }}"
+    and (.parameters.options.customCss | contains("direction: rtl"))
   )
   and any(
     .nodes[];
@@ -55,6 +60,7 @@ jq -e '
     and .type == "n8n-nodes-base.form"
     and .parameters.operation == "completion"
     and .parameters.completionMessage == "={{ $json.output }}"
+    and (.parameters.options.customCss | contains("direction: rtl"))
   )
   and any(.nodes[]; .name == "Expire Stale Assessment Executions")
   and any(.nodes[]; .name == "Stale Recovery Failure")

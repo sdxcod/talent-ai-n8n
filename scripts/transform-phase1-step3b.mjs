@@ -23,6 +23,10 @@ const code = (name) =>
 const query = (name) =>
   readRepositoryFile(`database/queries/${name}.sql`);
 
+const formCss = readRepositoryFile(
+  'workflows/shared/talentai-form-rtl.css'
+).trim();
+
 const workflow = JSON.parse(readFileSync(workflowPath, 'utf8'));
 
 const findNode = (name) =>
@@ -151,7 +155,7 @@ const completionFormNode = (
     operation: 'completion',
     completionTitle,
     completionMessage: '={{ $json.output }}',
-    options: {},
+    options: { customCss: formCss },
   },
   type: 'n8n-nodes-base.form',
   typeVersion: 2.5,
@@ -174,6 +178,21 @@ const transformTai01 = () => {
   };
 
   const form = updateNode('On form submission', (node) => {
+    node.parameters.authentication = 'n8nUserAuth';
+    node.parameters.requireExecuteAccess = true;
+    node.parameters.formTitle = 'ارزیابی داخلی رزومه TalentAI';
+    node.parameters.formDescription =
+      'این فرم فقط برای HR و کاربران مجاز است. نتیجه ارزیابی و امکان صدور دعوت امن پس از تکمیل پردازش نمایش داده می‌شود.';
+    node.parameters.options = {
+      ...(node.parameters.options ?? {}),
+      path: 'talentai-hr-resume-assessment',
+      buttonLabel: 'ارزیابی رزومه',
+      ignoreBots: true,
+      includeUserInOutput: false,
+      showHeaders: false,
+      customCss: formCss,
+    };
+
     const fields = node.parameters.formFields.values;
     const requestIdField = fields.find(
       (field) => field.fieldName === 'requestId'

@@ -19,7 +19,8 @@
           "path": "talentai-candidate-interview",
           "buttonLabel": "شروع مصاحبه",
           "ignoreBots": true,
-          "showHeaders": false
+          "showHeaders": false,
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
         }
       },
       "id": "1b2159ab-255c-4108-9b9c-8726a6d65964",
@@ -230,7 +231,8 @@
         "options": {
           "formTitle": "={{ $json.interviewFormTitle }}",
           "formDescription": "={{ $json.interviewFormDescription }}",
-          "buttonLabel": "ارسال پاسخ‌های مرحله اول"
+          "buttonLabel": "ارسال پاسخ‌های مرحله اول",
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
         }
       },
       "id": "6bde423d-31b5-45e2-b932-a2cd79699b65",
@@ -348,7 +350,8 @@
         "options": {
           "formTitle": "={{ $json.followUpFormTitle }}",
           "formDescription": "={{ $json.followUpFormDescription }}",
-          "buttonLabel": "ارسال پاسخ‌های تکمیلی"
+          "buttonLabel": "ارسال پاسخ‌های تکمیلی",
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
         }
       },
       "id": "7aff7b21-c2b2-4e1d-84f7-49cf622aecfb",
@@ -491,7 +494,9 @@
         "operation": "completion",
         "completionTitle": "نتیجه ارزیابی TalentAI",
         "completionMessage": "={{ $json.finalGradeMessage }}",
-        "options": {}
+        "options": {
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
       },
       "id": "f6de889c-18fc-4fcb-ac22-0e9f2b8a6c37",
       "name": "Show Final Grade",
@@ -1665,7 +1670,9 @@
         "operation": "completion",
         "completionTitle": "مصاحبه فنی TalentAI آغاز نشد",
         "completionMessage": "لینک دعوت معتبر نیست، منقضی یا قبلاً استفاده شده است؛ یا اجرای مصاحبه تکمیل نشد. لطفاً با واحد منابع انسانی تماس بگیرید.",
-        "options": {}
+        "options": {
+          "customCss": "html,\nbody,\n#n8n-form {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form .form-header,\n#n8n-form .form-title,\n#n8n-form .form-description,\n#n8n-form label,\n#n8n-form p,\n#n8n-form li,\n#n8n-form textarea,\n#n8n-form select,\n#n8n-form input {\n  direction: rtl;\n  text-align: right;\n}\n\n#n8n-form ul,\n#n8n-form ol {\n  padding-right: 1.5rem;\n  padding-left: 0;\n}\n\n#n8n-form button {\n  direction: rtl;\n  text-align: center;\n}\n\n#n8n-form input[name=\"requestId\"],\n#n8n-form input[name=\"extractionId\"],\n#n8n-form input[name=\"assessmentId\"],\n#n8n-form input[name=\"invitationId\"],\n#n8n-form input[name=\"invitationToken\"],\n#n8n-form input[type=\"email\"],\n#n8n-form input[type=\"url\"],\n#n8n-form code,\n#n8n-form pre {\n  direction: ltr;\n  text-align: left;\n  unicode-bidi: isolate;\n}"
+        }
       },
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,

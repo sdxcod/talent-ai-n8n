@@ -29,6 +29,10 @@ const sql = (name) =>
 const databaseQuery = (name) =>
   readRepositoryFile(`database/queries/${name}.sql`);
 
+const formCss = readRepositoryFile(
+  'workflows/shared/talentai-form-rtl.css'
+).trim();
+
 const workflow = JSON.parse(readFileSync(workflowPath, 'utf8'));
 
 const findNode = (name) =>
@@ -1521,6 +1525,18 @@ workflow.connections['Build Failed Technical Interview Result'] = {
 workflow.connections['Build Interview Failure Recording Fallback'] = {
   main: [[mainConnection('Show Interview Failure')]],
 };
+
+for (const node of workflow.nodes) {
+  if (
+    node.type === 'n8n-nodes-base.formTrigger' ||
+    node.type === 'n8n-nodes-base.form'
+  ) {
+    node.parameters.options = {
+      ...(node.parameters.options ?? {}),
+      customCss: formCss,
+    };
+  }
+}
 
 writeFileSync(
   workflowPath,
