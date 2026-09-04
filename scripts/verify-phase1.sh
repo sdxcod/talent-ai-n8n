@@ -59,6 +59,15 @@ required_operational_files=(
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T003__technical_interview_persistence_contract.sql"
   "$TALENTAI_REPOSITORY_ROOT/database/tests/T004__technical_interview_queries.sql"
   "$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"
+  "$TALENTAI_REPOSITORY_ROOT/database/migrations/V011__create_secure_interview_invitation.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q022__issue_technical_interview_invitation.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q023__claim_technical_interview_invitation.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q024__revoke_technical_interview_invitation.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/queries/Q025__expire_technical_interview_invitations.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/tests/T005__technical_interview_invitation_contract.sql"
+  "$TALENTAI_REPOSITORY_ROOT/database/tests/T006__technical_interview_invitation_queries.sql"
+  "$TALENTAI_SCRIPT_DIR/test-technical-interview-invitations.sh"
+  "$TALENTAI_REPOSITORY_ROOT/docs/contracts/technical-interview-invitation-v1.md"
   "$TALENTAI_SCRIPT_DIR/build-phase45-mvp-package.sh"
   "$TALENTAI_SCRIPT_DIR/verify-phase45-correlation.sh"
   "$TALENTAI_REPOSITORY_ROOT/docs/runbooks/phase45-end-to-end.md"
@@ -349,6 +358,7 @@ SQL
 "$TALENTAI_SCRIPT_DIR/test-assessment-execution-contract.sh"
 "$TALENTAI_SCRIPT_DIR/test-assessment-execution-queries.sh"
 "$TALENTAI_SCRIPT_DIR/test-technical-interview-persistence.sh"
+"$TALENTAI_SCRIPT_DIR/test-technical-interview-invitations.sh"
 "$TALENTAI_SCRIPT_DIR/test-phase1-operational-workflows.sh"
 
 echo 'TalentAI repository and runtime verification passed.'
