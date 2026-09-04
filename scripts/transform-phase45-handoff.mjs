@@ -18,13 +18,13 @@ const readRepositoryFile = (relativePath) =>
   readFileSync(resolve(repositoryRoot, relativePath), 'utf8');
 
 const code = (name) =>
-  readRepositoryFile(`workflows/phase-4-5/code/${name}.js`).trimEnd();
+  readRepositoryFile(`workflows/technical-interview/code/${name}.js`).trimEnd();
 
 const failureCode = (sourceName, definition) =>
   `const failureDefinition = ${JSON.stringify(definition, null, 2)};\n${code(sourceName)}`;
 
 const sql = (name) =>
-  readRepositoryFile(`workflows/phase-4-5/sql/${name}.sql`);
+  readRepositoryFile(`workflows/technical-interview/sql/${name}.sql`);
 
 const databaseQuery = (name) =>
   readRepositoryFile(`database/queries/${name}.sql`);

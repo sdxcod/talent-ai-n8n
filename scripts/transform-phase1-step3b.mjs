@@ -18,7 +18,7 @@ const readRepositoryFile = (relativePath) =>
   readFileSync(resolve(repositoryRoot, relativePath), 'utf8');
 
 const code = (name) =>
-  readRepositoryFile(`workflows/phase-1/code/${name}.js`).trimEnd();
+  readRepositoryFile(`workflows/resume-assessment/code/${name}.js`).trimEnd();
 
 const query = (name) =>
   readRepositoryFile(`database/queries/${name}.sql`);

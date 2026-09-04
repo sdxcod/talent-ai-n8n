@@ -5,7 +5,7 @@ TalentAI یک سامانهٔ قابل ممیزی برای پشتیبانی از 
 قراردادهای نسخه‌بندی‌شده، آزمون‌ها و ابزارهای عملیاتی سامانه را نگه‌داری
 می‌کند.
 
-آخرین Release پایدار این مسیر، [`v3.1.0`](https://github.com/sdxcod/talent-ai-n8n/releases/tag/v3.1.0)
+آخرین Release پایدار این مسیر، [`v3.1.1`](https://github.com/sdxcod/talent-ai-n8n/releases/tag/v3.1.1)
 است و پنج Workflow فازهای ۱ تا ۵ را به‌همراه دعوت امن تحت کنترل HR و فرم‌های
 راست‌به‌چپ ارائه می‌کند.
 
@@ -153,9 +153,15 @@ n8n-cli --version
 ├── schemas              # JSON Schema و قراردادهای داده
 ├── scripts              # Bootstrap، تست، تبدیل و Release build
 └── workflows
-    ├── phase-1          # TAI-01، TAI-02 و TAI-03
-    └── phase-4-5        # TAI-04 و TAI-05
+    ├── resume-assessment    # TAI-01، TAI-02 و TAI-03
+    ├── technical-interview  # TAI-04 و TAI-05
+    └── shared               # Assetهای مشترک Form
 ```
+
+Sourceهای Workflow براساس دامنهٔ کسب‌وکار در
+`workflows/resume-assessment/` و `workflows/technical-interview/` گروه‌بندی
+شده‌اند؛ شمارهٔ TAI هر Workflow ترتیب منطقی آن را در جریان End-to-End مشخص
+می‌کند، نه نام پوشه را.
 
 فایل‌های `database/bootstrap` دستور روزمرهٔ Host نیستند؛ Docker آن‌ها را فقط
 هنگام ایجاد اولین Volume اجرا می‌کند. همگام‌سازی روزمرهٔ دیتابیس با
@@ -253,7 +259,7 @@ unset TALENTAI_N8N_ENDPOINT
 
 ```bash
 ./scripts/apply-database.sh
-./scripts/verify-phase1.sh
+./scripts/verify-talentai.sh
 ```
 
 این فرمان‌ها برای نصب تازه و Volume موجود قابل استفاده‌اند. از
@@ -292,17 +298,17 @@ Import دستی JSONهای standalone بخشی از نصب عادی نیست؛ �
 قابل‌ممیزی توسعه هستند و جزئیات Export و Transformation آن‌ها در
 [`scripts/README.md`](scripts/README.md) نگه‌داری می‌شود.
 
-دریافت `v3.1.0` با GitHub CLI:
+دریافت `v3.1.1` با GitHub CLI:
 
 ```bash
 mkdir -p exports/private
 
-gh release download v3.1.0 \
+gh release download v3.1.1 \
   --repo sdxcod/talent-ai-n8n \
-  --pattern 'TalentAI-phase45-mvp-v3.1.0.n8np' \
+  --pattern 'TalentAI-mvp-v3.1.1.n8np' \
   --dir exports/private
 
-TALENTAI_PACKAGE="$PWD/exports/private/TalentAI-phase45-mvp-v3.1.0.n8np"
+TALENTAI_PACKAGE="$PWD/exports/private/TalentAI-mvp-v3.1.1.n8np"
 test -s "$TALENTAI_PACKAGE"
 shasum -a 256 "$TALENTAI_PACKAGE"
 ```
@@ -386,14 +392,14 @@ TAI-05 و همراه Token همان دعوت ساخته می‌شود.
 ## Smoke Test و اجرای End-to-End
 
 Runbook کامل در
-[`docs/runbooks/phase45-end-to-end.md`](docs/runbooks/phase45-end-to-end.md)
+[`docs/runbooks/talentai-end-to-end.md`](docs/runbooks/talentai-end-to-end.md)
 قرار دارد. برای Smoke Test فقط از رزومهٔ ساختگی یا مجاز استفاده کنید.
 
 ### ۱. کنترل پایه
 
 ```bash
 ./scripts/apply-database.sh
-./scripts/verify-phase1.sh
+./scripts/verify-talentai.sh
 ```
 
 ### ۲. ارزیابی رزومه توسط HR
@@ -435,7 +441,7 @@ HR می‌تواند دعوت Claim‌نشده را از همان Workflow لغ�
 پس از یک اجرای کامل، `extractionId` مربوط به همان Assessment را بررسی کنید:
 
 ```bash
-./scripts/verify-phase45-correlation.sh '<phase3-extraction-uuid>'
+./scripts/verify-talentai-correlation.sh '<phase3-extraction-uuid>'
 ```
 
 این Gate وجود یک زنجیرهٔ سازگار از Assessment، Question Setها، Answerهای
@@ -471,7 +477,7 @@ SQL
 ```
 
 برای بررسی End-to-End از Query دستی روی Payloadهای رزومه یا پاسخ استفاده
-نکنید؛ `verify-phase45-correlation.sh` شناسه‌ها، وضعیت‌ها و شمارش‌های لازم را
+نکنید؛ `verify-talentai-correlation.sh` شناسه‌ها، وضعیت‌ها و شمارش‌های لازم را
 بدون چاپ محتوای حساس بررسی می‌کند.
 
 ### مسئولیت جدول‌ها
@@ -532,13 +538,13 @@ Verification جامع Repository و Runtime:
 ```bash
 docker compose config --quiet
 ./scripts/apply-database.sh
-./scripts/verify-phase1.sh
+./scripts/verify-talentai.sh
 ```
 
 تست‌های متمرکز هنگام تغییر همان حوزه:
 
 ```bash
-./scripts/test-phase1-operational-workflows.sh
+./scripts/test-resume-assessment-workflows.sh
 ./scripts/test-technical-interview-persistence.sh
 ./scripts/test-technical-interview-invitations.sh
 node scripts/test-phase45-workflow.mjs
@@ -550,7 +556,7 @@ node scripts/test-form-access-and-rtl.mjs
 تنها پس از اجرای کامل واقعی قابل استفاده است:
 
 ```bash
-./scripts/verify-phase45-correlation.sh '<phase3-extraction-uuid>'
+./scripts/verify-talentai-correlation.sh '<phase3-extraction-uuid>'
 ```
 
 پیش از Commit:
@@ -567,12 +573,12 @@ Builder رسمی پنج Workflow، دو Credential definition بدون Secret، 
 می‌کند:
 
 ```bash
-TALENTAI_RELEASE_VERSION='3.1.0'
+TALENTAI_RELEASE_VERSION='3.1.1'
 
-./scripts/build-phase45-mvp-package.sh \
+./scripts/build-talentai-mvp-package.sh \
   "$TALENTAI_RELEASE_VERSION"
 
-TALENTAI_RELEASE_PACKAGE="$PWD/exports/private/TalentAI-phase45-mvp-v${TALENTAI_RELEASE_VERSION}.n8np"
+TALENTAI_RELEASE_PACKAGE="$PWD/exports/private/TalentAI-mvp-v${TALENTAI_RELEASE_VERSION}.n8np"
 
 test -s "$TALENTAI_RELEASE_PACKAGE"
 shasum -a 256 "$TALENTAI_RELEASE_PACKAGE"
@@ -607,7 +613,7 @@ Save نکنید و Volume را حذف نکنید.
 
 ```bash
 ./scripts/apply-database.sh
-./scripts/verify-phase1.sh
+./scripts/verify-talentai.sh
 ```
 
 Workflow را برای دورزدن خطا به Role مدیریتی `admin` متصل نکنید.

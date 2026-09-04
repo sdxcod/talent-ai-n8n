@@ -8,17 +8,17 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDirectory, '..');
 const outputPath = process.argv[2] ?? resolve(
   repositoryRoot,
-  'workflows/phase-4-5/TAI-05-secure-interview-invitation-v1.json'
+  'workflows/technical-interview/TAI-05-secure-interview-invitation-v1.json'
 );
 
 const read = (relativePath) =>
   readFileSync(resolve(repositoryRoot, relativePath), 'utf8');
 
 const code = (name) =>
-  read(`workflows/phase-4-5/code/${name}.js`).trimEnd();
+  read(`workflows/technical-interview/code/${name}.js`).trimEnd();
 
 const sql = (name) =>
-  read(`workflows/phase-4-5/sql/${name}.sql`);
+  read(`workflows/technical-interview/sql/${name}.sql`);
 
 const query = (name) =>
   read(`database/queries/${name}.sql`);

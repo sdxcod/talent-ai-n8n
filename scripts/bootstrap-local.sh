@@ -48,7 +48,7 @@ fi
 unset TALENTAI_N8N_HEALTHY
 
 "$TALENTAI_SCRIPT_DIR/apply-database.sh"
-"$TALENTAI_SCRIPT_DIR/verify-phase1.sh"
+"$TALENTAI_SCRIPT_DIR/verify-talentai.sh"
 
 echo
 echo 'TalentAI local stack is ready.'

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptDir, '..');
-const workflowPath = path.join(root, 'workflows/phase-1/TAI-03-evidence-scoring-grade-engine-v1.json');
+const workflowPath = path.join(root, 'workflows/resume-assessment/TAI-03-evidence-scoring-grade-engine-v1.json');
 const casesPath = path.join(root, 'demo/phase3/calibration-cases.json');
 
 const workflow = JSON.parse(fs.readFileSync(workflowPath, 'utf8'));

@@ -12,7 +12,7 @@ const repositoryRoot = path.resolve(scriptDirectory, '..');
 const workflowDirectory = path.join(
   repositoryRoot,
   'workflows',
-  'phase-4-5'
+  'technical-interview'
 );
 const workflowPath = path.join(
   workflowDirectory,

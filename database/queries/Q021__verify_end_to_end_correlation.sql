@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE TEMPORARY TABLE phase45_end_to_end_correlation
+CREATE TEMPORARY TABLE talentai_end_to_end_correlation
 ON COMMIT DROP
 AS
 WITH correlated AS
@@ -113,9 +113,9 @@ SELECT
     )                                              AS correlation_valid
 FROM resolved;
 
-TABLE phase45_end_to_end_correlation;
+TABLE talentai_end_to_end_correlation;
 
-DO $phase45_correlation_assertion$
+DO $talentai_correlation_assertion$
 DECLARE
     correlation_count INTEGER;
     correlation_valid BOOLEAN;
@@ -126,7 +126,7 @@ BEGIN
     INTO
         correlation_count,
         correlation_valid
-    FROM phase45_end_to_end_correlation AS check_result;
+    FROM talentai_end_to_end_correlation AS check_result;
 
     IF correlation_count <> 1 THEN
         RAISE EXCEPTION
@@ -139,6 +139,6 @@ BEGIN
             'Phase 3 through Phase 5 correlation invariants failed';
     END IF;
 END
-$phase45_correlation_assertion$;
+$talentai_correlation_assertion$;
 
 ROLLBACK;
