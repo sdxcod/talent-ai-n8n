@@ -11,19 +11,35 @@
       "id": "6topbXRO9Zga3l1h",
       "name": "TAI-04 Candidate Interview & Final Grade v1",
       "file": "TAI-04-candidate-interview-final-grade-v1.json"
+    },
+    {
+      "id": "L8uQ5xN2pR7sV4wZ",
+      "name": "TAI-05 Secure Interview Invitation v1",
+      "file": "TAI-05-secure-interview-invitation-v1.json"
     }
   ],
   "persistence": {
     "schemaVersion": "1.0.0",
     "migration": "database/migrations/V009__create_technical_interview_persistence.sql",
     "checkpointMigration": "database/migrations/V010__add_technical_interview_checkpoint_recovery.sql",
+    "invitationMigration": "database/migrations/V011__create_secure_interview_invitation.sql",
     "tables": [
       "talentai.technical_interview_session",
       "talentai.technical_question_set",
       "talentai.technical_interview_answer",
-      "talentai.technical_interview_result"
+      "talentai.technical_interview_result",
+      "talentai.technical_interview_invitation"
     ],
-    "queryRange": "Q013-Q021"
+    "queryRange": "Q013-Q025"
+  },
+  "invitation": {
+    "contract": "talentai.secure-interview-invitation",
+    "version": "1.0.0",
+    "defaultTtlMinutes": 2880,
+    "minimumTtlMinutes": 15,
+    "maximumTtlMinutes": 10080,
+    "candidateFormPath": "talentai-candidate-interview",
+    "operatorFormPath": "talentai-secure-interview-invitation"
   },
   "requiredCredentialTypes": [
     "openAiApi",

@@ -9,13 +9,48 @@ revoked AS
     UPDATE talentai.technical_interview_invitation AS invitation
     SET
         status = 'REVOKED',
+        claimed_by_workflow_execution_id = NULL,
+        claimed_at = NULL,
         revoked_by_workflow_execution_id = supplied.workflow_execution_id,
         revoked_at = now(),
         updated_at = now()
     FROM supplied
     WHERE invitation.id = supplied.invitation_id
-      AND invitation.status = 'ISSUED'
       AND supplied.workflow_execution_id IS NOT NULL
+      AND
+      (
+          invitation.status = 'ISSUED'
+          OR
+          (
+              invitation.status = 'CLAIMED'
+              AND
+              (
+                  EXISTS
+                  (
+                      SELECT 1
+                      FROM talentai.technical_interview_session AS session
+                      WHERE session.contract_version = invitation.contract_version
+                        AND session.request_id = invitation.request_id
+                        AND session.assessment_id = invitation.assessment_id
+                        AND session.extraction_id = invitation.extraction_id
+                        AND session.status = 'FAILED'
+                        AND session.retryable = TRUE
+                  )
+                  OR
+                  (
+                      invitation.claimed_at <= now() - INTERVAL '10 minutes'
+                      AND NOT EXISTS
+                      (
+                          SELECT 1
+                          FROM talentai.technical_interview_session AS session
+                          WHERE session.contract_version = invitation.contract_version
+                            AND session.request_id = invitation.request_id
+                            AND session.assessment_id = invitation.assessment_id
+                      )
+                  )
+              )
+          )
+      )
     RETURNING invitation.*
 ),
 current_invitation AS

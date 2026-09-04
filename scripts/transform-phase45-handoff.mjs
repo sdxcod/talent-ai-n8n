@@ -196,24 +196,48 @@ const stopAndErrorNode = ({ name, id, position, errorMessage }) => ({
   name,
 });
 
-const validateDemoRequest = renameNode(
-  'Validate Interview Request',
-  'Validate Demo Interview Request'
+const validateInvitationToken = renameNode(
+  'Validate Demo Interview Request',
+  'Validate Invitation Token'
 );
-validateDemoRequest.parameters.jsCode = code(
-  'tai04-validate-demo-interview-request'
+validateInvitationToken.parameters.jsCode = code(
+  'tai04-validate-invitation-token'
 );
-validateDemoRequest.position = [-160, -256];
+validateInvitationToken.position = [-608, -256];
+
+upsertNode(postgresQueryNode({
+  name: 'Claim Secure Interview Invitation',
+  id: '728db322-9dc7-44f8-b4d2-a845e84e3101',
+  position: [-384, -256],
+  queryName: 'Q023__claim_technical_interview_invitation',
+  queryReplacement:
+    '={{ [$json.invitationToken, String($execution.id)] }}',
+}));
+
+upsertNode(ifNode({
+  name: 'Invitation Claim Can Continue?',
+  id: 'e7b9f4d3-a062-492d-9278-14df7f693102',
+  position: [-160, -256],
+  leftValue: '={{ $json.canContinue === true }}',
+}));
+
+upsertNode(codeNode({
+  name: 'Build Invitation Access Failure',
+  id: '17b72f99-7afc-4872-9a38-14c1a2663103',
+  position: [64, -64],
+  sourceName: 'tai04-build-invitation-access-failure',
+}));
 
 const loadCompletedAssessment = renameNode(
   'Resolve Candidate and Resume Grade',
   'Load Completed Phase 3 Assessment'
 );
 loadCompletedAssessment.parameters.query = sql(
-  'load-completed-phase3-handoff-by-extraction'
+  'load-completed-phase3-handoff-by-correlation'
 );
 loadCompletedAssessment.parameters.options = {
-  queryReplacement: '={{ [$json.extractionId] }}',
+  queryReplacement:
+    '={{ [$json.requestId, $json.assessmentId, $json.extractionId] }}',
 };
 loadCompletedAssessment.position = [64, -256];
 
@@ -235,7 +259,7 @@ Object.assign(
       stage: '',
       category: 'VALIDATION',
       code: 'COMPLETED_PHASE3_ASSESSMENT_NOT_FOUND',
-      message: 'A completed Phase 3 assessment could not be resolved for the supplied extraction.',
+      message: 'A completed Phase 3 assessment could not be resolved for the claimed invitation.',
       retryable: false,
     },
   })
@@ -248,17 +272,47 @@ const validateHandoff = renameNode(
 validateHandoff.parameters.jsCode = code('tai04-validate-phase3-handoff');
 validateHandoff.position = [736, -320];
 
-upsertNode(codeNode({
-  name: 'Build Demo Phase 3 Handoff',
+const buildSecuredHandoff = renameNode(
+  'Build Demo Phase 3 Handoff',
+  'Build Secured Phase 3 Handoff'
+);
+Object.assign(buildSecuredHandoff, codeNode({
+  name: 'Build Secured Phase 3 Handoff',
   id: 'ad4e2705-1e38-4a71-9456-b9a5f9d4e201',
   position: [512, -320],
-  sourceName: 'tai04-build-demo-phase3-handoff',
+  sourceName: 'build-phase3-handoff-from-query',
 }));
 
 const form = requireNode('On interview request');
+form.parameters.formTitle = 'مصاحبه فنی TalentAI';
 form.parameters.formDescription =
-  'Demo adapter: start an interview from a completed TalentAI Phase 3 extraction.';
-form.position = [-384, -256];
+  'برای بررسی دعوت و شروع مصاحبه، دکمه زیر را انتخاب کنید. این لینک شخصی و یک‌بارمصرف است.';
+form.parameters.formFields = {
+  values: [
+    {
+      fieldName: 'invitationToken',
+      fieldType: 'hiddenField',
+      fieldValue: '',
+    },
+  ],
+};
+form.parameters.options = {
+  ...(form.parameters.options ?? {}),
+  path: 'talentai-candidate-interview',
+  buttonLabel: 'شروع مصاحبه',
+  ignoreBots: true,
+  showHeaders: false,
+};
+form.position = [-832, -256];
+
+workflow.settings = {
+  ...(workflow.settings ?? {}),
+  saveDataErrorExecution: 'none',
+  saveDataSuccessExecution: 'none',
+  saveManualExecutions: false,
+  saveExecutionProgress: false,
+  redactionPolicy: 'all',
+};
 
 const trigger = requireNode('When Executed by Another Workflow');
 trigger.parameters.inputSource = 'workflowInputs';
@@ -500,17 +554,38 @@ upsertNode(codeNode({
   sourceName: 'tai04-build-unrecorded-interview-result',
 }));
 
+renameNode(
+  'Demo Request Failure',
+  'Invitation Token Validation Failure'
+);
+renameNode(
+  'Demo Handoff Assembly Failure',
+  'Secure Handoff Assembly Failure'
+);
+
 const unclaimedFailures = [
   {
-    name: 'Demo Request Failure',
+    name: 'Invitation Token Validation Failure',
     id: '63e0d476-4644-4a94-aa0b-3b6a9abdf105',
     position: [-160, 64],
     definition: {
       stage: '',
       category: 'VALIDATION',
-      code: 'TECHNICAL_INTERVIEW_REQUEST_VALIDATION_FAILED',
-      message: 'The demo interview request did not satisfy the required contract.',
+      code: 'INVITATION_TOKEN_VALIDATION_FAILED',
+      message: 'The interview invitation token did not satisfy the required format.',
       retryable: false,
+    },
+  },
+  {
+    name: 'Invitation Claim Persistence Failure',
+    id: 'e11cf53c-61d0-422c-8587-f5af16583104',
+    position: [-384, 64],
+    definition: {
+      stage: '',
+      category: 'PERSISTENCE',
+      code: 'INVITATION_CLAIM_FAILED',
+      message: 'The interview invitation could not be claimed.',
+      retryable: true,
     },
   },
   {
@@ -526,14 +601,14 @@ const unclaimedFailures = [
     },
   },
   {
-    name: 'Demo Handoff Assembly Failure',
+    name: 'Secure Handoff Assembly Failure',
     id: '1f7d7540-6973-4812-8d17-86f18ebf9107',
     position: [512, 64],
     definition: {
       stage: '',
       category: 'ORCHESTRATION',
       code: 'PHASE3_HANDOFF_ASSEMBLY_FAILED',
-      message: 'The demo Phase 3 handoff could not be assembled.',
+      message: 'The secured Phase 3 handoff could not be assembled.',
       retryable: true,
     },
   },
@@ -976,6 +1051,22 @@ requireNode('Candidate Interview Form').webhookId =
 requireNode('Show Final Grade').webhookId =
   '6e7f8a9b-0c1d-4e2f-8a4b-5c6d7e8f9a0c';
 
+upsertNode({
+  parameters: {
+    operation: 'completion',
+    completionTitle: 'مصاحبه فنی TalentAI آغاز نشد',
+    completionMessage:
+      'لینک دعوت معتبر نیست، منقضی یا قبلاً استفاده شده است؛ یا اجرای مصاحبه تکمیل نشد. لطفاً با واحد منابع انسانی تماس بگیرید.',
+    options: {},
+  },
+  type: 'n8n-nodes-base.form',
+  typeVersion: 2.5,
+  position: [8352, 64],
+  id: 'a113a59a-e676-4580-a5db-0b1eac233105',
+  name: 'Show Interview Failure',
+  webhookId: '70f8a9bc-1d2e-4f30-9b5c-6d7e8f9a0b1c',
+});
+
 const positions = new Map([
   ['Build Interview Question Prompt', [1856, -320]],
   ['Generate Interview Questions', [2080, -320]],
@@ -1020,21 +1111,33 @@ for (const [name, position] of positions.entries()) {
 }
 
 workflow.connections['On interview request'] = {
-  main: [[mainConnection('Validate Demo Interview Request')]],
+  main: [[mainConnection('Validate Invitation Token')]],
 };
-workflow.connections['Validate Demo Interview Request'] = {
-  main: [[mainConnection('Load Completed Phase 3 Assessment')]],
+workflow.connections['Validate Invitation Token'] = {
+  main: [[mainConnection('Claim Secure Interview Invitation')]],
+};
+workflow.connections['Claim Secure Interview Invitation'] = {
+  main: [[mainConnection('Invitation Claim Can Continue?')]],
+};
+workflow.connections['Invitation Claim Can Continue?'] = {
+  main: [
+    [mainConnection('Load Completed Phase 3 Assessment')],
+    [mainConnection('Build Invitation Access Failure')],
+  ],
+};
+workflow.connections['Build Invitation Access Failure'] = {
+  main: [[mainConnection('Show Interview Failure')]],
 };
 workflow.connections['Load Completed Phase 3 Assessment'] = {
   main: [[mainConnection('Interview Context Resolved?')]],
 };
 workflow.connections['Interview Context Resolved?'] = {
   main: [
-    [mainConnection('Build Demo Phase 3 Handoff')],
+    [mainConnection('Build Secured Phase 3 Handoff')],
     [mainConnection('Phase 3 Resolution Failure')],
   ],
 };
-workflow.connections['Build Demo Phase 3 Handoff'] = {
+workflow.connections['Build Secured Phase 3 Handoff'] = {
   main: [[mainConnection('Validate Phase 3 Handoff')]],
 };
 workflow.connections['When Executed by Another Workflow'] = {
@@ -1205,9 +1308,14 @@ const connectWithFailure = (source, success, failure) => {
 };
 
 connectWithFailure(
-  'Validate Demo Interview Request',
-  'Load Completed Phase 3 Assessment',
-  'Demo Request Failure'
+  'Validate Invitation Token',
+  'Claim Secure Interview Invitation',
+  'Invitation Token Validation Failure'
+);
+connectWithFailure(
+  'Claim Secure Interview Invitation',
+  'Invitation Claim Can Continue?',
+  'Invitation Claim Persistence Failure'
 );
 connectWithFailure(
   'Load Completed Phase 3 Assessment',
@@ -1215,9 +1323,9 @@ connectWithFailure(
   'Phase 3 Lookup Failure'
 );
 connectWithFailure(
-  'Build Demo Phase 3 Handoff',
+  'Build Secured Phase 3 Handoff',
   'Validate Phase 3 Handoff',
-  'Demo Handoff Assembly Failure'
+  'Secure Handoff Assembly Failure'
 );
 connectWithFailure(
   'Validate Phase 3 Handoff',
@@ -1400,6 +1508,18 @@ workflow.connections['Record Technical Interview Failure'] = {
     [mainConnection('Build Failed Technical Interview Result')],
     [mainConnection('Build Interview Failure Recording Fallback')],
   ],
+};
+workflow.connections['Build Unrecorded Technical Interview Result'] = {
+  main: [[mainConnection('Show Interview Failure')]],
+};
+workflow.connections['Build Rejected Technical Interview Result'] = {
+  main: [[mainConnection('Show Interview Failure')]],
+};
+workflow.connections['Build Failed Technical Interview Result'] = {
+  main: [[mainConnection('Show Interview Failure')]],
+};
+workflow.connections['Build Interview Failure Recording Fallback'] = {
+  main: [[mainConnection('Show Interview Failure')]],
 };
 
 writeFileSync(

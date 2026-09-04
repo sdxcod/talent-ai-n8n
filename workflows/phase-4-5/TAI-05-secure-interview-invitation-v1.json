@@ -1,0 +1,648 @@
+{
+  "id": "L8uQ5xN2pR7sV4wZ",
+  "name": "TAI-05 Secure Interview Invitation v1",
+  "active": false,
+  "isArchived": false,
+  "isPublished": false,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "n8nUserAuth",
+        "requireExecuteAccess": true,
+        "formTitle": "مدیریت دعوت امن مصاحبه TalentAI",
+        "formDescription": "این فرم فقط برای HR و کاربران مجاز است. برای ISSUE، Extraction ID و مدت اعتبار را وارد کنید. برای REVOKE، Invitation ID را وارد کنید.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "عملیات",
+              "fieldName": "action",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "ISSUE"
+                  },
+                  {
+                    "option": "REVOKE"
+                  }
+                ]
+              },
+              "defaultValue": "ISSUE",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Extraction ID — فقط برای ISSUE",
+              "fieldName": "extractionId",
+              "fieldType": "text",
+              "placeholder": "UUID ارزیابی تکمیل‌شده",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Invitation ID — فقط برای REVOKE",
+              "fieldName": "invitationId",
+              "fieldType": "text",
+              "placeholder": "UUID دعوت فعال",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "مدت اعتبار دعوت — دقیقه",
+              "fieldName": "ttlMinutes",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "1440"
+                  },
+                  {
+                    "option": "2880"
+                  },
+                  {
+                    "option": "4320"
+                  },
+                  {
+                    "option": "10080"
+                  }
+                ]
+              },
+              "defaultValue": "2880",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "path": "talentai-secure-interview-invitation",
+          "buttonLabel": "اجرای عملیات امن",
+          "ignoreBots": true,
+          "showHeaders": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1120,
+        -160
+      ],
+      "id": "bc316b39-c02a-492f-8138-d47500115101",
+      "name": "On authorized invitation operation",
+      "webhookId": "253ea553-f07c-4b3e-b519-a76f77015102"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst action = String(input.action ?? '').trim().toUpperCase();\nconst extractionId = String(input.extractionId ?? '').trim();\nconst invitationId = String(input.invitationId ?? '').trim();\nconst ttlMinutes = Number(input.ttlMinutes ?? 2880);\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nif (!['ISSUE', 'REVOKE'].includes(action)) {\n  throw new Error(\n    'INVALID_INVITATION_ACTION: action must be ISSUE or REVOKE.'\n  );\n}\n\nif (action === 'ISSUE' && !uuidPattern.test(extractionId)) {\n  throw new Error(\n    'INVALID_EXTRACTION_ID: extractionId is required for ISSUE.'\n  );\n}\n\nif (action === 'REVOKE' && !uuidPattern.test(invitationId)) {\n  throw new Error(\n    'INVALID_INVITATION_ID: invitationId is required for REVOKE.'\n  );\n}\n\nif (\n  action === 'ISSUE' &&\n  (!Number.isInteger(ttlMinutes) || ttlMinutes < 15 || ttlMinutes > 10080)\n) {\n  throw new Error(\n    'INVALID_INVITATION_TTL: ttlMinutes must be from 15 to 10080.'\n  );\n}\n\nreturn [\n  {\n    json: {\n      action,\n      extractionId: action === 'ISSUE' ? extractionId : null,\n      invitationId: action === 'REVOKE' ? invitationId : null,\n      ttlMinutes: action === 'ISSUE' ? ttlMinutes : null,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        -160
+      ],
+      "id": "9a916d36-d1af-49d4-9819-8d77fe4e5103",
+      "name": "Validate Invitation Operation",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b7d66991-fae7-4b76-92e9-8f8da57f5104-condition",
+              "leftValue": "={{ String($json.action ?? '') === 'ISSUE' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -672,
+        -160
+      ],
+      "id": "b7d66991-fae7-4b76-92e9-8f8da57f5104",
+      "name": "Issue Invitation?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH requested AS\n(\n    SELECT $1::UUID AS extraction_id\n)\nSELECT\n    CASE\n        WHEN extraction.id IS NULL\n            THEN 'EXTRACTION_NOT_FOUND'\n        WHEN execution.request_id IS NULL\n            THEN 'COMPLETED_EXECUTION_NOT_FOUND'\n        WHEN assessment.id IS NULL\n            THEN 'COMPLETED_ASSESSMENT_NOT_FOUND'\n        WHEN grade_guide.id IS NULL\n            THEN 'GRADE_GUIDE_NOT_FOUND'\n        ELSE 'RESOLVED'\n    END AS \"resolutionStatus\",\n    CASE\n        WHEN extraction.id IS NULL\n            THEN 'Resume extraction was not found.'\n        WHEN execution.request_id IS NULL\n            THEN 'A completed assessment execution was not found.'\n        WHEN assessment.id IS NULL\n            THEN 'A completed grade assessment was not found.'\n        WHEN grade_guide.id IS NULL\n            THEN 'The versioned grade guide used by the assessment was not found.'\n        ELSE 'Completed Phase 3 assessment resolved for the demo adapter.'\n    END AS \"resolutionMessage\",\n    requested.extraction_id                 AS \"requestedExtractionId\",\n    execution.request_id                    AS \"requestId\",\n    execution.attempt_count                 AS \"attemptCount\",\n    execution.status                        AS \"executionStatus\",\n    execution.started_at                    AS \"startedAt\",\n    execution.completed_at                  AS \"completedAt\",\n    assessment.id                           AS \"assessmentId\",\n    assessment.extraction_id                AS \"extractionId\",\n    assessment.grade_guide_id               AS \"gradeGuideId\",\n    assessment.grade_guide_version          AS \"gradeGuideVersion\",\n    assessment.target_grade_code            AS \"targetGradeCode\",\n    assessment.scoring_model                AS \"scoringModel\",\n    assessment.prompt_version               AS \"promptVersion\",\n    assessment.engine_version               AS \"engineVersion\",\n    assessment.dimension_assessments        AS \"dimensionAssessments\",\n    assessment.overall_score::DOUBLE PRECISION\n                                                AS \"overallScore\",\n    assessment.minimum_overall_score::DOUBLE PRECISION\n                                                AS \"minimumOverallScore\",\n    assessment.threshold_met                AS \"thresholdMet\",\n    assessment.mandatory_dimensions_met     AS \"mandatoryDimensionsMet\",\n    assessment.decision,\n    assessment.review_reasons               AS \"reviewReasons\",\n    assessment.model_warnings               AS \"modelWarnings\",\n    assessment.assessment_summary           AS \"assessmentSummary\",\n    assessment.status                       AS \"assessmentStatus\",\n    assessment.created_at                   AS \"assessmentCreatedAt\",\n    extraction.position_code                AS \"positionCode\",\n    extraction.job_description              AS \"jobDescription\",\n    extraction.profile -> 'candidate'        AS candidate,\n    grade_guide.guide -> 'grades'            AS \"gradeDefinitions\"\nFROM requested\nLEFT JOIN talentai.resume_extraction AS extraction\n       ON extraction.id = requested.extraction_id\nLEFT JOIN talentai.assessment_execution AS execution\n       ON execution.extraction_id = requested.extraction_id\n      AND execution.status = 'COMPLETED'\n      AND execution.current_stage = 'COMPLETED'\n      AND execution.completed_at IS NOT NULL\nLEFT JOIN talentai.grade_assessment AS assessment\n       ON assessment.id = execution.assessment_id\n      AND assessment.request_id = execution.request_id\n      AND assessment.extraction_id = requested.extraction_id\n      AND assessment.status = 'COMPLETED'\nLEFT JOIN talentai.grade_guide AS grade_guide\n       ON grade_guide.id = assessment.grade_guide_id\n      AND grade_guide.guide_version = assessment.grade_guide_version;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Validate Invitation Operation').first().json.extractionId] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -448,
+        -320
+      ],
+      "id": "a82044c6-e925-4b6a-a173-f2e407c85105",
+      "name": "Load Completed Phase 3 For Invitation",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c070b232-9b2a-46c5-b847-6b2a4e985106-condition",
+              "leftValue": "={{ String($json.resolutionStatus ?? '') === 'RESOLVED' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        -320
+      ],
+      "id": "c070b232-9b2a-46c5-b847-6b2a4e985106",
+      "name": "Invitation Context Resolved?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resolved = $input.first().json;\n\nif (resolved.resolutionStatus !== 'RESOLVED') {\n  throw new Error(\n    `UNEXPECTED_RESOLUTION_STATUS: ${resolved.resolutionStatus}`\n  );\n}\n\nconst asIsoDate = (value, fieldName) => {\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    throw new Error(\n      `INVALID_PHASE3_HANDOFF_SOURCE: ${fieldName} must be a valid date-time.`\n    );\n  }\n\n  return date.toISOString();\n};\n\nconst candidate =\n  resolved.candidate &&\n  typeof resolved.candidate === 'object' &&\n  !Array.isArray(resolved.candidate)\n    ? resolved.candidate\n    : {};\n\nreturn [\n  {\n    json: {\n      gradeCatalog: {\n        id: resolved.gradeGuideId,\n        version: resolved.gradeGuideVersion,\n        grades: resolved.gradeDefinitions,\n      },\n      phase3Handoff: {\n        contract: 'talentai.phase3.assessment-handoff',\n        contractVersion: '1.0.0',\n        requestId: resolved.requestId,\n        assessmentId: resolved.assessmentId,\n        extractionId: resolved.extractionId,\n        candidate: {\n          fullName: String(candidate.fullName ?? '').trim(),\n        },\n        assessmentContext: {\n          positionCode: resolved.positionCode,\n          targetGradeCode: resolved.targetGradeCode,\n          jobDescription: resolved.jobDescription,\n        },\n        gradeGuide: {\n          id: resolved.gradeGuideId,\n          version: resolved.gradeGuideVersion,\n        },\n        score: {\n          overall: Number(resolved.overallScore),\n          minimumRequired: Number(resolved.minimumOverallScore),\n          thresholdMet: resolved.thresholdMet === true,\n          mandatoryDimensionsMet:\n            resolved.mandatoryDimensionsMet === true,\n        },\n        decision: resolved.decision,\n        dimensionAssessments: resolved.dimensionAssessments,\n        reviewReasons: resolved.reviewReasons,\n        modelWarnings: resolved.modelWarnings,\n        assessmentSummary: resolved.assessmentSummary,\n        execution: {\n          attemptCount: Number(resolved.attemptCount),\n          status: resolved.executionStatus,\n          replayed: false,\n          startedAt: asIsoDate(resolved.startedAt, 'startedAt'),\n          completedAt: asIsoDate(resolved.completedAt, 'completedAt'),\n        },\n        metadata: {\n          scoringModel: resolved.scoringModel,\n          promptVersion: resolved.promptVersion,\n          engineVersion: resolved.engineVersion,\n          assessmentStatus: resolved.assessmentStatus,\n          createdAt: asIsoDate(\n            resolved.assessmentCreatedAt,\n            'assessmentCreatedAt'\n          ),\n        },\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -320
+      ],
+      "id": "2703902e-652a-48e6-b5d1-f3c2104d5107",
+      "name": "Build Phase 3 Invitation Handoff",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst handoff = input.phase3Handoff ?? input;\nconst suppliedGradeCatalog = input.gradeCatalog ?? null;\nconst errors = [];\n\nconst isObject = (value) =>\n  value !== null &&\n  typeof value === 'object' &&\n  !Array.isArray(value);\n\nconst requireObject = (value, path) => {\n  if (!isObject(value)) {\n    errors.push(`${path} must be an object`);\n    return {};\n  }\n\n  return value;\n};\n\nconst requireExactKeys = (value, path, requiredKeys) => {\n  if (!isObject(value)) return;\n\n  const allowed = new Set(requiredKeys);\n\n  for (const key of requiredKeys) {\n    if (!Object.hasOwn(value, key)) {\n      errors.push(`${path}.${key} is required`);\n    }\n  }\n\n  for (const key of Object.keys(value)) {\n    if (!allowed.has(key)) {\n      errors.push(`${path}.${key} is not allowed`);\n    }\n  }\n};\n\nconst requireText = (value, path, minimumLength = 1) => {\n  if (\n    typeof value !== 'string' ||\n    value.trim().length < minimumLength\n  ) {\n    errors.push(`${path} must contain at least ${minimumLength} characters`);\n    return '';\n  }\n\n  return value.trim();\n};\n\nconst requireBoolean = (value, path) => {\n  if (typeof value !== 'boolean') {\n    errors.push(`${path} must be boolean`);\n  }\n};\n\nconst requireNumber = (value, path, minimum, maximum) => {\n  if (\n    typeof value !== 'number' ||\n    !Number.isFinite(value) ||\n    value < minimum ||\n    value > maximum\n  ) {\n    errors.push(`${path} must be a number from ${minimum} to ${maximum}`);\n  }\n};\n\nconst uuidPattern =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nconst requireUuid = (value, path) => {\n  if (!uuidPattern.test(String(value ?? ''))) {\n    errors.push(`${path} must be UUID`);\n  }\n};\n\nconst requireDateTime = (value, path) => {\n  if (\n    typeof value !== 'string' ||\n    value.trim() === '' ||\n    Number.isNaN(Date.parse(value))\n  ) {\n    errors.push(`${path} must be a valid date-time string`);\n  }\n};\n\nconst root = requireObject(handoff, 'handoff');\n\nconst topLevelKeys = [\n  'contract',\n  'contractVersion',\n  'requestId',\n  'assessmentId',\n  'extractionId',\n  'candidate',\n  'assessmentContext',\n  'gradeGuide',\n  'score',\n  'decision',\n  'dimensionAssessments',\n  'reviewReasons',\n  'modelWarnings',\n  'assessmentSummary',\n  'execution',\n  'metadata',\n];\n\nrequireExactKeys(root, 'handoff', topLevelKeys);\n\nif (root.contract !== 'talentai.phase3.assessment-handoff') {\n  errors.push('unsupported contract');\n}\n\nif (root.contractVersion !== '1.0.0') {\n  errors.push('unsupported contractVersion');\n}\n\nrequireUuid(root.requestId, 'requestId');\nrequireUuid(root.assessmentId, 'assessmentId');\nrequireUuid(root.extractionId, 'extractionId');\n\nconst candidate = requireObject(root.candidate, 'candidate');\nrequireExactKeys(candidate, 'candidate', ['fullName']);\nrequireText(candidate.fullName, 'candidate.fullName');\n\nconst assessmentContext = requireObject(\n  root.assessmentContext,\n  'assessmentContext'\n);\nrequireExactKeys(assessmentContext, 'assessmentContext', [\n  'positionCode',\n  'targetGradeCode',\n  'jobDescription',\n]);\n\nif (assessmentContext.positionCode !== 'JAVA_BACKEND') {\n  errors.push('unsupported assessmentContext.positionCode');\n}\n\nif (\n  !['JUNIOR', 'MID', 'SENIOR'].includes(\n    assessmentContext.targetGradeCode\n  )\n) {\n  errors.push('unsupported assessmentContext.targetGradeCode');\n}\n\nrequireText(\n  assessmentContext.jobDescription,\n  'assessmentContext.jobDescription',\n  30\n);\n\nconst gradeGuide = requireObject(root.gradeGuide, 'gradeGuide');\nrequireExactKeys(gradeGuide, 'gradeGuide', ['id', 'version']);\nrequireUuid(gradeGuide.id, 'gradeGuide.id');\nrequireText(gradeGuide.version, 'gradeGuide.version');\n\nconst score = requireObject(root.score, 'score');\nrequireExactKeys(score, 'score', [\n  'overall',\n  'minimumRequired',\n  'thresholdMet',\n  'mandatoryDimensionsMet',\n]);\nrequireNumber(score.overall, 'score.overall', 0, 100);\nrequireNumber(score.minimumRequired, 'score.minimumRequired', 0, 100);\nrequireBoolean(score.thresholdMet, 'score.thresholdMet');\nrequireBoolean(\n  score.mandatoryDimensionsMet,\n  'score.mandatoryDimensionsMet'\n);\n\nconst decisions = new Set([\n  'MEETS_TARGET',\n  'BELOW_TARGET',\n  'REVIEW_REQUIRED',\n]);\n\nif (!decisions.has(root.decision)) {\n  errors.push('unsupported decision');\n}\n\nfor (const [value, path] of [\n  [root.reviewReasons, 'reviewReasons'],\n  [root.modelWarnings, 'modelWarnings'],\n]) {\n  if (!Array.isArray(value)) {\n    errors.push(`${path} must be an array`);\n    continue;\n  }\n\n  for (const [index, item] of value.entries()) {\n    requireText(item, `${path}[${index}]`);\n  }\n}\n\nrequireText(root.assessmentSummary, 'assessmentSummary');\n\nconst requiredDimensionCodes = new Set([\n  'JAVA_CORE',\n  'SPRING_ECOSYSTEM',\n  'DATABASE',\n  'DISTRIBUTED_SYSTEMS',\n  'TESTING',\n  'SOFTWARE_ARCHITECTURE',\n  'OBSERVABILITY_DEVOPS',\n]);\nconst confidenceValues = new Set(['HIGH', 'MEDIUM', 'LOW']);\nconst evidenceSources = new Set([\n  'PROFILE_SKILL',\n  'WORK_EXPERIENCE',\n  'EDUCATION',\n  'WARNING',\n  'OTHER',\n]);\nconst dimensionKeys = [\n  'code',\n  'title',\n  'weight',\n  'mandatory',\n  'modelScore',\n  'effectiveScore',\n  'confidence',\n  'confidenceAccepted',\n  'weightedScore',\n  'minimumRequired',\n  'minimumMet',\n  'evidence',\n  'rationale',\n];\nconst receivedDimensionCodes = new Set();\n\nif (\n  !Array.isArray(root.dimensionAssessments) ||\n  root.dimensionAssessments.length !== requiredDimensionCodes.size\n) {\n  errors.push('dimensionAssessments must contain exactly 7 entries');\n} else {\n  for (const [index, rawDimension] of root.dimensionAssessments.entries()) {\n    const path = `dimensionAssessments[${index}]`;\n    const dimension = requireObject(rawDimension, path);\n\n    requireExactKeys(dimension, path, dimensionKeys);\n\n    if (!requiredDimensionCodes.has(dimension.code)) {\n      errors.push(`${path}.code is unsupported`);\n    } else if (receivedDimensionCodes.has(dimension.code)) {\n      errors.push(`${path}.code is duplicated`);\n    } else {\n      receivedDimensionCodes.add(dimension.code);\n    }\n\n    requireText(dimension.title, `${path}.title`);\n\n    if (\n      !Number.isInteger(dimension.weight) ||\n      dimension.weight < 0 ||\n      dimension.weight > 100\n    ) {\n      errors.push(`${path}.weight must be an integer from 0 to 100`);\n    }\n\n    requireBoolean(dimension.mandatory, `${path}.mandatory`);\n\n    for (const field of ['modelScore', 'effectiveScore']) {\n      if (\n        !Number.isInteger(dimension[field]) ||\n        dimension[field] < 0 ||\n        dimension[field] > 4\n      ) {\n        errors.push(`${path}.${field} must be an integer from 0 to 4`);\n      }\n    }\n\n    if (!confidenceValues.has(dimension.confidence)) {\n      errors.push(`${path}.confidence is unsupported`);\n    }\n\n    requireBoolean(\n      dimension.confidenceAccepted,\n      `${path}.confidenceAccepted`\n    );\n    requireNumber(\n      dimension.weightedScore,\n      `${path}.weightedScore`,\n      0,\n      100\n    );\n\n    if (\n      dimension.minimumRequired !== null &&\n      (\n        !Number.isInteger(dimension.minimumRequired) ||\n        dimension.minimumRequired < 0 ||\n        dimension.minimumRequired > 4\n      )\n    ) {\n      errors.push(\n        `${path}.minimumRequired must be null or an integer from 0 to 4`\n      );\n    }\n\n    requireBoolean(dimension.minimumMet, `${path}.minimumMet`);\n\n    if (!Array.isArray(dimension.evidence)) {\n      errors.push(`${path}.evidence must be an array`);\n    } else {\n      if (dimension.evidence.length > 5) {\n        errors.push(`${path}.evidence must contain at most 5 entries`);\n      }\n\n      if (dimension.modelScore > 0 && dimension.evidence.length === 0) {\n        errors.push(`${path} positive score lacks evidence`);\n      }\n\n      for (const [evidenceIndex, rawEvidence] of\n        dimension.evidence.entries()) {\n        const evidencePath = `${path}.evidence[${evidenceIndex}]`;\n        const evidence = requireObject(rawEvidence, evidencePath);\n\n        requireExactKeys(evidence, evidencePath, ['quote', 'source']);\n        requireText(evidence.quote, `${evidencePath}.quote`);\n\n        if (!evidenceSources.has(evidence.source)) {\n          errors.push(`${evidencePath}.source is unsupported`);\n        }\n      }\n    }\n\n    requireText(dimension.rationale, `${path}.rationale`);\n  }\n}\n\nif (receivedDimensionCodes.size !== requiredDimensionCodes.size) {\n  errors.push('dimensionAssessments has an incomplete dimension set');\n}\n\nconst execution = requireObject(root.execution, 'execution');\nrequireExactKeys(execution, 'execution', [\n  'attemptCount',\n  'status',\n  'replayed',\n  'startedAt',\n  'completedAt',\n]);\n\nif (!Number.isInteger(execution.attemptCount) || execution.attemptCount < 1) {\n  errors.push('execution.attemptCount must be a positive integer');\n}\n\nif (execution.status !== 'COMPLETED') {\n  errors.push('execution.status must be COMPLETED');\n}\n\nrequireBoolean(execution.replayed, 'execution.replayed');\nrequireDateTime(execution.startedAt, 'execution.startedAt');\nrequireDateTime(execution.completedAt, 'execution.completedAt');\n\nconst metadata = requireObject(root.metadata, 'metadata');\nrequireExactKeys(metadata, 'metadata', [\n  'scoringModel',\n  'promptVersion',\n  'engineVersion',\n  'assessmentStatus',\n  'createdAt',\n]);\nrequireText(metadata.scoringModel, 'metadata.scoringModel');\nrequireText(metadata.promptVersion, 'metadata.promptVersion');\nrequireText(metadata.engineVersion, 'metadata.engineVersion');\n\nif (metadata.assessmentStatus !== 'COMPLETED') {\n  errors.push('metadata.assessmentStatus must be COMPLETED');\n}\n\nrequireDateTime(metadata.createdAt, 'metadata.createdAt');\n\nif (\n  root.decision === 'MEETS_TARGET' &&\n  (\n    score.thresholdMet !== true ||\n    score.mandatoryDimensionsMet !== true ||\n    root.reviewReasons?.length !== 0\n  )\n) {\n  errors.push('MEETS_TARGET invariants are not satisfied');\n}\n\nif (\n  root.decision === 'REVIEW_REQUIRED' &&\n  root.reviewReasons?.length === 0\n) {\n  errors.push('REVIEW_REQUIRED requires at least one review reason');\n}\n\nconst minimumDimensionLevels = Object.fromEntries(\n  (Array.isArray(root.dimensionAssessments)\n    ? root.dimensionAssessments\n    : [])\n    .filter((dimension) => dimension.minimumRequired !== null)\n    .map((dimension) => [\n      dimension.code,\n      dimension.minimumRequired,\n    ])\n);\n\nlet catalogGrades = null;\n\nif (suppliedGradeCatalog !== null) {\n  const catalog = requireObject(\n    suppliedGradeCatalog,\n    'gradeCatalog'\n  );\n\n  requireExactKeys(catalog, 'gradeCatalog', [\n    'id',\n    'version',\n    'grades',\n  ]);\n\n  if (catalog.id !== gradeGuide.id) {\n    errors.push('gradeCatalog.id does not match handoff.gradeGuide.id');\n  }\n\n  if (catalog.version !== gradeGuide.version) {\n    errors.push(\n      'gradeCatalog.version does not match handoff.gradeGuide.version'\n    );\n  }\n\n  if (!Array.isArray(catalog.grades) || catalog.grades.length !== 3) {\n    errors.push('gradeCatalog.grades must contain exactly 3 grades');\n  } else {\n    const supportedGradeCodes = ['JUNIOR', 'MID', 'SENIOR'];\n    const receivedGradeCodes = new Set();\n\n    catalogGrades = catalog.grades.map((rawGrade, index) => {\n      const path = `gradeCatalog.grades[${index}]`;\n      const catalogGrade = requireObject(rawGrade, path);\n\n      requireExactKeys(catalogGrade, path, [\n        'code',\n        'label',\n        'minimumOverallScore',\n        'minimumDimensionLevels',\n      ]);\n\n      if (!supportedGradeCodes.includes(catalogGrade.code)) {\n        errors.push(`${path}.code is unsupported`);\n      } else if (receivedGradeCodes.has(catalogGrade.code)) {\n        errors.push(`${path}.code is duplicated`);\n      } else {\n        receivedGradeCodes.add(catalogGrade.code);\n      }\n\n      requireText(catalogGrade.label, `${path}.label`);\n      requireNumber(\n        catalogGrade.minimumOverallScore,\n        `${path}.minimumOverallScore`,\n        0,\n        100\n      );\n\n      const levels = requireObject(\n        catalogGrade.minimumDimensionLevels,\n        `${path}.minimumDimensionLevels`\n      );\n\n      for (const [code, level] of Object.entries(levels)) {\n        if (!requiredDimensionCodes.has(code)) {\n          errors.push(`${path}.minimumDimensionLevels.${code} is unsupported`);\n        }\n\n        if (!Number.isInteger(level) || level < 0 || level > 4) {\n          errors.push(\n            `${path}.minimumDimensionLevels.${code} must be an integer from 0 to 4`\n          );\n        }\n      }\n\n      return {\n        code: catalogGrade.code,\n        label: catalogGrade.label,\n        minimumOverallScore: catalogGrade.minimumOverallScore,\n        minimumDimensionLevels: levels,\n      };\n    });\n\n    if (receivedGradeCodes.size !== supportedGradeCodes.length) {\n      errors.push('gradeCatalog.grades has an incomplete grade set');\n    }\n\n    const orderedGrades = supportedGradeCodes.map(\n      (code) => catalogGrades.find((item) => item.code === code)\n    );\n\n    if (\n      orderedGrades.every(Boolean) &&\n      !(\n        orderedGrades[0].minimumOverallScore <\n          orderedGrades[1].minimumOverallScore &&\n        orderedGrades[1].minimumOverallScore <\n          orderedGrades[2].minimumOverallScore\n      )\n    ) {\n      errors.push('gradeCatalog minimum scores must increase by grade');\n    }\n\n    const catalogTarget = catalogGrades.find(\n      (item) => item.code === assessmentContext.targetGradeCode\n    );\n\n    if (catalogTarget) {\n      if (catalogTarget.minimumOverallScore !== score.minimumRequired) {\n        errors.push(\n          'gradeCatalog target threshold does not match Phase 3 assessment'\n        );\n      }\n\n      const expectedEntries = Object.entries(minimumDimensionLevels)\n        .sort(([left], [right]) => left.localeCompare(right));\n      const receivedEntries = Object.entries(\n        catalogTarget.minimumDimensionLevels\n      ).sort(([left], [right]) => left.localeCompare(right));\n\n      if (JSON.stringify(receivedEntries) !== JSON.stringify(expectedEntries)) {\n        errors.push(\n          'gradeCatalog target dimension levels do not match Phase 3 assessment'\n        );\n      }\n    }\n  }\n}\n\nif (errors.length > 0) {\n  throw new Error(\n    `INVALID_PHASE3_HANDOFF: ${errors.join('; ')}`\n  );\n}\n\nconst targetGrade = {\n  code: assessmentContext.targetGradeCode,\n  label: assessmentContext.targetGradeCode,\n  minimumOverallScore: score.minimumRequired,\n  minimumDimensionLevels,\n};\n\nreturn [\n  {\n    json: {\n      phase3Handoff: root,\n      correlation: {\n        contractVersion: root.contractVersion,\n        requestId: root.requestId,\n        assessmentId: root.assessmentId,\n        extractionId: root.extractionId,\n      },\n      extraction: {\n        id: root.extractionId,\n        positionCode: assessmentContext.positionCode,\n        targetGradeCode: assessmentContext.targetGradeCode,\n        jobDescription: assessmentContext.jobDescription,\n      },\n      candidate: {\n        fullName: candidate.fullName.trim(),\n      },\n      gradeGuide: {\n        id: gradeGuide.id,\n        version: gradeGuide.version,\n        targetGrade,\n        gradeCatalogComplete: catalogGrades !== null,\n        grades: catalogGrades ?? [targetGrade],\n        dimensions: root.dimensionAssessments.map((dimension) => ({\n          code: dimension.code,\n          title: dimension.title,\n          weight: dimension.weight,\n          mandatory: dimension.mandatory,\n          minimumRequired: dimension.minimumRequired,\n        })),\n        scoringScale: [\n          { score: 0, meaning: 'NO_USABLE_EVIDENCE' },\n          { score: 1, meaning: 'LIMITED_OR_VAGUE' },\n          { score: 2, meaning: 'PRACTICAL_AND_CONCRETE' },\n          { score: 3, meaning: 'ADVANCED_WITH_TRADE_OFFS' },\n          { score: 4, meaning: 'LEADERSHIP_OR_CROSS_CUTTING_OWNERSHIP' },\n        ],\n      },\n      resumeGrade: {\n        assessmentId: root.assessmentId,\n        decision: root.decision,\n        overallScore: score.overall,\n        minimumOverallScore: score.minimumRequired,\n        thresholdMet: score.thresholdMet,\n        mandatoryDimensionsMet: score.mandatoryDimensionsMet,\n        assessedAt: metadata.createdAt,\n        summary: root.assessmentSummary,\n        reviewReasons: root.reviewReasons,\n        modelWarnings: root.modelWarnings,\n        dimensions: root.dimensionAssessments,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -320
+      ],
+      "id": "b1b8dfb0-d023-4a49-87be-9cd7eec95108",
+      "name": "Validate Phase 3 Invitation Handoff",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        NULLIF(BTRIM($1), '')                 AS contract_version,\n        $2::UUID                              AS request_id,\n        $3::UUID                              AS assessment_id,\n        $4::UUID                              AS extraction_id,\n        NULLIF(BTRIM($5), '')                 AS workflow_execution_id,\n        $6::INTEGER                           AS ttl_minutes,\n        encode(gen_random_bytes(32), 'hex')   AS invitation_token\n),\nvalidated AS\n(\n    SELECT supplied.*\n    FROM supplied\n    WHERE supplied.contract_version = '1.0.0'\n      AND supplied.workflow_execution_id IS NOT NULL\n      AND supplied.ttl_minutes BETWEEN 15 AND 10080\n),\neligible AS\n(\n    SELECT validated.*\n    FROM validated\n    JOIN talentai.assessment_execution AS execution\n      ON execution.request_id = validated.request_id\n     AND execution.assessment_id = validated.assessment_id\n     AND execution.extraction_id = validated.extraction_id\n     AND execution.status = 'COMPLETED'\n     AND execution.current_stage = 'COMPLETED'\n     AND execution.completed_at IS NOT NULL\n    JOIN talentai.grade_assessment AS assessment\n      ON assessment.id = validated.assessment_id\n     AND assessment.request_id = validated.request_id\n     AND assessment.extraction_id = validated.extraction_id\n     AND assessment.status = 'COMPLETED'\n),\nissued AS\n(\n    INSERT INTO talentai.technical_interview_invitation\n    (\n        contract_version,\n        request_id,\n        assessment_id,\n        extraction_id,\n        token_hash,\n        status,\n        issue_count,\n        issued_by_workflow_execution_id,\n        issued_at,\n        expires_at,\n        updated_at\n    )\n    SELECT\n        eligible.contract_version,\n        eligible.request_id,\n        eligible.assessment_id,\n        eligible.extraction_id,\n        encode(digest(eligible.invitation_token, 'sha256'), 'hex'),\n        'ISSUED',\n        1,\n        eligible.workflow_execution_id,\n        now(),\n        now() + make_interval(mins => eligible.ttl_minutes),\n        now()\n    FROM eligible\n    ON CONFLICT ON CONSTRAINT uq_technical_interview_invitation_handoff\n    DO UPDATE\n    SET\n        extraction_id = EXCLUDED.extraction_id,\n        token_hash = EXCLUDED.token_hash,\n        status = 'ISSUED',\n        issue_count = technical_interview_invitation.issue_count + 1,\n        issued_by_workflow_execution_id = EXCLUDED.issued_by_workflow_execution_id,\n        claimed_by_workflow_execution_id = NULL,\n        revoked_by_workflow_execution_id = NULL,\n        issued_at = EXCLUDED.issued_at,\n        expires_at = EXCLUDED.expires_at,\n        claimed_at = NULL,\n        revoked_at = NULL,\n        updated_at = EXCLUDED.updated_at\n    WHERE\n        technical_interview_invitation.status IN ('REVOKED', 'EXPIRED')\n        OR\n        (\n            technical_interview_invitation.status = 'ISSUED'\n            AND technical_interview_invitation.expires_at <= now()\n        )\n    RETURNING *\n),\ncurrent_invitation AS\n(\n    SELECT invitation.*\n    FROM talentai.technical_interview_invitation AS invitation\n    CROSS JOIN supplied\n    WHERE invitation.contract_version = supplied.contract_version\n      AND invitation.request_id = supplied.request_id\n      AND invitation.assessment_id = supplied.assessment_id\n      AND NOT EXISTS (SELECT 1 FROM issued)\n),\nresolved AS\n(\n    SELECT issued.* FROM issued\n    UNION ALL\n    SELECT current_invitation.* FROM current_invitation\n)\nSELECT\n    resolved.id                                      AS \"invitationId\",\n    CASE\n        WHEN NOT EXISTS (SELECT 1 FROM validated)\n            THEN 'INVALID_ISSUE_REQUEST'\n        WHEN NOT EXISTS (SELECT 1 FROM eligible)\n            THEN 'PHASE3_HANDOFF_NOT_ELIGIBLE'\n        WHEN EXISTS (SELECT 1 FROM issued)\n         AND resolved.issue_count = 1\n            THEN 'ISSUED_NEW'\n        WHEN EXISTS (SELECT 1 FROM issued)\n            THEN 'ISSUED_REPLACEMENT'\n        WHEN resolved.status = 'ISSUED'\n         AND resolved.expires_at > now()\n            THEN 'ACTIVE_INVITATION_EXISTS'\n        WHEN resolved.status = 'CLAIMED'\n            THEN 'INVITATION_ALREADY_CLAIMED'\n        ELSE 'INVITATION_NOT_ISSUED'\n    END                                              AS \"issueStatus\",\n    EXISTS (SELECT 1 FROM issued)                    AS \"canDeliver\",\n    CASE\n        WHEN EXISTS (SELECT 1 FROM issued)\n            THEN supplied.invitation_token\n        ELSE NULL\n    END                                              AS \"invitationToken\",\n    CASE\n        WHEN EXISTS (SELECT 1 FROM issued)\n            THEN resolved.contract_version\n        ELSE NULL\n    END                                              AS \"contractVersion\",\n    CASE\n        WHEN EXISTS (SELECT 1 FROM issued)\n            THEN resolved.request_id\n        ELSE NULL\n    END                                              AS \"requestId\",\n    CASE\n        WHEN EXISTS (SELECT 1 FROM issued)\n            THEN resolved.assessment_id\n        ELSE NULL\n    END                                              AS \"assessmentId\",\n    CASE\n        WHEN EXISTS (SELECT 1 FROM issued)\n            THEN resolved.extraction_id\n        ELSE NULL\n    END                                              AS \"extractionId\",\n    resolved.status,\n    resolved.issue_count                             AS \"issueCount\",\n    resolved.issued_at                               AS \"issuedAt\",\n    resolved.expires_at                              AS \"expiresAt\"\nFROM supplied\nLEFT JOIN resolved ON TRUE;\n",
+        "options": {
+          "queryReplacement": "={{ [$json.correlation.contractVersion, $json.correlation.requestId, $json.correlation.assessmentId, $json.correlation.extractionId, String($execution.id), $('Validate Invitation Operation').first().json.ttlMinutes] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        448,
+        -320
+      ],
+      "id": "0f0d84e4-dfc6-483b-85ba-334f1f6f5109",
+      "name": "Issue Secure Interview Invitation",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cfbd0846-e13c-438a-a92b-2f8569995110-condition",
+              "leftValue": "={{ $json.canDeliver === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -320
+      ],
+      "id": "cfbd0846-e13c-438a-a92b-2f8569995110",
+      "name": "Invitation Issued?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const issued = $input.first().json;\nconst token = String(issued.invitationToken ?? '').trim().toLowerCase();\n\nif (\n  issued.canDeliver !== true ||\n  !/^[0-9a-f]{64}$/.test(token) ||\n  !issued.invitationId ||\n  !issued.expiresAt\n) {\n  throw new Error('SECURE_INVITATION_RESULT_NOT_AVAILABLE');\n}\n\nconst invitationPath =\n  `/form/talentai-candidate-interview?invitationToken=${encodeURIComponent(token)}`;\n\nconst expiresAt = new Date(issued.expiresAt);\n\nif (Number.isNaN(expiresAt.getTime())) {\n  throw new Error('SECURE_INVITATION_EXPIRY_INVALID');\n}\n\nconst output = [\n  '<p>دعوت امن مصاحبه با موفقیت صادر شد.</p>',\n  `<p><strong>شناسه دعوت:</strong> ${String(issued.invitationId)}</p>`,\n  `<p><strong>انقضا:</strong> ${expiresAt.toISOString()}</p>`,\n  `<p><strong>دفعات صدور:</strong> ${Number(issued.issueCount)}</p>`,\n  `<p><a href=\"${invitationPath}\" target=\"_blank\" rel=\"noopener noreferrer\">باز کردن لینک مصاحبه Candidate</a></p>`,\n  '<p>برای ارسال لینک، روی دکمه بالا راست‌کلیک و Copy Link Address را انتخاب کنید.</p>',\n].join('');\n\nreturn [\n  {\n    json: {\n      success: true,\n      operation: 'ISSUE',\n      invitationId: String(issued.invitationId),\n      issueStatus: String(issued.issueStatus),\n      issueCount: Number(issued.issueCount),\n      expiresAt: expiresAt.toISOString(),\n      invitationPath,\n      output,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -384
+      ],
+      "id": "c254d111-f168-4c7c-81d9-caf2d1c75111",
+      "name": "Build Secure Invitation Result",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH supplied AS\n(\n    SELECT\n        $1::UUID                          AS invitation_id,\n        NULLIF(BTRIM($2), '')             AS workflow_execution_id\n),\nrevoked AS\n(\n    UPDATE talentai.technical_interview_invitation AS invitation\n    SET\n        status = 'REVOKED',\n        claimed_by_workflow_execution_id = NULL,\n        claimed_at = NULL,\n        revoked_by_workflow_execution_id = supplied.workflow_execution_id,\n        revoked_at = now(),\n        updated_at = now()\n    FROM supplied\n    WHERE invitation.id = supplied.invitation_id\n      AND supplied.workflow_execution_id IS NOT NULL\n      AND\n      (\n          invitation.status = 'ISSUED'\n          OR\n          (\n              invitation.status = 'CLAIMED'\n              AND\n              (\n                  EXISTS\n                  (\n                      SELECT 1\n                      FROM talentai.technical_interview_session AS session\n                      WHERE session.contract_version = invitation.contract_version\n                        AND session.request_id = invitation.request_id\n                        AND session.assessment_id = invitation.assessment_id\n                        AND session.extraction_id = invitation.extraction_id\n                        AND session.status = 'FAILED'\n                        AND session.retryable = TRUE\n                  )\n                  OR\n                  (\n                      invitation.claimed_at <= now() - INTERVAL '10 minutes'\n                      AND NOT EXISTS\n                      (\n                          SELECT 1\n                          FROM talentai.technical_interview_session AS session\n                          WHERE session.contract_version = invitation.contract_version\n                            AND session.request_id = invitation.request_id\n                            AND session.assessment_id = invitation.assessment_id\n                      )\n                  )\n              )\n          )\n      )\n    RETURNING invitation.*\n),\ncurrent_invitation AS\n(\n    SELECT invitation.*\n    FROM talentai.technical_interview_invitation AS invitation\n    CROSS JOIN supplied\n    WHERE invitation.id = supplied.invitation_id\n      AND NOT EXISTS (SELECT 1 FROM revoked)\n),\nresolved AS\n(\n    SELECT revoked.*, TRUE AS revoked_now FROM revoked\n    UNION ALL\n    SELECT current_invitation.*, FALSE AS revoked_now FROM current_invitation\n)\nSELECT\n    resolved.id                                      AS \"invitationId\",\n    CASE\n        WHEN resolved.id IS NULL\n            THEN 'INVITATION_NOT_FOUND'\n        WHEN resolved.revoked_now\n            THEN 'REVOKED_NOW'\n        WHEN resolved.status = 'REVOKED'\n            THEN 'ALREADY_REVOKED'\n        WHEN resolved.status = 'CLAIMED'\n            THEN 'CLAIMED_INVITATION_NOT_REVOKED'\n        WHEN resolved.status = 'EXPIRED'\n            THEN 'EXPIRED_INVITATION_NOT_REVOKED'\n        ELSE 'INVITATION_NOT_REVOKED'\n    END                                              AS \"revokeStatus\",\n    resolved.status,\n    COALESCE(resolved.revoked_now, FALSE)             AS \"revokedNow\",\n    resolved.revoked_at                              AS \"revokedAt\"\nFROM supplied\nLEFT JOIN resolved ON TRUE;\n",
+        "options": {
+          "queryReplacement": "={{ [$('Validate Invitation Operation').first().json.invitationId, String($execution.id)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -448,
+        0
+      ],
+      "id": "b18ee6d5-47cd-4d4a-b859-b44e1de95112",
+      "name": "Revoke Secure Interview Invitation",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c7d34cf6-a155-4578-ad57-a44099e55113-condition",
+              "leftValue": "={{ ['REVOKED_NOW', 'ALREADY_REVOKED'].includes(String($json.revokeStatus ?? '')) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "c7d34cf6-a155-4578-ad57-a44099e55113",
+      "name": "Invitation Revoked?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const revoked = $input.first().json;\n\nif (\n  !revoked.invitationId ||\n  !['REVOKED_NOW', 'ALREADY_REVOKED'].includes(\n    String(revoked.revokeStatus ?? '')\n  )\n) {\n  throw new Error('SECURE_INVITATION_REVOCATION_NOT_CONFIRMED');\n}\n\nconst output = [\n  '<p>دعوت مصاحبه با موفقیت باطل شد.</p>',\n  `<p><strong>شناسه دعوت:</strong> ${String(revoked.invitationId)}</p>`,\n  `<p><strong>وضعیت:</strong> ${String(revoked.revokeStatus)}</p>`,\n].join('');\n\nreturn [\n  {\n    json: {\n      success: true,\n      operation: 'REVOKE',\n      invitationId: String(revoked.invitationId),\n      revokeStatus: String(revoked.revokeStatus),\n      revokedAt: revoked.revokedAt ?? null,\n      output,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "43ab4b11-d35f-4d2c-bdc4-ea9353565114",
+      "name": "Build Secure Revocation Result",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst issueStatus = String(input.issueStatus ?? '');\nconst revokeStatus = String(input.revokeStatus ?? '');\nconst resolutionStatus = String(input.resolutionStatus ?? '');\n\nconst failureCode =\n  issueStatus ||\n  revokeStatus ||\n  resolutionStatus ||\n  'SECURE_INVITATION_OPERATION_FAILED';\n\nconst messages = {\n  ACTIVE_INVITATION_EXISTS:\n    'برای این ارزیابی یک دعوت فعال وجود دارد. ابتدا همان لینک را استفاده یا دعوت را باطل کنید.',\n  INVITATION_ALREADY_CLAIMED:\n    'این دعوت قبلاً برای شروع مصاحبه استفاده شده است.',\n  PHASE3_HANDOFF_NOT_ELIGIBLE:\n    'ارزیابی کامل و قابل استفاده‌ای برای صدور دعوت پیدا نشد.',\n  INVITATION_NOT_FOUND:\n    'دعوت موردنظر پیدا نشد.',\n  CLAIMED_INVITATION_NOT_REVOKED:\n    'دعوت استفاده‌شده قابل ابطال نیست.',\n  EXPIRED_INVITATION_NOT_REVOKED:\n    'دعوت منقضی‌شده نیازی به ابطال ندارد.',\n};\n\nconst message =\n  messages[failureCode] ??\n  'عملیات دعوت امن تکمیل نشد. جزئیات خصوصی در خروجی نمایش داده نمی‌شود.';\n\nreturn [\n  {\n    json: {\n      success: false,\n      failureCode,\n      retryable: false,\n      output: `<p>${message}</p><p><strong>کد وضعیت:</strong> ${failureCode}</p>`,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "ed1c148b-f67c-4d1e-a174-6e6d8db85115",
+      "name": "Build Secure Invitation Failure"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "عملیات دعوت امن TalentAI تکمیل شد",
+        "completionMessage": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1120,
+        -384
+      ],
+      "id": "46e81c99-c1b9-468d-a2d3-aec5764d5116",
+      "name": "Show Secure Invitation Result",
+      "webhookId": "42bfde76-b22a-4b80-a678-2c7b43225117"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "عملیات دعوت امن TalentAI تکمیل نشد",
+        "completionMessage": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "5a1dc1d7-1c68-4ed1-a027-35a8435f5118",
+      "name": "Show Secure Invitation Failure",
+      "webhookId": "929a39e6-cf59-44d2-81a0-7817f0875119"
+    }
+  ],
+  "connections": {
+    "On authorized invitation operation": {
+      "main": [
+        [
+          {
+            "node": "Validate Invitation Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Invitation Operation": {
+      "main": [
+        [
+          {
+            "node": "Issue Invitation?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issue Invitation?": {
+      "main": [
+        [
+          {
+            "node": "Load Completed Phase 3 For Invitation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Revoke Secure Interview Invitation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Completed Phase 3 For Invitation": {
+      "main": [
+        [
+          {
+            "node": "Invitation Context Resolved?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invitation Context Resolved?": {
+      "main": [
+        [
+          {
+            "node": "Build Phase 3 Invitation Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Phase 3 Invitation Handoff": {
+      "main": [
+        [
+          {
+            "node": "Validate Phase 3 Invitation Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Phase 3 Invitation Handoff": {
+      "main": [
+        [
+          {
+            "node": "Issue Secure Interview Invitation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issue Secure Interview Invitation": {
+      "main": [
+        [
+          {
+            "node": "Invitation Issued?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invitation Issued?": {
+      "main": [
+        [
+          {
+            "node": "Build Secure Invitation Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Secure Invitation Result": {
+      "main": [
+        [
+          {
+            "node": "Show Secure Invitation Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revoke Secure Interview Invitation": {
+      "main": [
+        [
+          {
+            "node": "Invitation Revoked?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invitation Revoked?": {
+      "main": [
+        [
+          {
+            "node": "Build Secure Revocation Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Secure Revocation Result": {
+      "main": [
+        [
+          {
+            "node": "Show Secure Invitation Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Secure Invitation Failure": {
+      "main": [
+        [
+          {
+            "node": "Show Secure Invitation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "executionTimeout": 60,
+    "redactionPolicy": "all"
+  }
+}

@@ -53,11 +53,17 @@ Question sets and answers are reloaded through the checkpoint query instead of
 being regenerated, and answer-evaluation metadata is retained for final-result
 recovery.
 
-`scripts/build-phase45-mvp-package.sh` creates a private four-workflow release
-candidate from the verified Phase 3 package and the committed TAI-04 source. It
-derives credential references from the source package, rejects source drift and
-scans the assembled archive for likely secrets. Release artifacts remain under
-`exports/private` and must not be committed.
+`scripts/build-phase45-mvp-package.sh` creates a private five-workflow release
+candidate from the verified Phase 3 package and the committed TAI-04 and TAI-05
+sources. It derives credential references from the source package, rejects
+source drift and scans the assembled archive for likely secrets. Release
+artifacts remain under `exports/private` and must not be committed.
+
+`scripts/build-tai05-secure-invitation.mjs` deterministically rebuilds the
+authenticated invitation-management workflow. The associated
+`scripts/test-secure-invitation-workflows.mjs` suite verifies one-time opaque
+token delivery, TAI-04 claim routing, form privacy settings, source
+synchronization and sanitized candidate-facing failures.
 
 Optional native Windows PowerShell database initialization:
 

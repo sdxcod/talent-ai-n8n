@@ -255,13 +255,58 @@ BEGIN
         RAISE EXCEPTION 'Claimed invitation was unexpectedly revoked: %', v_row;
     END IF;
 
-    UPDATE talentai.technical_interview_invitation
-    SET
-        status = 'EXPIRED',
-        claimed_by_workflow_execution_id = NULL,
-        claimed_at = NULL,
-        updated_at = now()
-    WHERE id = v_invitation_id;
+    INSERT INTO talentai.technical_interview_session
+    (
+        contract_version,
+        request_id,
+        assessment_id,
+        extraction_id,
+        initial_workflow_execution_id,
+        claim_owner_workflow_execution_id,
+        last_workflow_execution_id,
+        status,
+        current_stage,
+        attempt_count,
+        failure_category,
+        failure_code,
+        failure_message,
+        retryable,
+        started_at,
+        updated_at,
+        failed_at
+    )
+    VALUES
+    (
+        '1.0.0',
+        v_request_id,
+        v_assessment_id,
+        v_extraction_id,
+        'invitation-claim-test-1',
+        'invitation-claim-test-1',
+        'invitation-claim-test-1',
+        'FAILED',
+        'QUESTION_GENERATION',
+        1,
+        'PROVIDER',
+        'SYNTHETIC_RETRYABLE_FAILURE',
+        'Synthetic retryable failure for invitation recovery testing.',
+        TRUE,
+        now() - INTERVAL '1 minute',
+        now(),
+        now()
+    );
+
+    SELECT * INTO STRICT v_row
+    FROM pg_temp.revoke_technical_interview_invitation(
+        v_invitation_id,
+        'invitation-recovery-test'
+    );
+
+    IF v_row."revokeStatus" <> 'REVOKED_NOW'
+       OR v_row."revokedNow" IS NOT TRUE
+       OR v_row.status <> 'REVOKED' THEN
+        RAISE EXCEPTION 'Retryable failed invitation was not revoked: %', v_row;
+    END IF;
 
     SELECT * INTO STRICT v_row
     FROM pg_temp.issue_technical_interview_invitation(
@@ -277,7 +322,7 @@ BEGIN
        OR v_row."canDeliver" IS NOT TRUE
        OR v_row."issueCount" <> 2
        OR v_row."invitationToken" = v_token THEN
-        RAISE EXCEPTION 'Expired invitation was not securely replaced: %', v_row;
+        RAISE EXCEPTION 'Recovery invitation was not securely replaced: %', v_row;
     END IF;
 
     v_replacement_token := v_row."invitationToken";

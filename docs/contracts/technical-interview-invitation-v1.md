@@ -50,12 +50,18 @@ The accepted TTL range is 15 minutes through 7 days. The workflow default is
 | State | Meaning | Allowed transition |
 |---|---|---|
 | `ISSUED` | Active and not yet used | `CLAIMED`, `REVOKED`, `EXPIRED` |
-| `CLAIMED` | Bound to one TAI-04 workflow execution | Terminal |
+| `CLAIMED` | Bound to one TAI-04 workflow execution | Terminal, except controlled failure recovery |
 | `REVOKED` | Disabled by an authorized operator | Replacement issue |
 | `EXPIRED` | Lifetime elapsed | Replacement issue |
 
 Only one row exists for a Phase 3 handoff. Reissuing an expired or revoked
 invitation rotates the token hash and increments `issue_count`.
+
+A claimed invitation can be revoked for recovery only when its correlated
+technical interview session is `FAILED` and retryable, or when no interview
+session was created and the claim is older than ten minutes. Invitations tied
+to `RUNNING` or `COMPLETED` interviews cannot be revoked. Recovery revocation
+clears the previous claim binding before a replacement token is issued.
 
 ## Claim semantics
 
